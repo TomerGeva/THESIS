@@ -2,6 +2,7 @@
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
 from Config import *
+import torch
 import numpy  as np
 import torch.nn as nn
 from torch.autograd import Variable
@@ -13,12 +14,13 @@ from torch.autograd import Variable
 def accuracy_test(net, loader):
     total = 0
     MSE   = 0
-    for sample in loader:
-        grids = Variable(sample['grid'].float()).to(net.device)
-        sensitivities = sample['sensitivity'].to(net.device)
-        outputs = net(grids)
-        MSE   += (sensitivities - outputs).pow(2).sum()
-        total += sensitivities.size(0)
+    with torch.no_grad():
+        for sample in loader:
+            grids = Variable(sample['grid'].float()).to(net.device)
+            sensitivities = sample['sensitivity'].to(net.device)
+            outputs = net(grids)
+            MSE   += (sensitivities - outputs).pow(2).sum()
+            total += sensitivities.size(0)
 
     return (MSE / total).item()
 

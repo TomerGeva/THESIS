@@ -64,11 +64,11 @@ LAYER_DESCRIPTION = {0: 'conv',
 FILTER_NUM       = [1,  # INPUT, do not change
                     6,  # first layer
                     16,  # second layer
-                    32,  # third layer
-                    64,  # fourth layer
-                    128,  # fifth layer
-                    128,  # sixth layer
-                    256,  # seventh layer
+                    16,  # third layer
+                    16,  # fourth layer
+                    16,  # fifth layer
+                    16,  # sixth layer
+                    32,  # seventh layer
                     ]
 # Filter sizes for each filter layer
 KERNEL_SIZE      = [25,  # first layer

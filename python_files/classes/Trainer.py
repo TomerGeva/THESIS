@@ -83,17 +83,15 @@ class Trainer:
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Testing accuracy at the end of the epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            accuracies_train.append(accuracy_test(net, train_loader))
+            accuracies_train.append(self.loss)
             accuracies_test.append(accuracy_test(net, test_loader))
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Documenting with tensorboard
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             logger.logger.add_scalars(logger.logger_tag + "_accuracy",
-                                      {"Train_MSE_learning_rate_{}".format(self.learning_rate): accuracies_train[
-                                          -1],
-                                       "Test_MSE_learning_rate_{}".format(self.learning_rate): accuracies_test[
-                                           -1]},
+                                      {"Train_MSE_learning_rate_{}".format(self.learning_rate): accuracies_train[-1],
+                                       "Test_MSE_learning_rate_{}".format(self.learning_rate): accuracies_test[-1]},
                                       epoch + 1)
             logger.logger.add_scalars(logger.logger_tag + "_loss",
                                       {"learning_rate_{}".format(self.learning_rate): self.loss},
