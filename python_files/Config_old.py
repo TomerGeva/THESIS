@@ -21,7 +21,7 @@ SAVE_PATH_DB = './database.pth'
 SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
-PATH_DATABASE = 'C:\\Users\\tgeva\\Documents\\UNIVERSITY\\THESIS\\Git_repository\\databases\\corner_1450_10k.csv'
+PATH_DATABASE = 'C:\\Users\\tomer\\Documents\\MATLAB\\results\\grid_size_2500_2500\\corner_1450\\corner_1450_db.csv'
 PATH_LOGS     = 'C:\\Users\\tomer\\Documents\\Thesis_logs'
 # ==================================
 # Flow Control Variables
