@@ -47,63 +47,55 @@ INIT_WEIGHT_STD  = 0.02
 # ----------------------
 CONV_DESCRIPTION = {0: 'conv',
                     1: 'conv',
-                    2: 'pool',
-                    3: 'conv',
-                    4: 'pool',
+                    2: 'conv',
+                    3: 'pool',
+                    4: 'conv',
                     5: 'conv',
                     6: 'pool',
                     7: 'conv',
-                    8: 'conv',
-                    9: 'pool',
-                    10: 'conv',
-                    11: 'linear',
-                    12: 'linear',
-                    13: 'linear last',
-                    }
+                    8: 'pool',
+                    9: 'conv'}
 # Number of filters in each filter layer
-FILTER_NUM       = [6,  # first layer
-                    16,  # second layer
-                    32,  # third layer
-                    64,  # fourth layer
-                    128,  # fifth layer
-                    128,  # sixth layer
-                    256,  # seventh layer
-                    ]
+FILTER_NUM   = [6,  # first layer
+                16,  # second layer
+                16,  # third layer
+                16,  # fourth layer
+                32,  # fifth layer
+                32,  # sixth layer
+                64,  # seventh layer
+                ]
 # Filter sizes for each filter layer
-KERNEL_SIZE      = [25,  # first layer
-                    5,  # second layer
-                    5,  # third layer
-                    4,  # fourth layer
-                    3,  # fifth layer
-                    3,  # sixth layer
-                    4,  # seventh layer
-                    ]
+KERNEL_SIZE  = [25,  # first layer
+                7,  # second layer
+                7,  # third layer
+                7,  # fourth layer
+                7,  # fifth layer
+                3,  # sixth layer
+                3,  # seventh layer
+                ]
 # Stride values of the convolution layers
-STRIDES          = [25,  # first layer
-                    1,  # second layer
-                    1,  # third layer
-                    1,  # fourth layer
-                    1,  # fifth layer
-                    1,  # sixth layer
-                    1,  # seventh layer
-                    ]
+STRIDES      = [25,  # first layer
+                1,  # second layer
+                1,  # third layer
+                1,  # fourth layer
+                1,  # fifth layer
+                1,  # sixth layer
+                1,  # seventh layer
+                ]
 # Padding values of the convolution layers
-PADDING          = [0,  # first layer
-                    2,  # second layer
-                    2,  # third layer
-                    1,  # fourth layer
-                    0,  # fifth layer
-                    0,  # sixth layer
-                    0,  # seventh layer
-                    ]
+PADDING      = [0,  # first layer
+                0,  # second layer
+                0,  # third layer
+                0,  # fourth layer
+                0,  # fifth layer
+                0,  # sixth layer
+                0,  # seventh layer
+                ]
 # Max pool size
-MAX_POOL_SIZE    = [2,  # first max-pool
-                    2,  # second max-pool
-                    2,  # third max-pool
-                    2,  # fourth max-pool
-                    ]
+MAX_POOL_SIZE   = 2
 # FC layer sizes
-FC_LAYERS = [150,
+FC_LAYERS = [1500,
+             150,
              25,
              1,
              ]
