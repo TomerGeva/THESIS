@@ -3,10 +3,6 @@
 from Config import *
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data        import Dataset, DataLoader, random_split
-from functions import *
 
 
 # ============================================================
@@ -70,10 +66,3 @@ class Net(nn.Module):
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         return x
-
-
-# if __name__ == '__main__':
-#     data = ScattererCoordinateDataset(csv_file=path_database, transform=ToTensor())
-#
-#     sample = data[5]
-#     print('{} \t{} \t{} \t {}'.format(5, sample['grid'].size(), sample['sensitivity'], sample['sensitivity'].size()))
