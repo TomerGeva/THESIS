@@ -1,16 +1,9 @@
 # ***************************************************************************************************
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
-from abc import ABC
-
 from Config import *
 import numpy  as np
-import pandas as pd
-import os
-import csv
-import torch
-import matplotlib.pyplot as plt
-from itertools import islice
+import torch.nn as nn
 from torch.autograd import Variable
 
 
@@ -62,3 +55,15 @@ def points2mat(arr):
     grid_array = np.zeros([XQUANTIZE, YQUANTIZE])
     grid_array[arr[:, 1], arr[:, 0]] = 255
     return grid_array
+
+
+def initialize_weights(net, mean, std):
+    """
+    :param net: the model which is being normalized
+    :param mean: the target mean of the weights
+    :param std: the target standard deviation of the weights
+    :return: nothing, just adjusts the weights
+    """
+    for module in net.modules():
+        if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear)):
+            nn.init.normal_(module.weight.data, mean, std)

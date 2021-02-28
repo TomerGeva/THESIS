@@ -22,7 +22,7 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 PATH_DATABASE = 'C:\\Users\\tgeva\\Documents\\UNIVERSITY\\THESIS\\Git_repository\\databases\\corner_1450_10k.csv'
-PATH_LOGS     = 'C:\\Users\\tomer\\Documents\\Thesis_logs'
+PATH_LOGS     = 'C:\\Users\\tgeva\\Documents\\UNIVERSITY\\THESIS\\Thesis_logs'
 # ==================================
 # Flow Control Variables
 # ==================================
@@ -45,23 +45,24 @@ INIT_WEIGHT_STD  = 0.02
 # ----------------------
 # Network topology
 # ----------------------
-CONV_DESCRIPTION = {0: 'conv',
-                    1: 'conv',
-                    2: 'pool',
-                    3: 'conv',
-                    4: 'pool',
-                    5: 'conv',
-                    6: 'pool',
-                    7: 'conv',
-                    8: 'conv',
-                    9: 'pool',
-                    10: 'conv',
-                    11: 'linear',
-                    12: 'linear',
-                    13: 'linear last',
-                    }
+LAYER_DESCRIPTION = {0: 'conv',
+                     1: 'conv',
+                     2: 'pool',
+                     3: 'conv',
+                     4: 'pool',
+                     5: 'conv',
+                     6: 'pool',
+                     7: 'conv',
+                     8: 'conv',
+                     9: 'pool',
+                     10: 'conv',
+                     11: 'linear',
+                     12: 'linear',
+                     13: 'linear last',
+                     }
 # Number of filters in each filter layer
-FILTER_NUM       = [6,  # first layer
+FILTER_NUM       = [1,  # INPUT, do not change
+                    6,  # first layer
                     16,  # second layer
                     32,  # third layer
                     64,  # fourth layer

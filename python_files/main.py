@@ -1,8 +1,12 @@
 # import numpy as np
 # import os
-# import torch
+import torch
 from Config import *
-from Classes import *
+from Logger import Logger
+from Trainer import Trainer
+from Net_dynamic import ConvNet
+from functions import initialize_weights
+from ScatterCoordinateDataset import import_data_sets
 
 
 def main_old():
@@ -28,7 +32,7 @@ def main():
     # ================================================================================
     # Setting the logger
     # ================================================================================
-    logger = Logger(path_logs)
+    logger = Logger(PATH_LOGS)
     logger.logger_tag = 'Training_raw'
 
     # ================================================================================
@@ -44,19 +48,14 @@ def main():
     # ================================================================================
     # Creating the net & trainer objects
     # ================================================================================
-    net = Net(device)
+    net = ConvNet(device)
+    initialize_weights(net, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     net.to(device)  # allocating the computation to the CPU or GPU
     trainer = Trainer(net, lr=LR, mu=MU)
+    # ================================================================================
+    # Training
+    # ================================================================================
     trainer.train(net, train_loader, test_loader, logger)
-
-    """
-    for i_batch, sample_batched in enumerate(train_loader):
-        print('{} \t{} \t{} \t {}'.format(i_batch, sample_batched['grid'].size(),
-                                          sample_batched['sensitivity'], sample_batched['sensitivity'].size()))
-        if i_batch == 3:
-            break
-    print('hi')
-    """
 
 
 if __name__ == '__main__':
