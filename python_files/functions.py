@@ -59,6 +59,9 @@ def points2mat(arr):
     return grid_array
 
 
+# ==================================================================================================================
+# Function used to initialize the weights of the network before the training
+# ==================================================================================================================
 def initialize_weights(net, mean, std):
     """
     :param net: the model which is being normalized
