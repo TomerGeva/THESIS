@@ -4,7 +4,7 @@ import torch
 from Config import *
 from Logger import Logger
 from Trainer import Trainer
-from Net_dynamic import ConvNet
+from ConvNet import ConvNet
 from functions import initialize_weights
 from ScatterCoordinateDataset import import_data_sets
 
