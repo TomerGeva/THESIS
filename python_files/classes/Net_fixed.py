@@ -15,7 +15,7 @@ class Net(nn.Module):
     def __init__(self, device):
         super(Net, self).__init__()
         # a variable describing the forward process
-        self.description = CONV_DESCRIPTION
+        self.description = LAYER_DESCRIPTION
         # computation location
         self.device      = device
         #                       in_channels | out_channels | kernel_size    | stride

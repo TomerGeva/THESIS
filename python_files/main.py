@@ -60,6 +60,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # train_loader, test_loader = import_data_sets(BATCH_SIZE, 0.15)
+    # for sample in test_loader:
+    #     print(torch.max(sample['sensitivity']))
+
 
 
 

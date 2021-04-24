@@ -1,5 +1,6 @@
 from Config import *
 import torch.nn as nn
+from neural_network_functions import _conv_block, _fc_block
 
 
 class ConvNet(nn.Module):
@@ -20,12 +21,12 @@ class ConvNet(nn.Module):
         for ii in range(len(self.description)):
             action = self.description[ii]
             if 'conv' in action:
-                self.layers.append(self._conv_block(FILTER_NUM[conv_idx],
-                                                    FILTER_NUM[conv_idx + 1],
-                                                    KERNEL_SIZE[conv_idx],
-                                                    STRIDES[conv_idx],
-                                                    PADDING[conv_idx],
-                                                    )
+                self.layers.append(_conv_block(FILTER_NUM[conv_idx],
+                                               FILTER_NUM[conv_idx + 1],
+                                               KERNEL_SIZE[conv_idx],
+                                               STRIDES[conv_idx],
+                                               PADDING[conv_idx],
+                                               )
                                    )
                 conv_idx += 1
             elif 'pool' in action:
@@ -33,40 +34,18 @@ class ConvNet(nn.Module):
                 maxpool_idx += 1
             elif 'linear' in action:
                 if linear_idx == 0:
-                    self.layers.append(self._fc_block(x_dim * y_dim * FILTER_NUM[-1],
-                                                      FC_LAYERS[linear_idx],
-                                                      activation=True))
+                    self.layers.append(_fc_block(x_dim * y_dim * FILTER_NUM[-1],
+                                                 FC_LAYERS[linear_idx],
+                                                 activation=True))
                 elif 'last' in action:
-                    self.layers.append(self._fc_block(FC_LAYERS[linear_idx - 1],
-                                                      FC_LAYERS[linear_idx],
-                                                      activation=False))
+                    self.layers.append(_fc_block(FC_LAYERS[linear_idx - 1],
+                                                 FC_LAYERS[linear_idx],
+                                                 activation=False))
                 else:
-                    self.layers.append(self._fc_block(FC_LAYERS[linear_idx - 1],
-                                                      FC_LAYERS[linear_idx],
-                                                      activation=True))
+                    self.layers.append(_fc_block(FC_LAYERS[linear_idx - 1],
+                                                 FC_LAYERS[linear_idx],
+                                                 activation=True))
                 linear_idx += 1
-
-    def _conv_block(self, in_channels, out_channels, kernel_size, stride, padding, batch_norm=True):
-        if batch_norm:
-            return nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(),
-            )
-        else:
-            return nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=True),
-                nn.ReLU(),
-            )
-
-    def _fc_block(self, in_size, out_size, activation=True):
-        if activation:
-            return nn.Sequential(
-                nn.Linear(in_size, out_size),
-                nn.ReLU()
-            )
-        else:
-            return nn.Linear(in_size, out_size)
 
     def compute_dim_sizes(self):
         x_dim_size  = XQUANTIZE
