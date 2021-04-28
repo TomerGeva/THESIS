@@ -1,3 +1,4 @@
+from Config import *
 import torch
 import torch.nn            as nn
 import torch.distributions as dist
@@ -20,21 +21,22 @@ class VaeToy(nn.Module):
         encoder_out         = self.encoder(x)
         encoder_out_reshape = encoder_out.view(-1, 2, 50)
         mu                  = encoder_out_reshape[:, 0, :]
-        std                 = encoder_out_reshape[:, 1, :].abs()
+        logvar              = encoder_out_reshape[:, 1, :]
 
         # -------------------------------------------------------------------------
         # Generating gaussian samples, and performing the re-parameterization trick
         # -------------------------------------------------------------------------
-        normal_dist = dist.Normal(0, 1)
-        zeta = normal_dist.sample(mu.size())
         if self.training:
+            std = logvar.mul(0.5).exp_()
+            zeta = std.data.new(std.size()).normal_()
             sampled_latent = zeta.mul(std).add_(mu)
         else:
             sampled_latent = mu
-
+        # __________Reshaping to enter the decoder__________
+        sampled_latent = sampled_latent.view(-1, 50, 1, 1)
         # -------------------------------------------------------------------------
         # Decoding, outputs a 28 X 28 1 channel picture
         # -------------------------------------------------------------------------
         decoder_out = self.decoder(sampled_latent)
 
-        return decoder_out, mu, std
+        return decoder_out, mu, logvar
