@@ -15,9 +15,9 @@ YQUANTIZE = 2500
 TRANSFORM_NORM = 0.5
 IMG_CHANNELS   = 1
 
-# ---path for saving the database ---
+# ---logdir for saving the database ---
 SAVE_PATH_DB = './database.pth'
-# ---path for saving the network ----
+# ---logdir for saving the network ----
 SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'

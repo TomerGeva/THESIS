@@ -347,7 +347,7 @@ def load_state_train(mode):
     continure the training
     """
     # -------------------------------------
-    # assembling the path
+    # assembling the logdir
     # -------------------------------------
     filename = r"lr_0.0002_epoch_25.tar"
     path = os.path.join(PATH_MODELS, MODES_DICT[mode], filename)

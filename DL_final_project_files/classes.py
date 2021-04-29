@@ -27,7 +27,7 @@ class SymbolDatasetIterable(IterableDataset):
         :param train: if true, the system loads the train database, otherwise loads the validation database
         """
         # --------------------------------------------------------------------------------------
-        # Reading the data file from the path
+        # Reading the data file from the logdir
         # --------------------------------------------------------------------------------------
         if train:
             self.csv_data, _ = import_data_sets(PATH_TRAIN_DATA, PATH_VAL_DATA)
@@ -390,7 +390,7 @@ def load_state_train(mode):
     continure the training
     """
     # -------------------------------------
-    # assembling the path
+    # assembling the logdir
     # -------------------------------------
     filename = r"lr_0.01_epoch_50.tar"
     path = os.path.join(path_models, modes_dict[mode], filename)

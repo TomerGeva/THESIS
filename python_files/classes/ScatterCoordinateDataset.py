@@ -17,7 +17,7 @@ class ScattererCoordinateDataset(Dataset):
     def __init__(self, csv_file, transform=None):
         """
         Args:
-        :param csv_file: path to the file with all the database
+        :param csv_file: logdir to the file with all the database
         :param transform: transformation flag of the data
         """
         self.csv_data = pd.read_csv(csv_file)

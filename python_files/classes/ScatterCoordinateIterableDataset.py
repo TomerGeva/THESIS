@@ -22,7 +22,7 @@ class ScattererCoordinateIterableDataset(IterableDataset):
     def __init__(self, csv_file, transform_sens=None, transform_grid=None):
         """
         Args:
-        :param csv_file: path to the file with all the database
+        :param csv_file: logdir to the file with all the database
         :param transform_sens: transformation flag of the sensitivity
         :param transform_grid: transformation flag of the grid
         """

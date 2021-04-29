@@ -5,7 +5,7 @@
 # **********************************************************************************************************************
 def file2array(filename):
     """
-    :param filename: path to the .csv file with the array data
+    :param filename: logdir to the .csv file with the array data
     :return: function returns a dictionary with the following information:
         [array]       - key to a NX2 array which holds the scatterers' location in the medium
         [sensitivity] - key to the resulting sensitivity of the array
@@ -49,7 +49,7 @@ def array2mat(arr):
 
 def gather_data(path):
     """
-    :param path: holds the path to the folder which holds the csv files of the database
+    :param path: holds the logdir to the folder which holds the csv files of the database
     :return:this function goes through all the '.csv' files and extracts the grid points, and the resulting sensitivity.
     the function returns a dictionary with the following keys:
     [scat_arrays] - contains the grid coordinates of the scatterers. Each array hold a set of scatterer locations

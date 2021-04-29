@@ -108,7 +108,7 @@ def cost_function(pictures, reconstruction, mu, logvar):
     mse_loss = F.mse_loss(pictures, reconstruction, reduction='sum')
     # computing D_kl means summing over all dimensions, and averaging over the batch
     d_kl     = torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
-    return mse_loss + BETA * d_kl
+    return mse_loss, d_kl, mse_loss + BETA * d_kl
 
 
 def train(vae, optimizer, train_loader, test_loader, device):
@@ -129,7 +129,7 @@ def train(vae, optimizer, train_loader, test_loader, device):
             pictures = Variable(pictures.to(device))
             # ___________Forward pass_____________
             reconstruction, mu, logvar = vae(pictures)
-            cost = cost_function(pictures, reconstruction, mu, logvar)
+            _, _, cost = cost_function(pictures, reconstruction, mu, logvar)
             train_cost += cost.item()
             # ___________Backward calc____________
             optimizer.zero_grad()
