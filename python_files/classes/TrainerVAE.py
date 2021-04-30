@@ -92,6 +92,7 @@ class TrainerVAE:
         # Init Log
         # ==========================================================================================
         logger.start_log()
+        logger.log_model_arch(mod_vae)
 
         # ==========================================================================================
         # Begin of training
@@ -137,7 +138,7 @@ class TrainerVAE:
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Documenting with LoggerVAE
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            logger.log_epoch_results(self, epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, test_kl_div, test_cost)
+            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, test_kl_div, test_cost)
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Saving the training state

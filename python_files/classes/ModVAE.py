@@ -32,12 +32,12 @@ class ModVAE(nn.Module):
             sampled_latent = zeta.mul(std).add_(mu)
         else:
             sampled_latent = mu
-            # __________Reshaping to enter the decoder__________
-            sampled_latent = sampled_latent.view(-1, LATENT_SPACE_DIM)
 
         # -------------------------------------------------------------------------
         # Decoding, outputs a 28 X 28 1 channel picture
         # -------------------------------------------------------------------------
+        # __________Reshaping to enter the decoder__________
+        sampled_latent = sampled_latent.view(-1, LATENT_SPACE_DIM)
         decoder_out = self.decoder(sampled_latent)
 
         return decoder_out, mu, logvar

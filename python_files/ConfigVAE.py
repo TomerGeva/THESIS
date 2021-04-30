@@ -122,7 +122,7 @@ ENCODER_MAX_POOL_SIZE    = [2,  # first max-pool
                             ]
 # FC layer sizes
 ENCODER_FC_LAYERS = [150,
-                     25,
+                     150,
                      2 * LATENT_SPACE_DIM,
                     ]
 
