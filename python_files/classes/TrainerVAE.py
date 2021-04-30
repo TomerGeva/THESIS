@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.optim as optim
+from LoggerVAE import LoggerVAE
 from functions import *
 
 
@@ -7,7 +8,7 @@ class TrainerVAE:
     """
     This class holds the Trainer for the Variational autoencoder
     """
-    def __init__(self, net, lr=1e-2, mom=0.9):
+    def __init__(self, net, lr=1e-2, mom=0.9, beta=1):
         # -------------------------------------
         # cost function
         # -------------------------------------
@@ -26,88 +27,122 @@ class TrainerVAE:
         # -------------------------------------
         # Misc training parameters
         # -------------------------------------
-        self.loss           = []
+        self.cost           = []
         self.learning_rate  = lr
         self.mom            = mom
+        self.beta           = beta
 
-    def train(self, net, train_loader, test_loader, logger, save_per_epochs=1):
+    def compute_loss(self, targets, outputs, mu, logvar):
+        mse_loss = self.reconstruction_loss(targets, outputs, reduction='sum')
+        kl_div   = self.d_kl(mu, logvar)
+        return mse_loss, kl_div, mse_loss + self.beta * kl_div
+
+    def test_model(self, mod_vae, loader):
         """
-        :param net: Net class object, which is the net we want to train
-        :param train_loader: holds the training database
-        :param test_loader: holds the testing database
-        :param logger: logging the results
-        :param save_per_epochs: flag indicating if you want to save
-        :return: the function trains the network, and saves the trained network
+        :param mod_vae: VAE we want to test
+        :param loader: lodaer with the test database
+        :return: test parameters
         """
-        losses = []
-        accuracies_train = []
-        accuracies_test = []
-        print("Started training, learning rate: {}".format(self.learning_rate))
-        # ----------------------------------------------
-        # Begin of training
-        # ----------------------------------------------
-        net.train()
-        for epoch in range(self.epoch, EPOCH_NUM):
-            train_loss = 0.0
-            print("Starting Epoch #" + str(epoch + 1))
-            for i, sample_batched in enumerate(train_loader):
-                # ++++++++++++++++++++++++++++++++++++++
+        # ==========================================================================================
+        # Init variables
+        # ==========================================================================================
+        test_cost       = 0.0
+        test_mse_cost   = 0.0
+        test_kl_div     = 0.0
+
+        # ==========================================================================================
+        # Begin of testing
+        # ==========================================================================================
+        mod_vae.eval()
+        with torch.no_grad():
+            for sample in loader:
+                # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
-                # ++++++++++++++++++++++++++++++++++++++
-                grids         = Variable(sample_batched['grid'].float()).to(net.device)
-                sensitivities = Variable(sample_batched['sensitivity'].float()).to(net.device)
+                # ------------------------------------------------------------------------------
+                grids = Variable(sample['grid'].float()).to(mod_vae.device)
+                sensitivities = sample['sensitivity'].to(mod_vae.device)
 
-                # ++++++++++++++++++++++++++++++++++++++
-                # Feed forward
-                # ++++++++++++++++++++++++++++++++++++++
-                self.optimizer.zero_grad()
-                outputs = net(grids)
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                outputs, mu, logvar = mod_vae(grids)
 
-                # ++++++++++++++++++++++++++++++++++++++
-                # Computing the loss
-                # ++++++++++++++++++++++++++++++++++++++
-                loss = self.criterion(outputs, sensitivities)
+                # ------------------------------------------------------------------------------
+                # Cost computations
+                # ------------------------------------------------------------------------------
+                mse_loss, kl_div, cost = self.compute_loss(sensitivities, outputs, mu, logvar)
 
-                # ++++++++++++++++++++++++++++++++++++++
+                test_mse_cost   += mse_loss
+                test_kl_div     += sensitivities.size(0)
+                test_cost       += cost
+
+        mod_vae.train()
+        return test_mse_cost, test_kl_div, test_cost
+
+    def train(self, mod_vae, train_loader, test_loader, logger, save_per_epochs=1):
+        """
+        :param         mod_vae: Modified VAE which we want to train
+        :param    train_loader: holds the training database
+        :param     test_loader: holds the testing database
+        :param          logger: logging the results
+        :param save_per_epochs: flag indicating if you want to save
+        :return: The function trains the network, and saves the trained network
+        """
+        # ==========================================================================================
+        # Init Log
+        # ==========================================================================================
+        logger.start_log()
+
+        # ==========================================================================================
+        # Begin of training
+        # ==========================================================================================
+        mod_vae.train()
+        for epoch in range(self.epoch, EPOCH_NUM):
+            train_cost      = 0.0
+            train_mse_cost  = 0.0
+            train_kl_div    = 0.0
+            for i, sample_batched in enumerate(train_loader):
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities
+                # ------------------------------------------------------------------------------
+                grids         = Variable(sample_batched['grid'].float()).to(mod_vae.device)
+                sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
+
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                outputs, mu, logvar = mod_vae(grids)
+
+                # ------------------------------------------------------------------------------
+                # Backward computations
+                # ------------------------------------------------------------------------------
+                mse_loss, kl_div, cost = self.compute_loss(sensitivities, outputs, mu, logvar)
+                train_cost      += cost.item()
+                train_mse_cost  += mse_loss.item()
+                train_kl_div    += kl_div.item()
+
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Back propagation
-                # ++++++++++++++++++++++++++++++++++++++
-                loss.backward()
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                self.optimizer.zero_grad()
+                cost.backward()
                 self.optimizer.step()
 
-                # ++++++++++++++++++++++++++++++++++++++
-                # Documenting the loss
-                # ++++++++++++++++++++++++++++++++++++++
-                losses.append(loss.data.item())
-                train_loss += loss.item() * grids.size(0)
-            self.loss = train_loss / len(train_loader.dataset)
+            self.cost = train_cost / len(train_loader.dataset)
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Testing accuracy at the end of the epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            accuracies_train.append(self.loss)
-            accuracies_test.append(accuracy_test(net, test_loader))
+            test_mse_cost, test_kl_div, test_cost = self.test_model(mod_vae, test_loader)
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # Documenting with tensorboard
+            # Documenting with LoggerVAE
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            logger.logger.add_scalars(logger.logger_tag + "_accuracy",
-                                      {"Train_MSE_learning_rate_{}".format(self.learning_rate): accuracies_train[-1],
-                                       "Test_MSE_learning_rate_{}".format(self.learning_rate): accuracies_test[-1]},
-                                      epoch + 1)
-            logger.logger.add_scalars(logger.logger_tag + "_loss",
-                                      {"learning_rate_{}".format(self.learning_rate): self.loss},
-                                      epoch + 1)
+            logger.log_epoch_results(self, epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, test_kl_div, test_cost)
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Saving the training state
             # save every x epochs and on the last epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # Printing log to screen
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            print("Epoch: {}/{} \tTraining loss: {:.10f} \tTrain MSE: {:.6f} \tTest MSE: {:.6f}".format(
-                epoch + 1, EPOCH_NUM, self.loss,
-                accuracies_train[-1], accuracies_test[-1]))
 
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

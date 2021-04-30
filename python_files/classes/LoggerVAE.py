@@ -2,7 +2,7 @@ import os
 import datetime
 
 
-class LoggerNew:
+class LoggerVAE:
     """
     This class holds the logger for the Variational auto-encoder
     """
@@ -12,11 +12,20 @@ class LoggerNew:
         self.write_to_file  = True
         self.verbose        = 'INFO'
         self.header_space   = 10
+        self.result_space   = 15.6
         self.fileID         = None
 
     def _get_header(self):
         temp_str = '|{0:^' + str(self.header_space) + '}| '
         return temp_str.format(self.verbose)
+
+    def get_header(self, header):
+        temp_str = '{0:^' + str(self.header_space) + '}| '
+        return temp_str.format(header)
+
+    def _get_result_string(self, mse_loss, d_kl, cost):
+        temp_str = 'MSE loss: {0:^' + str(self.result_space) + 'f} D_kl: {1:^'+ str(self.result_space) + 'f} Total cost: {2:^'+ str(self.result_space) + 'f}'
+        return temp_str.format(mse_loss, d_kl, cost)
 
     def start_log(self):
         # ============================================================
@@ -70,14 +79,15 @@ class LoggerNew:
         if self.write_to_file:
             self.fileID.write(self._get_header() + line + '\n')
 
-    def log_epoch_results(self, epoch_num, recon_loss, d_kl, beta):
-        loss = recon_loss + beta * d_kl
-        self.log_line('Epoch: ' + str(epoch_num) + ' Reconstruction loss: ' + str(recon_loss) + ' D_kl: ' + str(d_kl) +
-                      ' Total loss: ' + str(loss))
+    def log_epoch_results(self, epoch_num, train_mse_loss, train_d_kl, train_cost, test_mse_loss, tset_d_kl, test_cost):
+        self.log_line('Epoch: {0:5d}' .format(epoch_num))
+        self.log_line(self.get_header('Train') + self._get_result_string(train_mse_loss, train_d_kl, train_cost))
+        self.log_line(self.get_header('Test') + self._get_result_string(test_mse_loss, tset_d_kl, test_cost))
+
 
 
 if __name__ == '__main__':
-    logger = LoggerNew()
+    logger = LoggerVAE()
     logger.write_to_file = True
     logger.start_log()
     logger.log_line('Hi, this is Jerry')
