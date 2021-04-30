@@ -11,12 +11,15 @@ class EncoderVAE(nn.Module):
     def __init__(self, device):
         super(EncoderVAE, self).__init__()
         self.device         = device
-        self.description    = DECODER_LAYER_DESCRIPTION
+        self.description    = ENCODER_LAYER_DESCRIPTION
         self.conv_len       = len(ENCODER_FILTER_NUM) - 1 + len(ENCODER_MAX_POOL_SIZE)
         self.fc_len         = len(ENCODER_FC_LAYERS)
         self.layers         = nn.ModuleList()
 
         x_dim, y_dim        = self.compute_dim_sizes()
+
+        self.x_dim          = x_dim
+        self.y_dim          = y_dim
 
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
@@ -27,7 +30,7 @@ class EncoderVAE(nn.Module):
         for ii in range(len(self.description)):
             action = self.description[ii]
             if 'conv' in action:
-                self.layers.append(_conv_block(ENCODER_LAYER_DESCRIPTION[conv_idx],
+                self.layers.append(_conv_block(ENCODER_FILTER_NUM[conv_idx],
                                                ENCODER_FILTER_NUM[conv_idx + 1],
                                                ENCODER_KERNEL_SIZE[conv_idx],
                                                ENCODER_STRIDES[conv_idx],
@@ -83,7 +86,7 @@ class EncoderVAE(nn.Module):
         # ---------------------------------------------------------
         # flattening for the FC layers
         # ---------------------------------------------------------
-        x = x.view(x.size(0), -1)
+        x = x.view(-1, self.x_dim * self.y_dim * ENCODER_FILTER_NUM[-1])
         # ---------------------------------------------------------
         # passing through the fully connected blocks
         # ---------------------------------------------------------

@@ -13,7 +13,7 @@ class TrainerVAE:
         # cost function
         # -------------------------------------
         self.reconstruction_loss = nn.MSELoss()
-        self.d_kl                = d_kl()
+        self.d_kl                = d_kl
         # -------------------------------------
         # optimizer
         # -------------------------------------
@@ -33,7 +33,7 @@ class TrainerVAE:
         self.beta           = beta
 
     def compute_loss(self, targets, outputs, mu, logvar):
-        mse_loss = self.reconstruction_loss(targets, outputs, reduction='sum')
+        mse_loss = self.reconstruction_loss(targets, outputs) * targets.size()[0]
         kl_div   = self.d_kl(mu, logvar)
         return mse_loss, kl_div, mse_loss + self.beta * kl_div
 

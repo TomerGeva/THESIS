@@ -10,9 +10,10 @@ class DecoderVAE(nn.Module):
     """
     def __init__(self, device):
         super(DecoderVAE, self).__init__()
-        self.device = device
-        self.fc_len = len(ENCODER_FC_LAYERS)
-        self.layers = nn.ModuleList()
+        self.device         = device
+        self.description    = DECODER_LAYER_DESCRIPTION
+        self.fc_len         = len(DECODER_FC_LAYERS)
+        self.layers         = nn.ModuleList()
 
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
@@ -23,15 +24,15 @@ class DecoderVAE(nn.Module):
             if 'linear' in action:
                 if linear_idx == 0:
                     self.layers.append(_fc_block(LATENT_SPACE_DIM,
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                                                 DECODER_FC_LAYERS[linear_idx],
                                                  activation=True))
                 elif 'last' in action:
-                    self.layers.append(_fc_block(ENCODER_FC_LAYERS[linear_idx - 1],
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                    self.layers.append(_fc_block(DECODER_FC_LAYERS[linear_idx - 1],
+                                                 DECODER_FC_LAYERS[linear_idx],
                                                  activation=False))
                 else:
-                    self.layers.append(_fc_block(ENCODER_FC_LAYERS[linear_idx - 1],
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                    self.layers.append(_fc_block(DECODER_FC_LAYERS[linear_idx - 1],
+                                                 DECODER_FC_LAYERS[linear_idx],
                                                  activation=True))
                 linear_idx += 1
 

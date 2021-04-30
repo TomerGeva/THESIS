@@ -6,8 +6,8 @@ from DecoderVAE import DecoderVAE
 
 class ModVAE(nn.Module):
     """
-        This class holds the modified Variational auto-encoder
-        """
+    This class holds the modified Variational auto-encoder
+    """
     def __init__(self, device):
         super(ModVAE, self).__init__()
         self.device     = device

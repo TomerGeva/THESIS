@@ -50,6 +50,17 @@ INIT_WEIGHT_STD  = 0.02
 """
 Encoder input: 2500 X 2500
 conv1: 2500 --> 100
+conv2: 100  --> 100
+pool1: 100  --> 50
+conv3: 50   --> 50
+pool2: 50   --> 25
+conv4: 25   --> 24
+pool3: 24   --> 12
+conv5: 10   --> 10
+conv6: 10   --> 8
+pool4: 8    --> 4
+conv7: 4    --> 1
+
 """
 ENCODER_LAYER_DESCRIPTION = {0: 'conv',
                              1: 'conv',
