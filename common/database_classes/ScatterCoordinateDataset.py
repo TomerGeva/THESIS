@@ -1,4 +1,5 @@
-from convolution_net.Config import *
+from ConfigVAE import *
+import os
 import torch
 import pandas as pd
 from functions import micrometer2pixel, points2mat
@@ -20,7 +21,10 @@ class ScattererCoordinateDataset(Dataset):
         :param csv_file: logdir to the file with all the database
         :param transform: transformation flag of the data
         """
-        self.csv_data = pd.read_csv(csv_file)
+        import os
+        dirname  = os.path.dirname(__file__)
+        filepath = os.path.join(dirname, csv_file)
+        self.csv_data = pd.read_csv(filepath)
         self.transform = transform
 
     def __len__(self):

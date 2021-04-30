@@ -11,8 +11,8 @@ class ModVAE(nn.Module):
     def __init__(self, device):
         super(ModVAE, self).__init__()
         self.device     = device
-        self.encoder    = EncoderVAE()
-        self.decoder    = DecoderVAE()
+        self.encoder    = EncoderVAE(device=device)
+        self.decoder    = DecoderVAE(device=device)
 
     def forward(self, x):
         # -------------------------------------------------------------------------
