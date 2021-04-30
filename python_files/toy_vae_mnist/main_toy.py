@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import torch
 from functions_toy import import_data_sets, train, initialize_weights_toy
 from VAE_toy import VaeToy

@@ -1,6 +1,4 @@
-from Config import *
 import torch.nn as nn
-import torch
 import torch.optim as optim
 from functions import *
 
@@ -48,7 +46,7 @@ class TrainerVAE:
         # ----------------------------------------------
         # Begin of training
         # ----------------------------------------------
-        net.eval()
+        net.train()
         for epoch in range(self.epoch, EPOCH_NUM):
             train_loss = 0.0
             print("Starting Epoch #" + str(epoch + 1))

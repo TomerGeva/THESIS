@@ -1,21 +1,25 @@
+from ConfigVAE import *
 import torch.nn            as nn
-from Encoder_toy import EncoderToy
-from Decoder_toy import DecoderToy
+from EncoderVAE import EncoderVAE
+from DecoderVAE import DecoderVAE
 
 
-class VaeToy(nn.Module):
-    def __init__(self):
-        super(VaeToy, self).__init__()
-
-        self.encoder = EncoderToy()
-        self.decoder = DecoderToy()
+class ModVAE(nn.Module):
+    """
+        This class holds the modified Variational auto-encoder
+        """
+    def __init__(self, device):
+        super(ModVAE, self).__init__()
+        self.device     = device
+        self.encoder    = EncoderVAE()
+        self.decoder    = DecoderVAE()
 
     def forward(self, x):
         # -------------------------------------------------------------------------
         # Encoding, outputs 100 points, 50 expectations and 50 standard deviations
         # -------------------------------------------------------------------------
         encoder_out         = self.encoder(x)
-        encoder_out_reshape = encoder_out.view(-1, 2, 50)
+        encoder_out_reshape = encoder_out.view(-1, 2, LATENT_SPACE_DIM)
         mu                  = encoder_out_reshape[:, 0, :]
         logvar              = encoder_out_reshape[:, 1, :]
 
@@ -28,8 +32,9 @@ class VaeToy(nn.Module):
             sampled_latent = zeta.mul(std).add_(mu)
         else:
             sampled_latent = mu
-        # __________Reshaping to enter the decoder__________
-        sampled_latent = sampled_latent.view(-1, 50, 1, 1)
+            # __________Reshaping to enter the decoder__________
+            sampled_latent = sampled_latent.view(-1, LATENT_SPACE_DIM)
+
         # -------------------------------------------------------------------------
         # Decoding, outputs a 28 X 28 1 channel picture
         # -------------------------------------------------------------------------

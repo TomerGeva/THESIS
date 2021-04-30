@@ -1,7 +1,7 @@
 # import numpy as np
 # import os
 import torch
-from Config import *
+from convolution_net.Config import *
 from convolution_net.classses.Trainer import Trainer
 
 

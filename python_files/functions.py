@@ -1,10 +1,9 @@
 # ***************************************************************************************************
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
-from Config import *
+from convolution_net.Config import *
 import torch
 import numpy  as np
-import torch.nn as nn
 from torch.autograd import Variable
 
 

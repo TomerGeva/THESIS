@@ -2,7 +2,7 @@ import torch
 from functions import import_data_sets
 from classes import train_specific_mode, load_state_train, generate_fake_images
 from convolution_net.classses import Logger
-from Config import *
+from convolution_net.Config import *
 
 
 def main():

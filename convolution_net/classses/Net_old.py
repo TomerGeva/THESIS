@@ -1,6 +1,6 @@
 # import torch
 # import numpy as np
-from Config import *
+from convolution_net.Config import *
 import torch.nn as nn
 import torch.nn.functional as F
 

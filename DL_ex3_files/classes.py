@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import torch
 import torchvision
 import os
@@ -7,10 +7,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import datasets
-from torch.autograd import Variable
-from torch.utils.data import Dataset, DataLoader
-from functions import accuracy_test, save_state_train
+from functions import save_state_train
 
 
 class DiscriminatorDCGAN(nn.Module):

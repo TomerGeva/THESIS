@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import torch
 import pandas as pd
 from functions import micrometer2pixel, points2mat

@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import torch.nn as nn
 from neural_network_functions import _conv_block, _fc_block
 

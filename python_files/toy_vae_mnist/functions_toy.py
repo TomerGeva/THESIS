@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import torch
 import torch.nn as nn
 import torch.nn.functional      as F

@@ -1,4 +1,4 @@
-from Config import *
+from convolution_net.Config import *
 import numpy as np
 import torch
 import torchvision.transforms as transforms

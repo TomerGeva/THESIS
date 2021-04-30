@@ -1,17 +1,8 @@
-from Config import *
-import torch
-import torchvision
 import os
-import numpy as np
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import torchvision.transforms as transforms
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import datasets
-from torch.autograd import Variable
-from torch.utils.data import IterableDataset, DataLoader, random_split
+from torch.utils.data import IterableDataset, DataLoader
 from functions import *
 
 

@@ -131,5 +131,5 @@ dmypy.json
 # ====================================================
 # Adding the config file to the git ignore
 # ====================================================
-python_files/Config.py
+convolution_net/Config.py
 databases/corner_1450_10k.csv

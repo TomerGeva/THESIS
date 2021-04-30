@@ -1,6 +1,5 @@
 from functions import *
-from classes import *
-from Config import *
+from convolution_net.Config import *
 
 
 def main():
