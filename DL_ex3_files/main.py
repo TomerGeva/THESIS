@@ -1,7 +1,7 @@
 import torch
-from functions import import_data_sets, accuracy_test, save_state_train
+from functions import import_data_sets
 from classes import train_specific_mode, load_state_train, generate_fake_images
-from classes import Logger, Trainer
+from convolution_net.classses import Logger
 from Config import *
 
 

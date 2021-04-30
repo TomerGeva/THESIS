@@ -1,21 +1,11 @@
 import os
 import datetime
-from torch.utils.tensorboard import SummaryWriter
-
-
-# ============================================================
-# defining the logger
-# ============================================================
-class Logger:
-    def __init__(self, logdir):
-        # -------------------------------------
-        # tensorboard logger
-        # -------------------------------------
-        self.logger = SummaryWriter(logdir)
-        self.logger_tag = []
 
 
 class LoggerNew:
+    """
+    This class holds the logger for the Variational auto-encoder
+    """
     def __init__(self, logdir=None, filename=None):
         self.logdir         = logdir
         self.filename       = filename

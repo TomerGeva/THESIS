@@ -2,11 +2,7 @@
 # import os
 import torch
 from Config import *
-from Logger import Logger
-from Trainer import Trainer
-from ConvNet import ConvNet
-from functions import initialize_weights
-from ScatterCoordinateDataset import import_data_sets
+from convolution_net.classses.Trainer import Trainer
 
 
 def main_old():

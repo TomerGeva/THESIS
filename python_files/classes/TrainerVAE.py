@@ -1,18 +1,20 @@
 from Config import *
 import torch.nn as nn
+import torch
 import torch.optim as optim
 from functions import *
 
 
-# ============================================================
-# defining the trainer
-# ============================================================
-class Trainer:
-    def __init__(self, net, lr=1e-2, mu=0.9):
+class TrainerVAE:
+    """
+    This class holds the Trainer for the Variational autoencoder
+    """
+    def __init__(self, net, lr=1e-2, mom=0.9):
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.criterion = nn.MSELoss()
+        self.reconstruction_loss = nn.MSELoss()
+        self.d_kl                = d_kl()
         # -------------------------------------
         # optimizer
         # -------------------------------------
@@ -26,9 +28,9 @@ class Trainer:
         # -------------------------------------
         # Misc training parameters
         # -------------------------------------
-        self.loss          = []
-        self.learning_rate = lr
-        self.mu            = mu
+        self.loss           = []
+        self.learning_rate  = lr
+        self.mom            = mom
 
     def train(self, net, train_loader, test_loader, logger, save_per_epochs=1):
         """
@@ -108,3 +110,16 @@ class Trainer:
             print("Epoch: {}/{} \tTraining loss: {:.10f} \tTrain MSE: {:.6f} \tTest MSE: {:.6f}".format(
                 epoch + 1, EPOCH_NUM, self.loss,
                 accuracies_train[-1], accuracies_test[-1]))
+
+
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# AUXILIARY FUNCTIONS
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+def d_kl(mu, logvar):
+    """
+    :param mu: expectation vector, assuming a tensor
+    :param logvar: log variance vector, assuming a tensor
+    :return: The function computes and returns the Kullback-Leiber divergence of a multivariable independant
+             normal distribution form the normal distribution N(0, I)
+    """
+    return torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
