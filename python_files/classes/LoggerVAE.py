@@ -103,7 +103,7 @@ class LoggerVAE:
 
     def log_title(self, title):
         self.log_line('-------------------------------------------------------------------------------------------')
-        self.log_line('{0:^108}' .format(title))
+        self.log_line('{0:^86}' .format(title))
         self.log_line('-------------------------------------------------------------------------------------------')
 
     def log_epoch_results(self, epoch_num, train_mse_loss, train_d_kl, train_cost, test_mse_loss, test_d_kl, test_cost):

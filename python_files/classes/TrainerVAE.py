@@ -97,6 +97,7 @@ class TrainerVAE:
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
+        logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
         for epoch in range(self.epoch, EPOCH_NUM):
             train_cost      = 0.0

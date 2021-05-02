@@ -84,8 +84,8 @@ ENCODER_FILTER_NUM       = [1,  # INPUT, do not change
                             16,  # third layer
                             16,  # fourth layer
                             16,  # fifth layer
-                            16,  # sixth layer
-                            32,  # seventh layer
+                            32,  # sixth layer
+                            64,  # seventh layer
                             ]
 # Filter sizes for each filter layer
 ENCODER_KERNEL_SIZE      = [25,  # first layer
