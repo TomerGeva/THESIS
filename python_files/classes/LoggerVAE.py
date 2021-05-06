@@ -18,13 +18,12 @@ class LoggerVAE:
         self.desc_space     = 6
         self.fileID         = None
 
+    # ==================================================================================================================
+    # Basic help functions, internal
+    # ==================================================================================================================
     def _get_header(self):
         temp_str = '|{0:^' + str(self.header_space) + '}| '
         return temp_str.format(self.verbose)
-
-    def get_header(self, header):
-        temp_str = '{0:^' + str(self.header_space) + '}| '
-        return temp_str.format(header)
 
     def _get_result_string(self, mse_loss, d_kl, cost):
         temp_str = 'MSE loss: {0:^' + str(self.result_space) +\
@@ -32,6 +31,9 @@ class LoggerVAE:
                    'f} Total cost: {2:^' + str(self.result_space) + 'f}'
         return temp_str.format(mse_loss, d_kl, cost)
 
+    # ==================================================================================================================
+    # Regular VAE log functions, used to log the layer architecture from the description
+    # ==================================================================================================================
     def _get_conv_layer_string(self, in_ch, out_ch, ktilde, stride, pad, x_dim, y_dim):
         temp_str = 'In channels: {0:^' + str(self.desc_space) +\
                    'd} Out channels: {1:^' + str(self.desc_space) +\
@@ -49,6 +51,13 @@ class LoggerVAE:
         temp_str = 'Input size: {0:^' + str(self.desc_space) + '} Output size: {1:^' + str(self.desc_space) + '}'
         return temp_str.format(num_in, num_out)
 
+    # ==================================================================================================================
+    # Dense VAE log functions, used to log the layer architecture
+    # ==================================================================================================================
+
+    # ==================================================================================================================
+    # Logging functions
+    # ==================================================================================================================
     def start_log(self):
         # ============================================================
         # Starting the logging
@@ -95,6 +104,10 @@ class LoggerVAE:
     def end_log(self):
         if self.write_to_file:
             self.fileID.close()
+
+    def get_header(self, header):
+        temp_str = '{0:^' + str(self.header_space) + '}| '
+        return temp_str.format(header)
 
     def log_line(self, line):
         print(self._get_header() + line)

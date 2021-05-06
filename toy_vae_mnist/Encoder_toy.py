@@ -1,5 +1,7 @@
+import math
 import torch.nn as nn
 import torch.nn.functional as F
+from neural_network_block_classes import DenseTransitionBlock, DenseBlock
 
 
 class EncoderToy(nn.Module):
@@ -34,3 +36,31 @@ class EncoderToy(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
+
+class DenseEncoderToy(nn.Module):
+    def __init__(self):
+        super(DenseEncoderToy, self).__init__()
+        self.conv1  = nn.Conv2d(in_channels=1,  out_channels=3, kernel_size=3, stride=1, padding=1)
+        self.dense1 = DenseBlock(channels=3, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
+        self.trans1 = DenseTransitionBlock(in_channels=3+4*3, out_channels=math.floor(15/2), kernel_size=3, stride=1,
+                                           padding=1)
+        self.dense2 = DenseBlock(channels=7, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
+        self.trans2 = DenseTransitionBlock(in_channels=7+4*3, out_channels=math.floor(19/2), kernel_size=3, stride=1,
+                                           padding=1)
+        self.dense3 = DenseBlock(channels=9, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
+        self.trans3 = DenseTransitionBlock(in_channels=9+4*3, out_channels=math.floor(21/2), kernel_size=3,
+                                           stride=1,
+                                           padding=1)
+        self.dense4 = DenseBlock(channels=10, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
+        self.trans4 = DenseTransitionBlock(in_channels=10+4*3, out_channels=math.floor(22 / 2), kernel_size=3, stride=1,
+                                           padding=1)
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.dense1(out)
+        out = self.trans1(out)
+        out = self.trans2(self.dense2(out))
+        out = self.trans3(self.dense3(out))
+        out = self.trans4(self.dense4(out))
+        return out
