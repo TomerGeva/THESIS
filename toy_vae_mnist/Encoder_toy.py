@@ -42,25 +42,38 @@ class DenseEncoderToy(nn.Module):
     def __init__(self):
         super(DenseEncoderToy, self).__init__()
         self.conv1  = nn.Conv2d(in_channels=1,  out_channels=3, kernel_size=3, stride=1, padding=1)
-        self.dense1 = DenseBlock(channels=3, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
-        self.trans1 = DenseTransitionBlock(in_channels=3+4*3, out_channels=math.floor(15/2), kernel_size=3, stride=1,
+        self.dense1 = DenseBlock(channels=3, depth=4, growth_rate=40, kernel_size=3, stride=1, padding=1)
+        self.trans1 = DenseTransitionBlock(in_channels=3+4*40, out_channels=math.floor(163/2), kernel_size=3, stride=1,
                                            padding=1)
-        self.dense2 = DenseBlock(channels=7, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
-        self.trans2 = DenseTransitionBlock(in_channels=7+4*3, out_channels=math.floor(19/2), kernel_size=3, stride=1,
+        self.dense2 = DenseBlock(channels=81, depth=4, growth_rate=40, kernel_size=3, stride=1, padding=1)
+        self.trans2 = DenseTransitionBlock(in_channels=81+4*40, out_channels=math.floor(241/2), kernel_size=3, stride=1,
                                            padding=1)
-        self.dense3 = DenseBlock(channels=9, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
-        self.trans3 = DenseTransitionBlock(in_channels=9+4*3, out_channels=math.floor(21/2), kernel_size=3,
+        self.dense3 = DenseBlock(channels=120, depth=4, growth_rate=40, kernel_size=3, stride=1, padding=1)
+        self.trans3 = DenseTransitionBlock(in_channels=120+4*40, out_channels=math.floor(280/2), kernel_size=3,
                                            stride=1,
                                            padding=1)
-        self.dense4 = DenseBlock(channels=10, depth=4, growth_rate=3, kernel_size=3, stride=1, padding=1)
-        self.trans4 = DenseTransitionBlock(in_channels=10+4*3, out_channels=math.floor(22 / 2), kernel_size=3, stride=1,
+        self.dense4 = DenseBlock(channels=140, depth=4, growth_rate=40, kernel_size=3, stride=1, padding=1)
+        self.trans4 = DenseTransitionBlock(in_channels=140+4*40, out_channels=math.floor(300/2), kernel_size=3, stride=1,
                                            padding=1)
+
+        self.zp = nn.ZeroPad2d(1)
+
+        self.fc1 = nn.Linear(600, 300)
+        self.fc2 = nn.Linear(300, 100)
 
     def forward(self, x):
         out = self.conv1(x)
         out = self.dense1(out)
         out = self.trans1(out)
+        out = self.zp(out)
         out = self.trans2(self.dense2(out))
         out = self.trans3(self.dense3(out))
         out = self.trans4(self.dense4(out))
+
+        # ------------------------------
+        # Fully Connected section
+        # ------------------------------
+        out = out.view(-1, 150 * 4)  # reshaping
+        out = F.relu(self.fc1(out))
+        out = self.fc2(out)
         return out

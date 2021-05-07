@@ -1,5 +1,5 @@
 import torch.nn            as nn
-from Encoder_toy import EncoderToy
+from Encoder_toy import EncoderToy, DenseEncoderToy
 from Decoder_toy import DecoderToy
 
 
@@ -7,7 +7,7 @@ class VaeToy(nn.Module):
     def __init__(self):
         super(VaeToy, self).__init__()
 
-        self.encoder = EncoderToy()
+        self.encoder = DenseEncoderToy()
         self.decoder = DecoderToy()
 
     def forward(self, x):
