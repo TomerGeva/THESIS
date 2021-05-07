@@ -1,7 +1,7 @@
 import os
+import math
 import datetime
-from ConfigVAE import XQUANTIZE, YQUANTIZE, ENCODER_KERNEL_SIZE, ENCODER_STRIDES, ENCODER_PADDING, ENCODER_FC_LAYERS,\
-    ENCODER_MAX_POOL_SIZE, ENCODER_FILTER_NUM, LATENT_SPACE_DIM, DECODER_FC_LAYERS
+from ConfigVAE import *
 
 
 class LoggerVAE:
@@ -35,11 +35,11 @@ class LoggerVAE:
     # Regular VAE log functions, used to log the layer architecture from the description
     # ==================================================================================================================
     def _get_conv_layer_string(self, in_ch, out_ch, ktilde, stride, pad, x_dim, y_dim):
-        temp_str = 'In channels: {0:^' + str(self.desc_space) +\
-                   'd} Out channels: {1:^' + str(self.desc_space) +\
-                   'd} K^tilde: {2:^' + str(self.desc_space) + \
-                   'd} Stride: {3:^' + str(self.desc_space) + \
-                   'd} Padding: {4:^' + str(self.desc_space) + \
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) +\
+                   'd} Out channels:{1:^' + str(self.desc_space) +\
+                   'd} K^tilde:     {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
                    'd} Output size: {5:^' + str(self.desc_space) + '}X{6:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, ktilde, stride, pad, x_dim, y_dim)
 
@@ -54,6 +54,29 @@ class LoggerVAE:
     # ==================================================================================================================
     # Dense VAE log functions, used to log the layer architecture
     # ==================================================================================================================
+    def _get_dense_layer_string(self, in_ch, depth, growth, ktilde, stride, pad, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Depth:       {1:^' + str(self.desc_space) + \
+                   'd} Growth rate: {2:^' + str(self.desc_space) + \
+                   'd} K^tilde:     {3:^' + str(self.desc_space) + \
+                   'd} Stride:      {4:^' + str(self.desc_space) + \
+                   'd} Padding:     {5:^' + str(self.desc_space) + \
+                   'd} Output size: {6:^' + str(self.desc_space) + \
+                   '}X{7:^' + str(self.desc_space) +\
+                   '}X{8:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, depth, growth, ktilde, stride, pad, in_ch+depth*growth, x_dim, y_dim)
+
+    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, pool_size, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Reduction:   {1:^' + str(self.desc_space) + \
+                   '.1f} K^tilde:     {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
+                   'd} Pool size:   {5:^' + str(self.desc_space) + \
+                   'd} Output size: {6:^' + str(self.desc_space) + \
+                   '}X{7:^' + str(self.desc_space) +\
+                   '}X{8:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, reduction, ktilde, stride, pad, pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
 
     # ==================================================================================================================
     # Logging functions
@@ -194,4 +217,96 @@ class LoggerVAE:
                 else:
                     self.log_line(self.get_header(action) + self._get_linear_layer_string(DECODER_FC_LAYERS[linear_idx - 1],
                                                                                           DECODER_FC_LAYERS[linear_idx]))
+                linear_idx += 1
+
+    def log_dense_model_arch(self, mod_vae):
+        """
+        :param mod_vae:Trained model
+        :return: function logs the VAE architecture
+        """
+        # ==============================================================================================================
+        # Init variables
+        # ==============================================================================================================
+        x_dim_size  = XQUANTIZE
+        y_dim_size  = YQUANTIZE
+        channels    = DENSE_INIT_CONV_LAYER[0]
+        dense_idx   = 0
+        trans_idx   = 0
+        linear_idx  = 0
+
+        # ==============================================================================================================
+        # Encoder log
+        # ==============================================================================================================
+        self.log_title('VAE Dense Encoder architecture')
+        self.log_line('Input size: {}X{}X{}'.format(channels, x_dim_size, y_dim_size))
+        for ii in range(len(mod_vae.encoder.description)):
+            # ------------------------------------------------------------------------------------------------------
+            # For each action, computing the output size and logging
+            # ------------------------------------------------------------------------------------------------------
+            action = mod_vae.encoder.description[ii]
+            if 'conv' in action:
+                x_dim_size = int((x_dim_size - (DENSE_INIT_CONV_LAYER[2] - DENSE_INIT_CONV_LAYER[3]) + 2 *
+                                  DENSE_INIT_CONV_LAYER[4]) / DENSE_INIT_CONV_LAYER[3])
+                y_dim_size = int((y_dim_size - (DENSE_INIT_CONV_LAYER[2] - DENSE_INIT_CONV_LAYER[3]) + 2 *
+                                  DENSE_INIT_CONV_LAYER[4]) / DENSE_INIT_CONV_LAYER[3])
+
+                self.log_line(self.get_header(action) + self._get_conv_layer_string(DENSE_INIT_CONV_LAYER[0],
+                                                                                    DENSE_INIT_CONV_LAYER[1],
+                                                                                    DENSE_INIT_CONV_LAYER[2],
+                                                                                    DENSE_INIT_CONV_LAYER[3],
+                                                                                    DENSE_INIT_CONV_LAYER[4],
+                                                                                    x_dim_size,
+                                                                                    y_dim_size))
+                channels = DENSE_INIT_CONV_LAYER[1]
+            elif 'dense' in action:
+                self.log_line(self.get_header(action) + self._get_dense_layer_string(channels,
+                                                                                     DENSE_DEPTHS[dense_idx],
+                                                                                     DENSE_GROWTH_RATES[dense_idx],
+                                                                                     DENSE_ENCODER_KERNEL_SIZE[dense_idx],
+                                                                                     DENSE_ENCODER_STRIDES[dense_idx],
+                                                                                     DENSE_ENCODER_PADDING[dense_idx],
+                                                                                     x_dim_size,
+                                                                                     y_dim_size))
+                channels  += DENSE_GROWTH_RATES[dense_idx] * DENSE_DEPTHS[dense_idx]
+                dense_idx += 1
+            elif 'transition' in action:
+                x_dim_size = int(x_dim_size / DENSE_ENCODER_MAX_POOL_SIZE[trans_idx])
+                y_dim_size = int(y_dim_size / DENSE_ENCODER_MAX_POOL_SIZE[trans_idx])
+                self.log_line(self.get_header(action) + self._get_transition_layer_string(channels,
+                                                                                          DENSE_REDUCTION_RATES[trans_idx],
+                                                                                          3,
+                                                                                          1,
+                                                                                          1,
+                                                                                          DENSE_ENCODER_MAX_POOL_SIZE[trans_idx],
+                                                                                          x_dim_size,
+                                                                                          y_dim_size))
+                channels = math.floor(channels * DENSE_REDUCTION_RATES[trans_idx])
+                trans_idx += 1
+            elif 'linear' in action:
+                if linear_idx == 0:
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(x_dim_size * y_dim_size * channels, DENSE_ENCODER_FC_LAYERS[linear_idx]))
+                else:
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(DENSE_ENCODER_FC_LAYERS[linear_idx-1], DENSE_ENCODER_FC_LAYERS[linear_idx]))
+                linear_idx += 1
+
+        # ==============================================================================================================
+        # Decoder log
+        # ==============================================================================================================
+        self.log_title('VAE Decoder architecture')
+        self.log_line('Input size: {}'.format(LATENT_SPACE_DIM))
+        linear_idx = 0
+        for ii in range(len(mod_vae.decoder.description)):
+            # ------------------------------------------------------------------------------------------------------
+            # For each action, computing the output size and logging
+            # ------------------------------------------------------------------------------------------------------
+            action = mod_vae.decoder.description[ii]
+            if 'linear' in action:
+                if linear_idx == 0:
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(LATENT_SPACE_DIM,
+                                                                                          DECODER_FC_LAYERS[
+                                                                                              linear_idx]))
+                else:
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(
+                        DECODER_FC_LAYERS[linear_idx - 1],
+                        DECODER_FC_LAYERS[linear_idx]))
                 linear_idx += 1

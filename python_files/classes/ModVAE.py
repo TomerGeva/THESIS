@@ -2,6 +2,7 @@ from ConfigVAE import *
 import torch.nn            as nn
 from EncoderVAE import EncoderVAE
 from DecoderVAE import DecoderVAE
+from DenseEncoderVAE import DenseEncoderVAE
 
 
 class ModVAE(nn.Module):
@@ -11,7 +12,8 @@ class ModVAE(nn.Module):
     def __init__(self, device):
         super(ModVAE, self).__init__()
         self.device     = device
-        self.encoder    = EncoderVAE(device=device)
+        self.encoder    = DenseEncoderVAE(device=device)
+        # self.encoder    = EncoderVAE(device=device)
         self.decoder    = DecoderVAE(device=device)
 
     def forward(self, x):

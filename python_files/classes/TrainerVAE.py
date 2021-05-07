@@ -92,7 +92,8 @@ class TrainerVAE:
         # Init Log
         # ==========================================================================================
         logger.start_log()
-        logger.log_model_arch(mod_vae)
+        # logger.log_model_arch(mod_vae)
+        logger.log_dense_model_arch(mod_vae)
 
         # ==========================================================================================
         # Begin of training

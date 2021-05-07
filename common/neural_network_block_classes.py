@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -78,11 +79,11 @@ class DenseTransitionBlock(nn.Module):
     """
     This class implements a transition block, used for pooling as well as convolving to reduce spatial size
     """
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
+    def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
                  relu=True, pool_size=2):
         super(DenseTransitionBlock, self).__init__()
         self.in_channels    = in_channels
-        self.out_channels   = out_channels
+        self.out_channels   = math.floor(in_channels * reduction_rate)
         self.kernel         = kernel_size
         self.stride         = stride
         self.padding        = padding
@@ -91,8 +92,8 @@ class DenseTransitionBlock(nn.Module):
         self.relu           = relu
         self.pool_size      = pool_size
 
-        self.conv   = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
-        self.bnorm  = nn.BatchNorm2d(num_features=out_channels)
+        self.conv   = nn.Conv2d(in_channels, self.out_channels, kernel_size, stride, padding)
+        self.bnorm  = nn.BatchNorm2d(num_features=self.out_channels)
         self.drop   = nn.Dropout2d(dropout_rate)
         self.act    = nn.ReLU()
         self.pool   = nn.MaxPool2d(pool_size)
@@ -107,3 +108,37 @@ class DenseTransitionBlock(nn.Module):
             out = self.act(out)
 
         return self.pool(out)
+
+
+class ConvBlock(nn.Module):
+    """
+    This class implements a convolution block, support batch morn, ReLU and/or dropout
+    """
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
+                 relu=True):
+        super(ConvBlock, self).__init__()
+        self.in_channels    = in_channels
+        self.out_channels   = out_channels
+        self.kernel         = kernel_size
+        self.stride         = stride
+        self.padding        = padding
+        self.bnorm          = batch_norm
+        self.drate          = dropout_rate
+        self.relu           = relu
+
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.bnorm = nn.BatchNorm2d(out_channels)
+        self.drop = nn.Dropout2d(dropout_rate)
+        self.act = nn.ReLU()
+
+    def forward(self, x):
+        out = self.conv(x)
+        if self.bnorm:
+            out = self.bnorm(out)
+        if self.drate > 0:
+            out = self.drop(out)
+        if self.relu:
+            out = self.act(out)
+
+        return out
