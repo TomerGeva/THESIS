@@ -91,12 +91,14 @@ class LoggerVAE:
             # -------------------------------------
             self.filename = 'logger.txt'
 
+        time_data = datetime.datetime.now()
+        time_list = [time_data.day, time_data.month, time_data.year, time_data.hour, time_data.minute]
+        time_string = '_'.join([str(ii) for ii in time_list])
+        del time_data, time_list
         if self.logdir is None:
-            time_data = datetime.datetime.now()
-            time_list = [time_data.day, time_data.month, time_data.year, time_data.hour, time_data.minute]
-            time_string = '_'.join([str(ii) for ii in time_list])
-            del time_data, time_list
             self.logdir = os.path.join(os.getcwd(), time_string)
+        else:
+            self.logdir = os.path.join(self.logdir, time_string)
 
         if self.write_to_file:
             # -------------------------------------

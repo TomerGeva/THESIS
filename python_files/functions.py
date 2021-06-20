@@ -1,7 +1,8 @@
 # ***************************************************************************************************
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
-from convolution_net.Config import *
+from ConfigVAE import *
+import os
 import torch
 import numpy  as np
 from torch.autograd import Variable
@@ -22,6 +23,27 @@ def accuracy_test(net, loader):
             total += sensitivities.size(0)
 
     return (MSE / total).item()
+
+
+def save_state_train(trainer, logdir, vae, epoch, lr, filename=None):
+    """Saving model and optimizer to drive, as well as current epoch and loss
+    # When saving a general checkpoint, to be used for either inference or resuming training, you must save more
+    # than just the model’s state_dict.
+    # It is important to also save the optimizer’s state_dict, as this contains buffers and parameters that are
+    # updated as the model trains.
+    """
+    if filename is None:
+        name = 'VAE_model_data_lr_ +' + str(lr) + '_epoch_' + str(epoch) + '.tar'
+        path = os.path.join(logdir, name)
+    else:
+        path = os.path.join(logdir, filename)
+
+    data_to_save = {'epoch': epoch,
+                    'vae_state_dict': vae.state_dict(),
+                    'optimizer_state_dict': trainer.optimizer.state_dict(),
+                    'lr': lr
+                    }
+    torch.save(data_to_save, path)
 
 
 # ==================================================================================================================

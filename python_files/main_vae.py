@@ -13,7 +13,7 @@ def main_vae():
     # ================================================================================
     # Setting the logger
     # ================================================================================
-    logger = LoggerVAE()
+    logger = LoggerVAE(logdir=PATH_LOGS)
 
     # ================================================================================
     # Allocating device of computation: CPU or GPU
@@ -37,7 +37,7 @@ def main_vae():
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.train(mod_vae, train_loader, test_loader, logger)
+    trainer.train(mod_vae, train_loader, test_loader, logger, save_per_epochs=40)
 
 
 if __name__ == '__main__':

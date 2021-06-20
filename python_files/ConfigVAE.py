@@ -22,7 +22,7 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 PATH_DATABASE = '..\\..\\databases\\corner_1450_10k.csv'
-PATH_LOGS     = 'C:\\Users\\tgeva\\Documents\\UNIVERSITY\\THESIS\\Thesis_logs'
+PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
 # ==================================
@@ -35,8 +35,8 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1        # the KL coefficient in the cost function
-EPOCH_NUM        = 40
+BETA             = 2        # the KL coefficient in the cost function
+EPOCH_NUM        = 300
 LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
 NORM_FACT        = 3e4      # output normalization factor

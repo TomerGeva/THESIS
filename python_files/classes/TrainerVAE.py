@@ -1,7 +1,9 @@
+from ConfigVAE import *
+from torch.autograd import Variable
+import torch
 import torch.nn as nn
 import torch.optim as optim
-from LoggerVAE import LoggerVAE
-from functions import *
+from functions import save_state_train
 
 
 class TrainerVAE:
@@ -104,6 +106,7 @@ class TrainerVAE:
             train_cost      = 0.0
             train_mse_cost  = 0.0
             train_kl_div    = 0.0
+            counter         = 0
             for i, sample_batched in enumerate(train_loader):
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
@@ -123,6 +126,7 @@ class TrainerVAE:
                 train_cost      += cost.item()
                 train_mse_cost  += mse_loss.item()
                 train_kl_div    += kl_div.item()
+                counter         += sensitivities.size(0)
 
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Back propagation
@@ -135,17 +139,28 @@ class TrainerVAE:
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Testing accuracy at the end of the epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            test_mse_cost, test_kl_div, test_cost = self.test_model(mod_vae, test_loader)
+            test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loader)
+
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # Normalizing
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            train_cost      = train_cost / counter
+            train_mse_cost  = train_mse_cost / counter
+            train_kl_div    = train_kl_div / counter
+            test_mse_cost   = test_mse_cost / test_counter
+            test_cost       = test_cost / test_counter
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Documenting with LoggerVAE
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, test_kl_div, test_cost)
+            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, 0, test_cost)
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Saving the training state
             # save every x epochs and on the last epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
+                save_state_train(self, logger.logdir, mod_vae, epoch, self.learning_rate)
 
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
