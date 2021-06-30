@@ -21,7 +21,7 @@ SAVE_PATH_DB = './database.pth'
 SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
-PATH_DATABASE = '..\\..\\databases\\corner_1450_10k.csv'
+PATH_DATABASE = '..\\..\\databases\\corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv'
 PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -39,7 +39,7 @@ BETA             = 2        # the KL coefficient in the cost function
 EPOCH_NUM        = 300
 LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
-NORM_FACT        = 3e4      # output normalization factor
+NORM_FACT        = 64458    # output normalization factor - mean sensitivity
 BATCH_SIZE       = 32
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
@@ -214,11 +214,13 @@ DECODER
 DECODER_LAYER_DESCRIPTION = {0: 'linear',
                              1: 'linear',
                              2: 'linear',
-                             3: 'linear last',
+                             3: 'linear',
+                             4: 'linear last',
                              }
 # FC layer sizes
-DECODER_FC_LAYERS = [150,
+DECODER_FC_LAYERS = [250,
                      150,
+                     100,
                      25,
                      1,
-                    ]
+                     ]

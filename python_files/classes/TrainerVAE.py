@@ -1,9 +1,9 @@
 from ConfigVAE import *
 from torch.autograd import Variable
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from functions import save_state_train
 
 
 class TrainerVAE:
@@ -153,14 +153,37 @@ class TrainerVAE:
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Documenting with LoggerVAE
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, 0, test_cost)
+            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, 0, test_mse_cost)
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Saving the training state
             # save every x epochs and on the last epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
-                save_state_train(self, logger.logdir, mod_vae, epoch, self.learning_rate)
+                self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, NORM_FACT)
+
+    def save_state_train(self, logdir, vae, epoch, lr, mom, beta, norm_fact, filename=None):
+        """Saving model and optimizer to drive, as well as current epoch and loss
+        # When saving a general checkpoint, to be used for either inference or resuming training, you must save more
+        # than just the model’s state_dict.
+        # It is important to also save the optimizer’s state_dict, as this contains buffers and parameters that are
+        # updated as the model trains.
+        """
+        if filename is None:
+            name = 'VAE_model_data_lr_' + str(lr) + '_epoch_' + str(epoch) + '.tar'
+            path = os.path.join(logdir, name)
+        else:
+            path = os.path.join(logdir, filename)
+
+        data_to_save = {'epoch': epoch,
+                        'vae_state_dict': vae.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'lr': lr,
+                        'mom': mom,
+                        'beta': beta,
+                        'norm_fact': norm_fact
+                        }
+        torch.save(data_to_save, path)
 
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

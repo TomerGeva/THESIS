@@ -5,45 +5,40 @@ from ConfigVAE import *
 import os
 import torch
 import numpy  as np
+from ModVAE import ModVAE
+from TrainerVAE import TrainerVAE
 from torch.autograd import Variable
 
 
 # ==================================================================================================================
-# Testing the MSE of the net
+# Saving and loading trained networks
 # ==================================================================================================================
-def accuracy_test(net, loader):
-    total = 0
-    MSE   = 0
-    with torch.no_grad():
-        for sample in loader:
-            grids = Variable(sample['grid'].float()).to(net.device)
-            sensitivities = sample['sensitivity'].to(net.device)
-            outputs = net(grids)
-            MSE   += (sensitivities - outputs).pow(2).sum()
-            total += sensitivities.size(0)
-
-    return (MSE / total).item()
-
-
-def save_state_train(trainer, logdir, vae, epoch, lr, filename=None):
-    """Saving model and optimizer to drive, as well as current epoch and loss
-    # When saving a general checkpoint, to be used for either inference or resuming training, you must save more
-    # than just the model’s state_dict.
-    # It is important to also save the optimizer’s state_dict, as this contains buffers and parameters that are
-    # updated as the model trains.
+def load_state_train(data_path, device=None):
     """
-    if filename is None:
-        name = 'VAE_model_data_lr_ +' + str(lr) + '_epoch_' + str(epoch) + '.tar'
-        path = os.path.join(logdir, name)
-    else:
-        path = os.path.join(logdir, filename)
+    :param data_path: path to the saved data regarding the network
+    :param device: allocation to either cpu of cuda:0
+    :return: the function loads the data into and returns the saves network and trainer
+    """
+    if device is None:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    data_to_save = {'epoch': epoch,
-                    'vae_state_dict': vae.state_dict(),
-                    'optimizer_state_dict': trainer.optimizer.state_dict(),
-                    'lr': lr
-                    }
-    torch.save(data_to_save, path)
+    # -------------------------------------
+    # loading the dictionary
+    # -------------------------------------
+    checkpoint = torch.load(data_path, map_location=device)
+
+    # -------------------------------------
+    # arranging the data
+    # -------------------------------------
+    mod_vae = ModVAE(device=device)
+    mod_vae.to(device)  # allocating the computation to the CPU or GPU
+    mod_vae.load_state_dict(checkpoint['vae_state_dict'])
+
+    trainer = TrainerVAE(mod_vae, lr=checkpoint['lr'], mom=MOM, beta=BETA)
+    trainer.start_epoch = checkpoint['epoch']
+    trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    return mod_vae, trainer
 
 
 # ==================================================================================================================
