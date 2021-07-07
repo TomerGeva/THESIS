@@ -130,80 +130,23 @@ ENCODER_FC_LAYERS = [150,
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------
-DENSE_ENCODER_LAYER_DESCRIPTION = {0: 'conv',
-                                   1: 'dense',
-                                   2: 'transition',
-                                   3: 'dense',
-                                   4: 'transition',
-                                   5: 'dense',
-                                   6: 'transition',
-                                   7: 'dense',
-                                   8: 'transition',
-                                   9: 'dense',
-                                   10: 'transition',
-                                   11: 'linear',
-                                   12: 'linear',
-                                   13: 'linear last',
-                                   }
-DENSE_INIT_CONV_LAYER = [1,   # In channels
-                         6,   # Out channels
-                         25,  # Kernel size
-                         25,  # Stride
-                         0]   # Padding
-# Growth rates for the dense blocks
-DENSE_GROWTH_RATES = [40,
-                      40,
-                      40,
-                      40,
-                      40,
-                      ]
-# Depth of the dense layers
-DENSE_DEPTHS = [5,
-                5,
-                5,
-                5,
-                5,
-                ]
-# Reduction rates for the transition blocks
-DENSE_REDUCTION_RATES = [0.5,
-                         0.5,
-                         0.5,
-                         0.5,
-                         0.5,
-                         ]
-# Filter sizes for each filter layer
-DENSE_ENCODER_KERNEL_SIZE      = [3,  # first layer
-                                  3,  # second layer
-                                  3,  # third layer
-                                  3,  # fourth layer
-                                  3,  # fifth layer
-                                  ]
-# Stride values of the convolution layers
-DENSE_ENCODER_STRIDES          = [1,  # first layer
-                                  1,  # second layer
-                                  1,  # third layer
-                                  1,  # fourth layer
-                                  1,  # fifth layer
-                                  ]
-# Padding values of the convolution layers
-DENSE_ENCODER_PADDING          = [1,  # first layer
-                                  1,  # second layer
-                                  1,  # third layer
-                                  1,  # fourth layer
-                                  1,  # fifth layer
-                                  ]
-# Max pool size
-DENSE_ENCODER_MAX_POOL_SIZE    = [2,  # first max-pool
-                                  2,  # second max-pool
-                                  2,  # third max-pool
-                                  2,  # fourth max-pool
-                                  2,  # fifth max-pool
-                                  ]
-# FC layer sizes
-DENSE_ENCODER_FC_LAYERS = [150,
-                           150,
-                           2 * LATENT_SPACE_DIM,
-                           ]
+DENSE_ENCODER_TOPOLOGY = [
+    ['conv', 1, 6, 25, 25, 0],          # Init layer: in channels, out channels, kernel size, stride, padding
+    ['dense', 40, 5, 3, 1, 1],          # Dense block: growth rate, depth, kernel size, stride, padding
+    ['transition', 0.5, 3, 1, 1, 2],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size
+    ['dense', 40, 5, 3, 1, 1],          # Fully connected: Out channels
+    ['transition', 0.5, 3, 1, 1, 2],
+    ['dense', 40, 5, 3, 1, 1],
+    ['transition', 0.5, 3, 1, 1, 2],
+    ['dense', 40, 5, 3, 1, 1],
+    ['transition', 0.5, 3, 1, 1, 2],
+    ['dense', 40, 5, 3, 1, 1],
+    ['transition', 0.5, 3, 1, 1, 2],
+    ['linear', 150],
+    ['linear', 150],
+    ['linear_last', 2 * LATENT_SPACE_DIM]
+]
+
 # --------------------------------------------------------
 # Decoder topology
 # --------------------------------------------------------
@@ -212,16 +155,10 @@ Decoder input: 2500 X 2500
 conv1: 2500 --> 100
 DECODER
 """
-DECODER_LAYER_DESCRIPTION = {0: 'linear',
-                             1: 'linear',
-                             2: 'linear',
-                             3: 'linear',
-                             4: 'linear last',
-                             }
-# FC layer sizes
-DECODER_FC_LAYERS = [250,
-                     150,
-                     100,
-                     25,
-                     1,
-                     ]
+DECODER_TOPOLOGY = [
+    ['linear', 250],
+    ['linear', 150],
+    ['linear', 100],
+    ['linear', 25],
+    ['linear', 1],
+]

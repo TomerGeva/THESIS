@@ -9,19 +9,20 @@ class ModVAE(nn.Module):
     """
     This class holds the modified Variational auto-encoder
     """
-    def __init__(self, device):
+    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim):
         super(ModVAE, self).__init__()
         self.device     = device
-        self.encoder    = DenseEncoderVAE(device=device)
+        self.encoder    = DenseEncoderVAE(device=device, topology=encoder_topology)
         # self.encoder    = EncoderVAE(device=device)
-        self.decoder    = DecoderVAE(device=device)
+        self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
+        self.latent_dim = latent_space_dim
 
     def forward(self, x):
         # -------------------------------------------------------------------------
         # Encoding, outputs 100 points, 50 expectations and 50 standard deviations
         # -------------------------------------------------------------------------
         encoder_out         = self.encoder(x)
-        encoder_out_reshape = encoder_out.view(-1, 2, LATENT_SPACE_DIM)
+        encoder_out_reshape = encoder_out.view(-1, 2, self.latent_dim)
         mu                  = encoder_out_reshape[:, 0, :]
         logvar              = encoder_out_reshape[:, 1, :]
 

@@ -28,7 +28,7 @@ def main_vae():
     # ================================================================================
     # Creating the net & trainer objects
     # ================================================================================
-    mod_vae = ModVAE(device=device)
+    mod_vae = ModVAE(device=device, encoder_topology=DENSE_ENCODER_TOPOLOGY, decoder_topology=DECODER_TOPOLOGY, latent_space_dim=LATENT_SPACE_DIM)
     initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
 

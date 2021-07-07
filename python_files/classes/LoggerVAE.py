@@ -231,84 +231,76 @@ class LoggerVAE:
         # ==============================================================================================================
         x_dim_size  = XQUANTIZE
         y_dim_size  = YQUANTIZE
-        channels    = DENSE_INIT_CONV_LAYER[0]
-        dense_idx   = 0
-        trans_idx   = 0
-        linear_idx  = 0
+        channels    = 0
+        action_prev = None
 
         # ==============================================================================================================
         # Encoder log
         # ==============================================================================================================
         self.log_title('VAE Dense Encoder architecture')
         self.log_line('Input size: {}X{}X{}'.format(channels, x_dim_size, y_dim_size))
-        for ii in range(len(mod_vae.encoder.description)):
+        for ii in range(len(mod_vae.encoder.topology)):
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.encoder.description[ii]
-            if 'conv' in action:
-                x_dim_size = int((x_dim_size - (DENSE_INIT_CONV_LAYER[2] - DENSE_INIT_CONV_LAYER[3]) + 2 *
-                                  DENSE_INIT_CONV_LAYER[4]) / DENSE_INIT_CONV_LAYER[3])
-                y_dim_size = int((y_dim_size - (DENSE_INIT_CONV_LAYER[2] - DENSE_INIT_CONV_LAYER[3]) + 2 *
-                                  DENSE_INIT_CONV_LAYER[4]) / DENSE_INIT_CONV_LAYER[3])
+            action = mod_vae.encoder.topology[ii]
+            if 'conv' in action[0]:
+                x_dim_size = int((x_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
+                y_dim_size = int((y_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
 
-                self.log_line(self.get_header(action) + self._get_conv_layer_string(DENSE_INIT_CONV_LAYER[0],
-                                                                                    DENSE_INIT_CONV_LAYER[1],
-                                                                                    DENSE_INIT_CONV_LAYER[2],
-                                                                                    DENSE_INIT_CONV_LAYER[3],
-                                                                                    DENSE_INIT_CONV_LAYER[4],
-                                                                                    x_dim_size,
-                                                                                    y_dim_size))
-                channels = DENSE_INIT_CONV_LAYER[1]
-            elif 'dense' in action:
-                self.log_line(self.get_header(action) + self._get_dense_layer_string(channels,
-                                                                                     DENSE_DEPTHS[dense_idx],
-                                                                                     DENSE_GROWTH_RATES[dense_idx],
-                                                                                     DENSE_ENCODER_KERNEL_SIZE[dense_idx],
-                                                                                     DENSE_ENCODER_STRIDES[dense_idx],
-                                                                                     DENSE_ENCODER_PADDING[dense_idx],
-                                                                                     x_dim_size,
-                                                                                     y_dim_size))
-                channels  += DENSE_GROWTH_RATES[dense_idx] * DENSE_DEPTHS[dense_idx]
-                dense_idx += 1
-            elif 'transition' in action:
-                x_dim_size = int(x_dim_size / DENSE_ENCODER_MAX_POOL_SIZE[trans_idx])
-                y_dim_size = int(y_dim_size / DENSE_ENCODER_MAX_POOL_SIZE[trans_idx])
-                self.log_line(self.get_header(action) + self._get_transition_layer_string(channels,
-                                                                                          DENSE_REDUCTION_RATES[trans_idx],
-                                                                                          3,
-                                                                                          1,
-                                                                                          1,
-                                                                                          DENSE_ENCODER_MAX_POOL_SIZE[trans_idx],
-                                                                                          x_dim_size,
-                                                                                          y_dim_size))
-                channels = math.floor(channels * DENSE_REDUCTION_RATES[trans_idx])
-                trans_idx += 1
-            elif 'linear' in action:
-                if linear_idx == 0:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(x_dim_size * y_dim_size * channels, DENSE_ENCODER_FC_LAYERS[linear_idx]))
+                self.log_line(self.get_header(action[0]) + self._get_conv_layer_string(action[1],
+                                                                                       action[2],
+                                                                                       action[3],
+                                                                                       action[4],
+                                                                                       action[5],
+                                                                                       x_dim_size,
+                                                                                       y_dim_size))
+                channels = action[2]
+            elif 'dense' in action[0]:
+                self.log_line(self.get_header(action[0]) + self._get_dense_layer_string(channels,
+                                                                                        action[2],
+                                                                                        action[1],
+                                                                                        action[3],
+                                                                                        action[4],
+                                                                                        action[5],
+                                                                                        x_dim_size,
+                                                                                        y_dim_size))
+                channels  += action[1] * action[2]
+            elif 'transition' in action[0]:
+                x_dim_size = int(x_dim_size / action[5])
+                y_dim_size = int(y_dim_size / action[5])
+                self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
+                                                                                             action[1],
+                                                                                             action[2],
+                                                                                             action[3],
+                                                                                             action[4],
+                                                                                             action[5],
+                                                                                             x_dim_size,
+                                                                                             y_dim_size))
+                channels = math.floor(channels * action[1])
+            elif 'linear' in action[0]:
+                if action_prev is None:
+                    action_prev = action
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(x_dim_size * y_dim_size * channels, action[1]))
                 else:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(DENSE_ENCODER_FC_LAYERS[linear_idx-1], DENSE_ENCODER_FC_LAYERS[linear_idx]))
-                linear_idx += 1
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1], action[1]))
+                    action_prev = action
 
         # ==============================================================================================================
         # Decoder log
         # ==============================================================================================================
         self.log_title('VAE Decoder architecture')
-        self.log_line('Input size: {}'.format(LATENT_SPACE_DIM))
-        linear_idx = 0
-        for ii in range(len(mod_vae.decoder.description)):
+        self.log_line('Input size: {}'.format(mod_vae.latent_dim))
+        action_prev = None
+        for ii in range(len(mod_vae.decoder.topology)):
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.decoder.description[ii]
+            action = mod_vae.decoder.topology[ii]
             if 'linear' in action:
-                if linear_idx == 0:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(LATENT_SPACE_DIM,
-                                                                                          DECODER_FC_LAYERS[
-                                                                                              linear_idx]))
+                if action_prev is None:
+                    action_prev = action
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(mod_vae.latent_dim, action[1]))
                 else:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(
-                        DECODER_FC_LAYERS[linear_idx - 1],
-                        DECODER_FC_LAYERS[linear_idx]))
-                linear_idx += 1
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1], action[1]))
+                    action_prev = action

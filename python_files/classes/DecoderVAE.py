@@ -8,32 +8,37 @@ class DecoderVAE(nn.Module):
     """
     This class holds the Variational auto-encoder Decoder part
     """
-    def __init__(self, device):
+    def __init__(self, device, topology, latent_dim):
         super(DecoderVAE, self).__init__()
         self.device         = device
-        self.description    = DECODER_LAYER_DESCRIPTION
-        self.fc_len         = len(DECODER_FC_LAYERS)
+        self.topology       = topology
+        self.fc_len         = len(topology)
         self.layers         = nn.ModuleList()
 
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
         linear_idx = 0
-        for ii in range(len(self.description)):
-            action = self.description[ii]
-            if 'linear' in action:
+        action_prev = None
+        for ii in range(len(self.topology)):
+            action = self.topology[ii]
+            if 'linear' in action[0]:
                 if linear_idx == 0:
-                    self.layers.append(_fc_block(LATENT_SPACE_DIM,
-                                                 DECODER_FC_LAYERS[linear_idx],
+                    action_prev = action
+                    self.layers.append(_fc_block(latent_dim,
+                                                 action[1],
                                                  activation=True))
-                elif 'last' in action:
-                    self.layers.append(_fc_block(DECODER_FC_LAYERS[linear_idx - 1],
-                                                 DECODER_FC_LAYERS[linear_idx],
+                elif 'last' in action[0]:
+                    self.layers.append(_fc_block(action_prev[1],
+                                                 action[1],
                                                  activation=False))
+                    action_prev = action
                 else:
-                    self.layers.append(_fc_block(DECODER_FC_LAYERS[linear_idx - 1],
-                                                 DECODER_FC_LAYERS[linear_idx],
+                    self.layers.append(_fc_block(action_prev[1],
+                                                 action[1],
                                                  activation=True))
+                    action_prev = action
+
                 linear_idx += 1
 
     def forward(self, x):
