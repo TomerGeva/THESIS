@@ -9,7 +9,7 @@ def load_and_batch():
     """
     :return: This function loads a saves model, and tests the MSE of the target error
     """
-    data_path                   = os.path.join(PATH_LOGS, '24_6_2021_9_53', 'VAE_model_data_lr_0.0003_epoch_280.tar')
+    data_path                   = os.path.join(PATH_LOGS, '1_7_2021_15_50', 'VAE_model_data_lr_0.0003_epoch_299.tar')
     train_loader, test_loader   = import_data_sets(BATCH_SIZE, 0.15)
     mod_vae, trainer            = load_state_train(data_path)
 
