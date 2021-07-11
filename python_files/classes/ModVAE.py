@@ -40,7 +40,7 @@ class ModVAE(nn.Module):
         # Decoding, outputs a 28 X 28 1 channel picture
         # -------------------------------------------------------------------------
         # __________Reshaping to enter the decoder__________
-        sampled_latent = sampled_latent.view(-1, LATENT_SPACE_DIM)
+        sampled_latent = sampled_latent.view(-1, self.latent_dim)
         decoder_out = self.decoder(sampled_latent)
 
         return decoder_out, mu, logvar

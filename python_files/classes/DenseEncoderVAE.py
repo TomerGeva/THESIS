@@ -47,7 +47,7 @@ class DenseEncoderVAE(nn.Module):
                                               kernel_size=action[3],
                                               stride=action[4],
                                               padding=action[5]))
-                channels  += action[2] * action[1]
+                channels += action[2] * action[1]
                 conv_len += 1
             elif 'transition' in action[0]:
                 self.layers.append(DenseTransitionBlock(in_channels=channels,

@@ -21,7 +21,6 @@ def load_state_train(data_path, device=None):
     """
     if device is None:
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
     # -------------------------------------
     # loading the dictionary
     # -------------------------------------
@@ -30,7 +29,10 @@ def load_state_train(data_path, device=None):
     # -------------------------------------
     # arranging the data
     # -------------------------------------
-    mod_vae = ModVAE(device=device)
+    encoder_topology = checkpoint['encoder_topology']
+    decoder_topology = checkpoint['decoder_topology']
+    latent_dim       = checkpoint['latent_dim']
+    mod_vae = ModVAE(device=device, encoder_topology=encoder_topology, decoder_topology=decoder_topology, latent_space_dim=latent_dim)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
     mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 

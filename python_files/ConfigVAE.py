@@ -22,7 +22,7 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv'
-PATH_DATABASE = '..\\..\\databases\\corner_1450_db_15p9k.csv'
+PATH_DATABASE = '..\\..\\databases\\corner_1450_db_17p9k.csv'
 PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -62,6 +62,7 @@ conv6: 10   --> 8
 pool4: 8    --> 4
 conv7: 4    --> 1
 
+"""
 """
 ENCODER_LAYER_DESCRIPTION = {0: 'conv',
                              1: 'conv',
@@ -126,7 +127,7 @@ ENCODER_FC_LAYERS = [150,
                      150,
                      2 * LATENT_SPACE_DIM,
                     ]
-
+"""
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------
@@ -156,7 +157,6 @@ conv1: 2500 --> 100
 DECODER
 """
 DECODER_TOPOLOGY = [
-    ['linear', 250],
     ['linear', 150],
     ['linear', 100],
     ['linear', 25],

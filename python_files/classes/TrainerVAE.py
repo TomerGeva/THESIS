@@ -181,7 +181,10 @@ class TrainerVAE:
                         'lr': lr,
                         'mom': mom,
                         'beta': beta,
-                        'norm_fact': norm_fact
+                        'norm_fact': norm_fact,
+                        'encoder_topology': vae.encoder.topology,
+                        'decoder_topology': vae.decoder.topology,
+                        'latent_dim': vae.latent_dim
                         }
         torch.save(data_to_save, path)
 
