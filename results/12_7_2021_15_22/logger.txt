@@ -1,0 +1,185 @@
+|    INFO    | ==============================================================================================
+|    INFO    | ==============================================================================================
+|    INFO    | =====                                 STATING THE LOG                                    =====
+|    INFO    | ==============================================================================================
+|    INFO    | ==============================================================================================
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    |                             VAE Dense Encoder architecture                            
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    | Input size: 0X2500X2500
+|    INFO    |     conv    | In channels:      1    Out channels:  6    K^tilde:       25   Stride:        25   Padding:       0    Output size:  100  X 100  
+|    INFO    |    dense    | In channels:      6    Depth:         5    Growth rate:   40   K^tilde:       3    Stride:        1    Padding:       1    Output size:  206  X 100  X 100  
+|    INFO    |  transition | In channels:     206   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       1    Pool size:     2    Output size:  103  X  50  X  50  
+|    INFO    |    dense    | In channels:     103   Depth:         5    Growth rate:   45   K^tilde:       3    Stride:        1    Padding:       1    Output size:  328  X  50  X  50  
+|    INFO    |  transition | In channels:     328   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       1    Pool size:     2    Output size:  164  X  25  X  25  
+|    INFO    |    dense    | In channels:     164   Depth:         5    Growth rate:   40   K^tilde:       3    Stride:        1    Padding:       1    Output size:  364  X  25  X  25  
+|    INFO    |  transition | In channels:     364   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       1    Pool size:     2    Output size:  182  X  13  X  13  
+|    INFO    |    dense    | In channels:     182   Depth:         5    Growth rate:   40   K^tilde:       3    Stride:        1    Padding:       1    Output size:  382  X  13  X  13  
+|    INFO    |  transition | In channels:     382   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       1    Pool size:     2    Output size:  191  X  7   X  7   
+|    INFO    |    dense    | In channels:     191   Depth:         5    Growth rate:   40   K^tilde:       3    Stride:        1    Padding:       1    Output size:  391  X  7   X  7   
+|    INFO    |  transition | In channels:     391   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       1    Pool size:     2    Output size:  195  X  4   X  4   
+|    INFO    |    dense    | In channels:     195   Depth:         5    Growth rate:   40   K^tilde:       3    Stride:        1    Padding:       1    Output size:  395  X  4   X  4   
+|    INFO    |  transition | In channels:     395   Reduction:    0.5   K^tilde:       3    Stride:        1    Padding:       0    Pool size:     1    Output size:  197  X  2   X  2   
+|    INFO    |    linear   | Input size:  788   Output size:  150  
+|    INFO    |    linear   | Input size:  150   Output size:  125  
+|    INFO    | linear_last | Input size:  125   Output size:  100  
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    |                                VAE Decoder architecture                               
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    | Input size: 50
+|    INFO    |    linear   | Input size:   50   Output size:  150  
+|    INFO    |    linear   | Input size:  150   Output size:  100  
+|    INFO    |    linear   | Input size:  100   Output size:   25  
+|    INFO    |    linear   | Input size:   25   Output size:   1   
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    |                    Beginning Training! ! ! ! number of epochs: 300                    
+|    INFO    | -------------------------------------------------------------------------------------------
+|    INFO    | Epoch:     0
+|    INFO    |    Train    | MSE loss:    2.979418     D_kl:    14.039940    Total cost:    3.119817    
+|    INFO    |     Test    | MSE loss:    1.696750     D_kl:    0.000000     Total cost:    1.696750    
+|    INFO    | Epoch:     1
+|    INFO    |    Train    | MSE loss:    1.827442     D_kl:    9.897909     Total cost:    1.926421    
+|    INFO    |     Test    | MSE loss:    1.641912     D_kl:    0.000000     Total cost:    1.641912    
+|    INFO    | Epoch:     2
+|    INFO    |    Train    | MSE loss:    1.751959     D_kl:    8.962509     Total cost:    1.841584    
+|    INFO    |     Test    | MSE loss:    1.754251     D_kl:    0.000000     Total cost:    1.754251    
+|    INFO    | Epoch:     3
+|    INFO    |    Train    | MSE loss:    1.748382     D_kl:    8.799403     Total cost:    1.836376    
+|    INFO    |     Test    | MSE loss:    1.621713     D_kl:    0.000000     Total cost:    1.621713    
+|    INFO    | Epoch:     4
+|    INFO    |    Train    | MSE loss:    1.706241     D_kl:    8.049663     Total cost:    1.786737    
+|    INFO    |     Test    | MSE loss:    1.676284     D_kl:    0.000000     Total cost:    1.676284    
+|    INFO    | Epoch:     5
+|    INFO    |    Train    | MSE loss:    1.701619     D_kl:    7.241262     Total cost:    1.774032    
+|    INFO    |     Test    | MSE loss:    2.018826     D_kl:    0.000000     Total cost:    2.018826    
+|    INFO    | Epoch:     6
+|    INFO    |    Train    | MSE loss:    1.684328     D_kl:    7.013856     Total cost:    1.754466    
+|    INFO    |     Test    | MSE loss:    1.624528     D_kl:    0.000000     Total cost:    1.624528    
+|    INFO    | Epoch:     7
+|    INFO    |    Train    | MSE loss:    1.654375     D_kl:    6.895118     Total cost:    1.723326    
+|    INFO    |     Test    | MSE loss:    1.667769     D_kl:    0.000000     Total cost:    1.667769    
+|    INFO    | Epoch:     8
+|    INFO    |    Train    | MSE loss:    1.657078     D_kl:    6.527585     Total cost:    1.722354    
+|    INFO    |     Test    | MSE loss:    2.046946     D_kl:    0.000000     Total cost:    2.046946    
+|    INFO    | Epoch:     9
+|    INFO    |    Train    | MSE loss:    1.617047     D_kl:    6.437703     Total cost:    1.681424    
+|    INFO    |     Test    | MSE loss:    1.667127     D_kl:    0.000000     Total cost:    1.667127    
+|    INFO    | Epoch:    10
+|    INFO    |    Train    | MSE loss:    1.605888     D_kl:    6.077973     Total cost:    1.666668    
+|    INFO    |     Test    | MSE loss:    1.623311     D_kl:    0.000000     Total cost:    1.623311    
+|    INFO    | Epoch:    11
+|    INFO    |    Train    | MSE loss:    1.601140     D_kl:    6.051439     Total cost:    1.661654    
+|    INFO    |     Test    | MSE loss:    1.623098     D_kl:    0.000000     Total cost:    1.623098    
+|    INFO    | Epoch:    12
+|    INFO    |    Train    | MSE loss:    1.583652     D_kl:    5.463707     Total cost:    1.638289    
+|    INFO    |     Test    | MSE loss:    1.629253     D_kl:    0.000000     Total cost:    1.629253    
+|    INFO    | Epoch:    13
+|    INFO    |    Train    | MSE loss:    1.578445     D_kl:    5.325322     Total cost:    1.631698    
+|    INFO    |     Test    | MSE loss:    1.647397     D_kl:    0.000000     Total cost:    1.647397    
+|    INFO    | Epoch:    14
+|    INFO    |    Train    | MSE loss:    1.623637     D_kl:    4.898607     Total cost:    1.672624    
+|    INFO    |     Test    | MSE loss:    1.623296     D_kl:    0.000000     Total cost:    1.623296    
+|    INFO    | Epoch:    15
+|    INFO    |    Train    | MSE loss:    1.546933     D_kl:    4.649763     Total cost:    1.593430    
+|    INFO    |     Test    | MSE loss:    1.620758     D_kl:    0.000000     Total cost:    1.620758    
+|    INFO    | Epoch:    16
+|    INFO    |    Train    | MSE loss:    1.531786     D_kl:    4.594103     Total cost:    1.577727    
+|    INFO    |     Test    | MSE loss:    1.635927     D_kl:    0.000000     Total cost:    1.635927    
+|    INFO    | Epoch:    17
+|    INFO    |    Train    | MSE loss:    1.530257     D_kl:    4.837576     Total cost:    1.578633    
+|    INFO    |     Test    | MSE loss:    1.633737     D_kl:    0.000000     Total cost:    1.633737    
+|    INFO    | Epoch:    18
+|    INFO    |    Train    | MSE loss:    1.512180     D_kl:    4.604945     Total cost:    1.558229    
+|    INFO    |     Test    | MSE loss:    1.736241     D_kl:    0.000000     Total cost:    1.736241    
+|    INFO    | Epoch:    19
+|    INFO    |    Train    | MSE loss:    1.484169     D_kl:    4.637970     Total cost:    1.530549    
+|    INFO    |     Test    | MSE loss:    1.671336     D_kl:    0.000000     Total cost:    1.671336    
+|    INFO    | Epoch:    20
+|    INFO    |    Train    | MSE loss:    1.428344     D_kl:    4.455508     Total cost:    1.472899    
+|    INFO    |     Test    | MSE loss:    1.644368     D_kl:    0.000000     Total cost:    1.644368    
+|    INFO    | Epoch:    21
+|    INFO    |    Train    | MSE loss:    1.389800     D_kl:    4.440110     Total cost:    1.434201    
+|    INFO    |     Test    | MSE loss:    1.625436     D_kl:    0.000000     Total cost:    1.625436    
+|    INFO    | Epoch:    22
+|    INFO    |    Train    | MSE loss:    1.368006     D_kl:    4.441416     Total cost:    1.412420    
+|    INFO    |     Test    | MSE loss:    1.715721     D_kl:    0.000000     Total cost:    1.715721    
+|    INFO    | Epoch:    23
+|    INFO    |    Train    | MSE loss:    1.346827     D_kl:    4.439449     Total cost:    1.391221    
+|    INFO    |     Test    | MSE loss:    1.795651     D_kl:    0.000000     Total cost:    1.795651    
+|    INFO    | Epoch:    24
+|    INFO    |    Train    | MSE loss:    1.311701     D_kl:    4.435527     Total cost:    1.356056    
+|    INFO    |     Test    | MSE loss:    1.689086     D_kl:    0.000000     Total cost:    1.689086    
+|    INFO    | Epoch:    25
+|    INFO    |    Train    | MSE loss:    1.301323     D_kl:    4.523023     Total cost:    1.346554    
+|    INFO    |     Test    | MSE loss:    2.157848     D_kl:    0.000000     Total cost:    2.157848    
+|    INFO    | Epoch:    26
+|    INFO    |    Train    | MSE loss:    1.279251     D_kl:    4.396929     Total cost:    1.323220    
+|    INFO    |     Test    | MSE loss:    1.660428     D_kl:    0.000000     Total cost:    1.660428    
+|    INFO    | Epoch:    27
+|    INFO    |    Train    | MSE loss:    1.236274     D_kl:    4.458436     Total cost:    1.280858    
+|    INFO    |     Test    | MSE loss:    2.208388     D_kl:    0.000000     Total cost:    2.208388    
+|    INFO    | Epoch:    28
+|    INFO    |    Train    | MSE loss:    1.228337     D_kl:    4.325933     Total cost:    1.271596    
+|    INFO    |     Test    | MSE loss:    1.905992     D_kl:    0.000000     Total cost:    1.905992    
+|    INFO    | Epoch:    29
+|    INFO    |    Train    | MSE loss:    1.207202     D_kl:    4.245801     Total cost:    1.249660    
+|    INFO    |     Test    | MSE loss:    2.294042     D_kl:    0.000000     Total cost:    2.294042    
+|    INFO    | Epoch:    30
+|    INFO    |    Train    | MSE loss:    1.163910     D_kl:    4.223995     Total cost:    1.206150    
+|    INFO    |     Test    | MSE loss:    4.707638     D_kl:    0.000000     Total cost:    4.707638    
+|    INFO    | Epoch:    31
+|    INFO    |    Train    | MSE loss:    1.160972     D_kl:    4.253172     Total cost:    1.203503    
+|    INFO    |     Test    | MSE loss:    2.226455     D_kl:    0.000000     Total cost:    2.226455    
+|    INFO    | Epoch:    32
+|    INFO    |    Train    | MSE loss:    1.120655     D_kl:    4.333955     Total cost:    1.163994    
+|    INFO    |     Test    | MSE loss:    2.101142     D_kl:    0.000000     Total cost:    2.101142    
+|    INFO    | Epoch:    33
+|    INFO    |    Train    | MSE loss:    1.071415     D_kl:    4.369561     Total cost:    1.115111    
+|    INFO    |     Test    | MSE loss:    2.082457     D_kl:    0.000000     Total cost:    2.082457    
+|    INFO    | Epoch:    34
+|    INFO    |    Train    | MSE loss:    1.045589     D_kl:    4.339196     Total cost:    1.088981    
+|    INFO    |     Test    | MSE loss:    2.684580     D_kl:    0.000000     Total cost:    2.684580    
+|    INFO    | Epoch:    35
+|    INFO    |    Train    | MSE loss:    1.035177     D_kl:    4.306587     Total cost:    1.078243    
+|    INFO    |     Test    | MSE loss:    1.899435     D_kl:    0.000000     Total cost:    1.899435    
+|    INFO    | Epoch:    36
+|    INFO    |    Train    | MSE loss:    1.028216     D_kl:    4.127724     Total cost:    1.069493    
+|    INFO    |     Test    | MSE loss:    2.112590     D_kl:    0.000000     Total cost:    2.112590    
+|    INFO    | Epoch:    37
+|    INFO    |    Train    | MSE loss:    0.965723     D_kl:    4.217176     Total cost:    1.007895    
+|    INFO    |     Test    | MSE loss:    1.931787     D_kl:    0.000000     Total cost:    1.931787    
+|    INFO    | Epoch:    38
+|    INFO    |    Train    | MSE loss:    0.939450     D_kl:    4.177647     Total cost:    0.981227    
+|    INFO    |     Test    | MSE loss:    2.801339     D_kl:    0.000000     Total cost:    2.801339    
+|    INFO    | Epoch:    39
+|    INFO    |    Train    | MSE loss:    0.911212     D_kl:    4.220660     Total cost:    0.953419    
+|    INFO    |     Test    | MSE loss:    4.248995     D_kl:    0.000000     Total cost:    4.248995    
+|    INFO    | Epoch:    40
+|    INFO    |    Train    | MSE loss:    0.810199     D_kl:    4.294860     Total cost:    0.853148    
+|    INFO    |     Test    | MSE loss:    2.134652     D_kl:    0.000000     Total cost:    2.134652    
+|    INFO    | Epoch:    41
+|    INFO    |    Train    | MSE loss:    0.755290     D_kl:    4.294095     Total cost:    0.798231    
+|    INFO    |     Test    | MSE loss:    2.278872     D_kl:    0.000000     Total cost:    2.278872    
+|    INFO    | Epoch:    42
+|    INFO    |    Train    | MSE loss:    0.732847     D_kl:    4.269666     Total cost:    0.775543    
+|    INFO    |     Test    | MSE loss:    2.196764     D_kl:    0.000000     Total cost:    2.196764    
+|    INFO    | Epoch:    43
+|    INFO    |    Train    | MSE loss:    0.719587     D_kl:    4.275256     Total cost:    0.762340    
+|    INFO    |     Test    | MSE loss:    2.075474     D_kl:    0.000000     Total cost:    2.075474    
+|    INFO    | Epoch:    44
+|    INFO    |    Train    | MSE loss:    0.694825     D_kl:    4.287831     Total cost:    0.737703    
+|    INFO    |     Test    | MSE loss:    2.173479     D_kl:    0.000000     Total cost:    2.173479    
+|    INFO    | Epoch:    45
+|    INFO    |    Train    | MSE loss:    0.669154     D_kl:    4.252897     Total cost:    0.711683    
+|    INFO    |     Test    | MSE loss:    2.267399     D_kl:    0.000000     Total cost:    2.267399    
+|    INFO    | Epoch:    46
+|    INFO    |    Train    | MSE loss:    0.679374     D_kl:    4.246936     Total cost:    0.721844    
+|    INFO    |     Test    | MSE loss:    2.074510     D_kl:    0.000000     Total cost:    2.074510    
+|    INFO    | Epoch:    47
+|    INFO    |    Train    | MSE loss:    0.659369     D_kl:    4.264424     Total cost:    0.702013    
+|    INFO    |     Test    | MSE loss:    2.231206     D_kl:    0.000000     Total cost:    2.231206    
+|    INFO    | Epoch:    48
+|    INFO    |    Train    | MSE loss:    0.630271     D_kl:    4.241361     Total cost:    0.672685    
+|    INFO    |     Test    | MSE loss:    2.282604     D_kl:    0.000000     Total cost:    2.282604    
+|    INFO    | Epoch:    49
+|    INFO    |    Train    | MSE loss:    0.628433     D_kl:    4.246218     Total cost:    0.670895    
