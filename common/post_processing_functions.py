@@ -3,6 +3,7 @@ import os
 import math
 import matplotlib.pyplot as plt
 
+
 def log_to_plot(path):
     """
     :param path: path to a result folder
