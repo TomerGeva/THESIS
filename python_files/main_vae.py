@@ -32,12 +32,12 @@ def main_vae():
     initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
 
-    trainer = TrainerVAE(mod_vae, lr=LR, mom=MOM, beta=BETA)
+    trainer = TrainerVAE(mod_vae, lr=LR, mom=MOM, beta=BETA, sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA, grad_clip=GRAD_CLIP)
 
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.train(mod_vae, train_loader, test_loader, logger, save_per_epochs=40)
+    trainer.train(mod_vae, train_loader, test_loader, logger, save_per_epochs=20)
 
 
 if __name__ == '__main__':

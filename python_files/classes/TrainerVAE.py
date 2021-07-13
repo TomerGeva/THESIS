@@ -10,7 +10,7 @@ class TrainerVAE:
     """
     This class holds the Trainer for the Variational autoencoder
     """
-    def __init__(self, net, lr=1e-2, mom=0.9, beta=1):
+    def __init__(self, net, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5):
         # -------------------------------------
         # cost function
         # -------------------------------------
@@ -21,6 +21,10 @@ class TrainerVAE:
         # -------------------------------------
         # self.optimizer = optim.SGD(net.parameters(), lr=lr, momentum=mu)
         self.optimizer = optim.Adam(net.parameters(), lr=lr)
+        # -------------------------------------
+        # Scheduler, reduces learning rate
+        # -------------------------------------
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=sched_step, gamma=sched_gamma, verbose=True)
         # -------------------------------------
         # Initializing the start epoch to zero
         # if not zero, the model is pre-trained
@@ -33,6 +37,7 @@ class TrainerVAE:
         self.learning_rate  = lr
         self.mom            = mom
         self.beta           = beta
+        self.grad_clip      = grad_clip
 
     def compute_loss(self, targets, outputs, mu, logvar):
         mse_loss = self.reconstruction_loss(targets, outputs) * targets.size()[0]
@@ -133,6 +138,7 @@ class TrainerVAE:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 self.optimizer.zero_grad()
                 cost.backward()
+                nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
                 self.optimizer.step()
 
             self.cost = train_cost / len(train_loader.dataset)
@@ -140,6 +146,11 @@ class TrainerVAE:
             # Testing accuracy at the end of the epoch
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loader)
+
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # Advancing the scheduler of the lr
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            self.scheduler.step()
 
             # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             # Normalizing

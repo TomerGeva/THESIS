@@ -36,7 +36,7 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1        # the KL coefficient in the cost function
+BETA             = 6e-4     # the KL coefficient in the cost function
 EPOCH_NUM        = 300
 LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
@@ -45,6 +45,10 @@ BATCH_SIZE       = 32
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
+GRAD_CLIP        = 5
+SCHEDULER_STEP   = 20
+SCHEDULER_GAMMA  = 0.25
+
 # --------------------------------------------------------
 # Encoder topology
 # --------------------------------------------------------
@@ -132,19 +136,21 @@ ENCODER_FC_LAYERS = [150,
 # Dense Encoder topology
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv', 1, 6, 25, 25, 0],          # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 40, 5, 3, 1, 1],          # Dense block: growth rate, depth, kernel size, stride, padding
-    ['transition', 0.5, 3, 1, 1, 2],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size
-    ['dense', 40, 5, 3, 1, 1],          # Fully connected: Out channels
-    ['transition', 0.5, 3, 1, 1, 2],
+    ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
+    ['dense', 40, 5, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
+    ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
+    ['dense', 45, 5, 3, 1, 1],             # Fully connected: Out channels
+    ['transition', 0.5, 3, 1, 1, 2, 0],
     ['dense', 40, 5, 3, 1, 1],
-    ['transition', 0.5, 3, 1, 1, 2],
+    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
     ['dense', 40, 5, 3, 1, 1],
-    ['transition', 0.5, 3, 1, 1, 2],
+    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
     ['dense', 40, 5, 3, 1, 1],
-    ['transition', 0.5, 3, 1, 1, 2],
+    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
+    ['dense', 40, 5, 3, 1, 1],
+    ['transition', 0.5, 3, 1, 0, 1, 0],
     ['linear', 150],
-    ['linear', 150],
+    ['linear', 125],
     ['linear_last', 2 * LATENT_SPACE_DIM]
 ]
 

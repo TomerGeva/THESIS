@@ -55,7 +55,8 @@ class DenseEncoderVAE(nn.Module):
                                                         kernel_size=action[2],
                                                         stride=action[3],
                                                         padding=action[4],
-                                                        pool_size=action[5]))
+                                                        pool_size=action[5],
+                                                        pool_pad=action[6]))
                 channels = math.floor(channels * action[1])
                 conv_len += 1
             elif 'linear' in action[0]:
@@ -69,10 +70,12 @@ class DenseEncoderVAE(nn.Module):
                     self.layers.append(_fc_block(action_prev[1],
                                                  action[1],
                                                  activation=False))
+                    action_prev = action
                 else:
                     self.layers.append(_fc_block(action_prev[1],
                                                  action[1],
                                                  activation=True))
+                    action_prev = action
 
         self.conv_len = conv_len
         self.fc_len   = linear_len
@@ -91,8 +94,17 @@ class DenseEncoderVAE(nn.Module):
                 channels += action[1] * action[2]
             elif 'transition' in action[0]:
                 channels = math.floor(channels * action[1])
-                x_dim_size = int(x_dim_size / action[5])
-                y_dim_size = int(y_dim_size / action[5])
+                # ------------------------------------------------
+                # This account for the conv layer and the pooling
+                # ------------------------------------------------
+                if type(action[6]) is not tuple:
+                    x_dim_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                    y_dim_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                else:
+                    x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                    y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                    x_dim_size = int((x_conv_size + action[6][0] + action[6][1]) / action[5])
+                    y_dim_size = int((y_conv_size + action[6][2] + action[6][3]) / action[5])
 
         return x_dim_size, y_dim_size, channels
 

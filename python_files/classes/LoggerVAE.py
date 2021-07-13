@@ -267,8 +267,14 @@ class LoggerVAE:
                                                                                         y_dim_size))
                 channels  += action[1] * action[2]
             elif 'transition' in action[0]:
-                x_dim_size = int(x_dim_size / action[5])
-                y_dim_size = int(y_dim_size / action[5])
+                if type(action[6]) is not tuple:
+                    x_dim_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                    y_dim_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                else:
+                    x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                    y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                    x_dim_size  = int((x_conv_size + action[6][0] + action[6][1]) / action[5])
+                    y_dim_size  = int((y_conv_size + action[6][2] + action[6][3]) / action[5])
                 self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
                                                                                              action[1],
                                                                                              action[2],

@@ -79,7 +79,7 @@ class DenseTransitionBlock(nn.Module):
     """
     This class implements a transition block, used for pooling as well as convolving to reduce spatial size
     """
-    def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
+    def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, pool_pad, batch_norm=True, dropout_rate=0.0,
                  relu=True, pool_size=2):
         super(DenseTransitionBlock, self).__init__()
         self.in_channels    = in_channels
@@ -91,11 +91,13 @@ class DenseTransitionBlock(nn.Module):
         self.drate          = dropout_rate
         self.relu           = relu
         self.pool_size      = pool_size
+        self.pool_padding   = pool_pad
 
         self.conv   = nn.Conv2d(in_channels, self.out_channels, kernel_size, stride, padding)
         self.bnorm  = nn.BatchNorm2d(num_features=self.out_channels)
         self.drop   = nn.Dropout2d(dropout_rate)
         self.act    = nn.ReLU()
+        self.pad    = nn.ZeroPad2d(self.pool_padding)
         self.pool   = nn.MaxPool2d(pool_size)
 
     def forward(self, x):
@@ -107,7 +109,7 @@ class DenseTransitionBlock(nn.Module):
         if self.relu:
             out = self.act(out)
 
-        return self.pool(out)
+        return self.pool(self.pad(out))
 
 
 class ConvBlock(nn.Module):
