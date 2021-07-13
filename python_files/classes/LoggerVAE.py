@@ -148,6 +148,10 @@ class LoggerVAE:
         self.log_line('Epoch: {0:5d}' .format(epoch_num))
         self.log_line(self.get_header('Train') + self._get_result_string(train_mse_loss, train_d_kl, train_cost))
         self.log_line(self.get_header('Test') + self._get_result_string(test_mse_loss, test_d_kl, test_cost))
+        self.end_log()
+        if self.write_to_file:
+            full_path = os.path.join(self.logdir, self.filename)
+            self.fileID = open(full_path, 'a')
 
     def log_model_arch(self, mod_vae):
         """
