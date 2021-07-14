@@ -2,6 +2,9 @@ from ConfigVAE import *
 import os
 import math
 import matplotlib.pyplot as plt
+from torch.autograd import Variable
+from ScatterCoordinateDataset import import_data_sets
+from functions import load_state_train
 
 
 def log_to_plot(path):
@@ -51,7 +54,10 @@ def log_to_plot(path):
     # Plotting the results
     # ====================================================================================================
     plt.plot(epoch_list, [math.sqrt(x) * NORM_FACT for x in train_mse_loss], '-o', label='Train RMS loss')
-    plt.plot(epoch_list[0:-1], [math.sqrt(x) * NORM_FACT for x in test_mse_loss], '-o', label='Test RMS loss')
+    if '15_22' in path:
+        plt.plot(epoch_list[0:-1], [math.sqrt(x) * NORM_FACT for x in test_mse_loss], '-o', label='Test RMS loss')
+    else:
+        plt.plot(epoch_list, [math.sqrt(x) * NORM_FACT for x in test_mse_loss], '-o', label='Test RMS loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training & test loss vs Epoch number')
@@ -61,5 +67,25 @@ def log_to_plot(path):
     print('hi')
 
 
+def load_and_batch():
+    """
+    :return: This function loads a saves model, and tests the MSE of the target error
+    """
+    data_path                   = os.path.join(PATH_LOGS, '1_7_2021_15_50', 'VAE_model_data_lr_0.0003_epoch_299.tar')
+    train_loader, test_loader   = import_data_sets(BATCH_SIZE, 0.15)
+    mod_vae, trainer            = load_state_train(data_path)
+
+    smapled_batch   = next(iter(test_loader))
+    grids           = Variable(smapled_batch['grid'].float()).to(mod_vae.device)
+    sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
+
+    mod_vae.eval()
+    outputs, mu, logvar = mod_vae(grids)
+    print('Outputs: ' + str(outputs))
+    print('Targets: ' + str(sensitivities))
+
+
 if __name__ == '__main__':
+    load_and_batch()
+    # 14_7_2021_0_47 # 12_7_2021_15_22
     log_to_plot('..\\results\\12_7_2021_15_22')

@@ -21,7 +21,7 @@ SAVE_PATH_DB = './database.pth'
 SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
-# \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv'
+# \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
 PATH_DATABASE = '..\\..\\databases\\corner_1450_db_17p9k.csv'
 PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
@@ -37,14 +37,14 @@ train     = True
 # Hyper parameters
 # --------------------------------------------------------
 BETA             = 6e-4     # the KL coefficient in the cost function
-EPOCH_NUM        = 300
+EPOCH_NUM        = 80
 LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
 NORM_FACT        = 64458    # output normalization factor - mean sensitivity
 BATCH_SIZE       = 32
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
-INIT_WEIGHT_STD  = 0.02
+INIT_WEIGHT_STD  = 0.2
 GRAD_CLIP        = 5
 SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.25
