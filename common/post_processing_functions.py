@@ -64,14 +64,13 @@ def log_to_plot(path):
     plt.legend()
     plt.grid()
     plt.show()
-    print('hi')
 
 
-def load_and_batch():
+def load_and_batch(path, epoch):
     """
     :return: This function loads a saves model, and tests the MSE of the target error
     """
-    data_path                   = os.path.join(PATH_LOGS, '1_7_2021_15_50', 'VAE_model_data_lr_0.0003_epoch_299.tar')
+    data_path                   = os.path.join(path, 'VAE_model_data_lr_0.0003_epoch_' + str(epoch) + '.tar')
     train_loader, test_loader   = import_data_sets(BATCH_SIZE, 0.15)
     mod_vae, trainer            = load_state_train(data_path)
 
@@ -86,6 +85,10 @@ def load_and_batch():
 
 
 if __name__ == '__main__':
-    load_and_batch()
     # 14_7_2021_0_47 # 12_7_2021_15_22
-    log_to_plot('..\\results\\12_7_2021_15_22')
+    c_path = '..\\results\\14_7_2021_0_47'
+    c_epoch = 20
+
+    load_and_batch(c_path, c_epoch)
+
+    log_to_plot(c_path)
