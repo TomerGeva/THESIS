@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 from functions import micrometer2pixel, points2mat
 from torch.utils.data import Dataset, DataLoader, random_split
+from torchvision.transforms import Compose, ToTensor, Normalize
 
 
 # ============================================================
@@ -75,6 +76,13 @@ class ScattererCoordinateDataset(Dataset):
 # ============================================================
 class ToTensorMap(object):
     """Convert ndarrays in sample to Tensors."""
+    def __init__(self):
+        super(ToTensorMap, self).__init__()
+        self.trans_grids = Compose([
+            ToTensor(),
+            Normalize(mean=[TRANSFORM_MEAN]*IMG_CHANNELS, std=[TRANSFORM_STD]*IMG_CHANNELS)
+        ])
+        self.trans_sens = ToTensor()
 
     def __call__(self, sample):
         grid, sensitivity = sample['grid'], sample['sensitivity']
@@ -83,9 +91,9 @@ class ToTensorMap(object):
         # numpy image: H x W x C
         # torch image: C X H X W
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
-        grid        = np.expand_dims(grid, axis=0)
+        grid        = self.trans_grids(grid)
         sensitivity = np.expand_dims(sensitivity, axis=0)
-        return {'grid': torch.from_numpy(grid),
+        return {'grid': grid,
                 'sensitivity': torch.from_numpy(np.array(sensitivity))}
 
 

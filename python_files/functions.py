@@ -74,4 +74,4 @@ def points2mat(arr):
     """
     grid_array = np.zeros([XQUANTIZE, YQUANTIZE])
     grid_array[arr[:, 1], arr[:, 0]] = 255
-    return grid_array
+    return grid_array.astype(np.uint8)

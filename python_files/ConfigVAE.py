@@ -12,7 +12,12 @@ YRANGE = np.array([0, 19])
 XQUANTIZE = 2500
 YQUANTIZE = 2500
 
-TRANSFORM_NORM = 0.5
+# ========================================================================================
+# when the grid is '0' for cylinder absence, and '1' for cylinder present,
+# these are the std and mean for 1450 cylinders, need to normalize
+# ========================================================================================
+TRANSFORM_MEAN = 0.000232
+TRANSFORM_STD  = 0.015229786
 IMG_CHANNELS   = 1
 
 # ---logdir for saving the database ---
@@ -31,12 +36,12 @@ gather_DB = False
 train     = True
 
 # ============================================================
-# Global variables of the net
+# Global variables of the net - target RMS = 41000
 # ============================================================
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 6e-4     # the KL coefficient in the cost function
+BETA             = 1e-5   # the KL coefficient in the cost function
 EPOCH_NUM        = 80
 LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
@@ -46,8 +51,8 @@ LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.2
 GRAD_CLIP        = 5
-SCHEDULER_STEP   = 20
-SCHEDULER_GAMMA  = 0.25
+SCHEDULER_STEP   = 10
+SCHEDULER_GAMMA  = 0.5
 
 # --------------------------------------------------------
 # Encoder topology
@@ -137,20 +142,19 @@ ENCODER_FC_LAYERS = [150,
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 40, 5, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
+    ['dense', 40, 6, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
     ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 45, 5, 3, 1, 1],             # Fully connected: Out channels
+    ['dense', 40, 6, 3, 1, 1],             # Fully connected: Out channels
     ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 40, 5, 3, 1, 1],
+    ['dense', 40, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 5, 3, 1, 1],
+    ['dense', 40, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 5, 3, 1, 1],
+    ['dense', 40, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 5, 3, 1, 1],
+    ['dense', 40, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 0, 1, 0],
-    ['linear', 150],
-    ['linear', 125],
+    ['linear', 200],
     ['linear_last', 2 * LATENT_SPACE_DIM]
 ]
 
@@ -163,7 +167,7 @@ conv1: 2500 --> 100
 DECODER
 """
 DECODER_TOPOLOGY = [
-    ['linear', 150],
+    ['linear', 300],
     ['linear', 100],
     ['linear', 25],
     ['linear', 1],
