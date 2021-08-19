@@ -37,7 +37,7 @@ def main_vae():
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.train(mod_vae, train_loader, test_loader, logger, save_per_epochs=20)
+    trainer.train(mod_vae, train_loader, test_loaders, logger, save_per_epochs=20)
 
 
 if __name__ == '__main__':

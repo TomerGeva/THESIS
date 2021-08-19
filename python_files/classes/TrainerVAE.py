@@ -40,7 +40,7 @@ class TrainerVAE:
         self.grad_clip      = grad_clip
 
     def compute_loss(self, targets, outputs, mu, logvar):
-        mse_loss = self.reconstruction_loss(targets, outputs) * targets.size()[0]
+        mse_loss = self.reconstruction_loss(targets, outputs) * targets.size()[0]  # nn.MSEloss returns the mean, therefore we multipy by the batch size
         kl_div   = self.d_kl(mu, logvar)
         return mse_loss, kl_div, mse_loss + self.beta * kl_div
 
@@ -86,11 +86,11 @@ class TrainerVAE:
         mod_vae.train()
         return test_mse_cost, test_kl_div, test_cost
 
-    def train(self, mod_vae, train_loader, test_loader, logger, save_per_epochs=1):
+    def train(self, mod_vae, train_loader, test_loaders, logger, save_per_epochs=1):
         """
         :param         mod_vae: Modified VAE which we want to train
         :param    train_loader: holds the training database
-        :param     test_loader: holds the testing database
+        :param    test_loaders: holds the testing databases
         :param          logger: logging the results
         :param save_per_epochs: flag indicating if you want to save
         :return: The function trains the network, and saves the trained network
@@ -143,43 +143,42 @@ class TrainerVAE:
                 train_kl_div    += kl_div.item()
                 counter         += sensitivities.size(0)
 
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # ------------------------------------------------------------------------------
                 # Back propagation
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # ------------------------------------------------------------------------------
                 self.optimizer.zero_grad()
                 cost.backward()
                 nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
                 self.optimizer.step()
 
             self.cost = train_cost / len(train_loader.dataset)
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # Testing accuracy at the end of the epoch
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loader)
+            # ------------------------------------------------------------------------------
+            # Normalizing and documenting training results with LoggerVAE
+            # ------------------------------------------------------------------------------
+            logger.log_epoch(epoch)
+            train_cost = train_cost / counter
+            train_mse_cost = train_mse_cost / counter
+            train_kl_div = train_kl_div / counter
+            logger.log_epoch_results('train', train_mse_cost, train_kl_div, train_cost)
 
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # ------------------------------------------------------------------------------
+            # Testing accuracy at the end of the epoch, and logging with LoggerVAE
+            # ------------------------------------------------------------------------------
+            for key in test_loaders:
+                test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
+                test_mse_cost = test_mse_cost / test_counter
+                test_cost     = test_cost / test_counter
+                logger.log_epoch_results(key, test_mse_cost, 0, test_cost)
+
+            # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # ------------------------------------------------------------------------------
             self.scheduler.step()
 
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # Normalizing
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            train_cost      = train_cost / counter
-            train_mse_cost  = train_mse_cost / counter
-            train_kl_div    = train_kl_div / counter
-            test_mse_cost   = test_mse_cost / test_counter
-            test_cost       = test_cost / test_counter
-
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # Documenting with LoggerVAE
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            logger.log_epoch_results(epoch, train_mse_cost, train_kl_div, train_cost, test_mse_cost, 0, test_mse_cost)
-
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # ------------------------------------------------------------------------------
             # Saving the training state
             # save every x epochs and on the last epoch
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # ------------------------------------------------------------------------------
             if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
                 self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, NORM_FACT)
 

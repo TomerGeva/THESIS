@@ -13,7 +13,7 @@ class LoggerVAE:
         self.filename       = filename
         self.write_to_file  = True
         self.verbose        = 'INFO'
-        self.header_space   = 12
+        self.header_space   = 16
         self.result_space   = 15.6
         self.desc_space     = 6
         self.fileID         = None
@@ -144,10 +144,11 @@ class LoggerVAE:
         self.log_line('{0:^86}' .format(title))
         self.log_line('-------------------------------------------------------------------------------------------')
 
-    def log_epoch_results(self, epoch_num, train_mse_loss, train_d_kl, train_cost, test_mse_loss, test_d_kl, test_cost):
-        self.log_line('Epoch: {0:5d}' .format(epoch_num))
-        self.log_line(self.get_header('Train') + self._get_result_string(train_mse_loss, train_d_kl, train_cost))
-        self.log_line(self.get_header('Test') + self._get_result_string(test_mse_loss, test_d_kl, test_cost))
+    def log_epoch(self, epoch_num):
+        self.log_line('Epoch: {0:5d}'.format(epoch_num))
+
+    def log_epoch_results(self, header, mse_loss, d_kl, cost):
+        self.log_line(self.get_header(header) + self._get_result_string(mse_loss, d_kl, cost))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)
