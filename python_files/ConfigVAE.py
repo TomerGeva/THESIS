@@ -27,7 +27,10 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE = '..\\..\\databases\\corner_1450_db_17p9k.csv'
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_17p9k_gt_2e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_17p9k_lt_2e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_17p9k_gt_2e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_17p9k_lt_2e+05_test.csv']
 PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables

@@ -23,7 +23,7 @@ def main_vae():
     # ================================================================================
     # Importing the data
     # ================================================================================
-    train_loader, test_loader = import_data_sets(BATCH_SIZE, 0.15)
+    train_loader, test_loaders = import_data_sets(BATCH_SIZE, 0.15)
 
     # ================================================================================
     # Creating the net & trainer objects

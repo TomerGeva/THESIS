@@ -107,12 +107,22 @@ class TrainerVAE:
         # ==========================================================================================
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
+
         for epoch in range(self.epoch, EPOCH_NUM):
             train_cost      = 0.0
             train_mse_cost  = 0.0
             train_kl_div    = 0.0
             counter         = 0
-            for i, sample_batched in enumerate(train_loader):
+            for _ in range(len(train_loader)):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                train_loader_iter = iter(train_loader)
+                try:
+                    sample_batched = next(train_loader_iter)
+                except StopIteration:
+                    dataloader_iterator = iter(train_loader)
+                    sample_batched = next(dataloader_iterator)
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------

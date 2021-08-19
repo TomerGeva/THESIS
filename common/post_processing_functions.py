@@ -89,8 +89,8 @@ def plot_grid_histogram(grid):
 
 
 if __name__ == '__main__':
-    # 14_7_2021_0_47 # 12_7_2021_15_22
-    c_path = '..\\results\\15_7_2021_9_7'
+    # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7
+    c_path = '..\\results\\4_8_2021_8_30'
     c_epoch = 20
 
     load_and_batch(c_path, c_epoch)

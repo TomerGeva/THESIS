@@ -16,33 +16,48 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_file, transform=None):
+    def __init__(self, csv_files, transform=None):
         """
         Args:
-        :param csv_file: logdir to the file with all the database
+        :param csv_files: logdir to the file with all the database
         :param transform: transformation flag of the data
         """
         import os
         dirname  = os.path.dirname(__file__)
-        filepath = os.path.join(dirname, csv_file)
-        self.csv_data = pd.read_csv(filepath)
+        self.csv_data = []
+        self.csv_lens = []
+        for csv_file in csv_files:
+            filepath = os.path.join(dirname, csv_file)
+            self.csv_data.append(pd.read_csv(filepath))
+            self.csv_lens.append(len(self.csv_data[-1]))
         self.transform = transform
 
     def __len__(self):
-        return len(self.csv_data)
+        return sum(self.csv_lens)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         # ---------------------------------------------
+        # Extracting row from specific file
+        # ---------------------------------------------
+        counter = 0
+        for file_idx in range(len(self.csv_lens)):
+            if idx < counter + self.csv_lens[file_idx]:
+                row_idx = idx - counter
+                break
+            else:
+                counter += self.csv_lens[file_idx]
+
+        # ---------------------------------------------
         # extracting the sensitivity
         # ---------------------------------------------
-        sensitivity = self.csv_data.iloc[idx, 0] / NORM_FACT
+        sensitivity = self.csv_data[file_idx].iloc[row_idx, 0] / NORM_FACT
 
         # ---------------------------------------------
         # extracting the points
         # ---------------------------------------------
-        points = self.csv_data.iloc[idx, 1:]
+        points = self.csv_data[file_idx].iloc[row_idx, 1:]
         points = np.array([points])
         points = points.astype('float').reshape(-1, 2)
 
@@ -108,26 +123,15 @@ def import_data_sets(batch_size, test_rate):
     :return: two datasets, training and test
     """
     # --------------------------------------------------------
-    # Importing complete dataset
+    # Importing complete dataset and creating dataloaders
     # --------------------------------------------------------
-    data = ScattererCoordinateDataset(csv_file=PATH_DATABASE, transform=ToTensorMap())
+    data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN, transform=ToTensorMap())
+    train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True)
 
-    # --------------------------------------------------------
-    # Computing the lengths
-    # --------------------------------------------------------
-    length    = round(len(data))
-    train_len = round(length * (1 - test_rate))
-    test_len  = length - train_len
+    test_loaders = {}
+    for dataset in PATH_DATABASE_TEST:
+        data_list = [dataset]
+        temp_data = ScattererCoordinateDataset(csv_files=data_list, transform=ToTensorMap())
+        test_loaders[dataset[-17:-4]] = DataLoader(temp_data, batch_size=batch_size, shuffle=True)
 
-    # --------------------------------------------------------
-    # Splitting randomly into two sets
-    # --------------------------------------------------------
-    train_data, test_data = random_split(data, [train_len, test_len])
-
-    # --------------------------------------------------------
-    # Creating the loaders
-    # --------------------------------------------------------
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    test_loader  = DataLoader(test_data, batch_size=batch_size, shuffle=True)
-
-    return train_loader, test_loader
+    return train_loader, test_loaders
