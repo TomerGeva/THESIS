@@ -164,12 +164,31 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
             # ------------------------------------------------------------------------------
+            test_mse_costs  = []
+            test_counters   = []
+            test_costs      = []
             for key in test_loaders:
                 test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
                 test_mse_cost = test_mse_cost / test_counter
                 test_cost     = test_cost / test_counter
                 logger.log_epoch_results(key, test_mse_cost, 0, test_cost)
 
+                test_mse_costs.append(test_mse_cost)
+                test_counters.append(test_counter)
+                test_costs.append(test_cost)
+            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            # Computing total cost for all test loaders and logging with LoggerVAE
+            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            test_mse_cost   = 0
+            test_counter    = 0
+            test_cost       = 0
+            for mse, count, cost in zip(test_mse_costs, test_counters, test_costs):
+                test_mse_cost   += (mse * count)
+                test_cost       += (cost * count)
+                test_counter    += count
+            test_mse_cost   = test_mse_cost / test_counter
+            test_cost       = test_cost / test_counter
+            logger.log_epoch_results('test_total', test_mse_cost, 0, test_cost)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
