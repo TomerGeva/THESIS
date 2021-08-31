@@ -19,6 +19,8 @@ YQUANTIZE = 2500
 TRANSFORM_MEAN = 0.000232
 TRANSFORM_STD  = 0.015229786
 IMG_CHANNELS   = 1
+MIXUP_FACTOR   = 0.3  # mixup parameter for the data
+NUM_WORKERS    = 8
 
 # ---logdir for saving the database ---
 SAVE_PATH_DB = './database.pth'
@@ -27,11 +29,11 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_17p9k_gt_2e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_17p9k_lt_2e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_17p9k_gt_2e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_17p9k_lt_2e+05_test.csv']
-PATH_LOGS     = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_test.csv']
+PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
 # ==================================
@@ -44,17 +46,17 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1e-5   # the KL coefficient in the cost function
+BETA             = 1e-5     # the KL coefficient in the cost function
 EPOCH_NUM        = 80
-LR               = 3e-4     # learning rate
+LR               = 1.5e-4     # learning rate
 MOM              = 0.9      # momentum update
 NORM_FACT        = 64458    # output normalization factor - mean sensitivity
-BATCH_SIZE       = 32
+BATCH_SIZE       = 64
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.2
 GRAD_CLIP        = 5
-SCHEDULER_STEP   = 10
+SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.5
 
 # --------------------------------------------------------
@@ -145,17 +147,17 @@ ENCODER_FC_LAYERS = [150,
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 40, 6, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
+    ['dense', 80, 6, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
     ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 40, 6, 3, 1, 1],             # Fully connected: Out channels
+    ['dense', 80, 6, 3, 1, 1],             # Fully connected: Out channels
     ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 40, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 40, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 0, 1, 0],
     ['linear', 200],
     ['linear_last', 2 * LATENT_SPACE_DIM]

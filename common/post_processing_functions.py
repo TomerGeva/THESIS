@@ -102,13 +102,17 @@ def load_and_batch(path, epoch):
     print('Targets: ' + str(sensitivities))
 
 
-def plot_grid_histogram(grid):
-    plt.hist(np.array(grid).ravel(), bins=10, density=True)
+def plot_grid_histogram(grid, bins=10):
+    plt.hist(np.array(grid).ravel(), bins=bins, density=True)
 
 
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
-    c_path = '..\\results\\19_8_2021_11_34'
+    # 24_8_2021_8_51   - with mixup 0.00 - 25k database
+    # 23_8_2021_8_16   - with mixup 0.01 - 25k database
+    # 24_8_2021_16_57  - without mixup - 25k database
+    # 30_8_2021_16_57  - without mixup - 30k database
+    c_path = '..\\results\\30_8_2021_16_57'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)
