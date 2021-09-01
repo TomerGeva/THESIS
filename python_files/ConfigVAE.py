@@ -16,8 +16,10 @@ YQUANTIZE = 2500
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
 # ========================================================================================
-TRANSFORM_MEAN = 0.000232
-TRANSFORM_STD  = 0.015229786
+GRID_MEAN = 0.000232
+GRID_STD  = 0.015229786
+SENS_MEAN = 64458    # output normalization factor - mean sensitivity
+SENS_STD  = 41025
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 NUM_WORKERS    = 8
@@ -48,9 +50,8 @@ train     = True
 # --------------------------------------------------------
 BETA             = 1e-5     # the KL coefficient in the cost function
 EPOCH_NUM        = 80
-LR               = 1.5e-4     # learning rate
+LR               = 3e-4     # learning rate
 MOM              = 0.9      # momentum update
-NORM_FACT        = 64458    # output normalization factor - mean sensitivity
 BATCH_SIZE       = 64
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0

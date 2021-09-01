@@ -198,7 +198,7 @@ class TrainerVAE:
             # save every x epochs and on the last epoch
             # ------------------------------------------------------------------------------
             if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
-                self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, NORM_FACT)
+                self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, SENS_STD)
 
     def save_state_train(self, logdir, vae, epoch, lr, mom, beta, norm_fact, filename=None):
         """Saving model and optimizer to drive, as well as current epoch and loss

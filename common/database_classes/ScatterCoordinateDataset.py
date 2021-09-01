@@ -62,7 +62,7 @@ class ScattererCoordinateDataset(Dataset):
         # Extracting the sensitivity
         # ----------------------------------------------------------------------------------------------------------
         # print('file_idx ' + str(file_idx) + ' , row_idx ' + str(row_idx))
-        sensitivity = self.csv_data[file_idx].iloc[row_idx, 0] / NORM_FACT
+        sensitivity = self.csv_data[file_idx].iloc[row_idx, 0]
 
         # ----------------------------------------------------------------------------------------------------------
         # extracting the points
@@ -101,7 +101,7 @@ class ScattererCoordinateDataset(Dataset):
             # Randomly deciding to do mixup or not
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             eps = rnd.random()
-            if eps >= 0.11:  # 0.11:
+            if eps >= 0:  # 0.11:
                 return sample
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # Raffling a different group
@@ -143,9 +143,11 @@ class ToTensorMap(object):
         super(ToTensorMap, self).__init__()
         self.trans_grids = Compose([
             ToTensor(),
-            Normalize(mean=[TRANSFORM_MEAN]*IMG_CHANNELS, std=[TRANSFORM_STD]*IMG_CHANNELS)
+            Normalize(mean=[GRID_MEAN]*IMG_CHANNELS, std=[GRID_STD]*IMG_CHANNELS)
         ])
-        self.trans_sens = ToTensor()
+        self.trans_sens = Compose([
+            Normalize(mean=[SENS_MEAN]*IMG_CHANNELS, std=[SENS_STD]*IMG_CHANNELS)
+        ])
 
     def __call__(self, sample):
         grid, sensitivity = sample['grid'], sample['sensitivity']
@@ -155,9 +157,11 @@ class ToTensorMap(object):
         # torch image: C X H X W
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
         grid        = self.trans_grids(grid)
+        sensitivity = (sensitivity - SENS_MEAN) / SENS_STD
         sensitivity = np.expand_dims(sensitivity, axis=0)
+        sensitivity = torch.from_numpy(np.array(sensitivity))
         return {'grid': grid,
-                'sensitivity': torch.from_numpy(np.array(sensitivity))}
+                'sensitivity': sensitivity}
 
 
 # ============================================================

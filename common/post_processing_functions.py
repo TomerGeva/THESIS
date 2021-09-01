@@ -70,12 +70,12 @@ def log_to_plot(path):
     # ====================================================================================================
     # Plotting the results
     # ====================================================================================================
-    plt.plot(epoch_list, [math.sqrt(x) * NORM_FACT for x in train_mse_loss], '-o', label='train')
+    plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label='train')
     for test_db in keys_list:
         if '15_22' in path:
-            plt.plot(epoch_list[0:-1], [math.sqrt(x) * NORM_FACT for x in test_results[test_db]], '-o', label=test_db)
+            plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
         else:
-            plt.plot(epoch_list, [math.sqrt(x) * NORM_FACT for x in test_results[test_db]], '-o', label=test_db)
+            plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
     plt.xlabel('Epoch')
     plt.ylabel('RMS Loss')
     plt.title('RMS loss vs Epoch number')
