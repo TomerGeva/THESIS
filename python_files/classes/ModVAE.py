@@ -9,11 +9,15 @@ class ModVAE(nn.Module):
     """
     This class holds the modified Variational auto-encoder
     """
-    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim):
+    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, dense_encoder=True):
         super(ModVAE, self).__init__()
         self.device     = device
-        self.encoder    = DenseEncoderVAE(device=device, topology=encoder_topology)
-        # self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
+        if dense_encoder:
+            self.encoder      = DenseEncoderVAE(device=device, topology=encoder_topology)
+            self.encoder_type = 'dense'
+        else:
+            self.encoder      = EncoderVAE(device=device, topology=encoder_topology)
+            self.encoder_type = 'vgg'
         self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
         self.latent_dim = latent_space_dim
 
