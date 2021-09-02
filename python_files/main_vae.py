@@ -9,7 +9,7 @@ from neural_network_functions   import initialize_weights
 from ScatterCoordinateDataset   import import_data_sets
 
 
-def main_vae():
+def main_vae(dense_encoder=True):
     # ================================================================================
     # Setting the logger
     # ================================================================================

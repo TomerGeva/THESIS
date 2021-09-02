@@ -143,6 +143,22 @@ ENCODER_FC_LAYERS = [150,
                      2 * LATENT_SPACE_DIM,
                     ]
 """
+ENCODER_TOPOLOGY = [
+    ['conv', IMG_CHANNELS,   6, 25, 25, 0],  # conv layer: input channels, output channels, kernel, stride, padding
+    ['conv',            6,  16,  5,  1, 2],
+    ['pool', 2],                             # pool layer: kernel
+    ['conv',           16,  32,  5,  1, 2],
+    ['pool', 2],
+    ['conv',           32,  64,  4,  1, 1],
+    ['pool', 2],
+    ['conv',           64, 128,  3,  1, 0],
+    ['conv',          128, 256,  3,  1, 0],
+    ['pool', 2],
+    ['conv',          256, 512,  4,  1, 0],
+    ['linear', 200],                         # linear layer: neuron number
+    ['linear', 150],
+    ['linear_last', 2 * LATENT_SPACE_DIM]
+]
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------

@@ -8,12 +8,10 @@ class EncoderVAE(nn.Module):
     """
     This class holds the Variational auto-encoder Encoder part
     """
-    def __init__(self, device):
+    def __init__(self, device, topology):
         super(EncoderVAE, self).__init__()
         self.device         = device
-        self.description    = ENCODER_LAYER_DESCRIPTION
-        self.conv_len       = len(ENCODER_FILTER_NUM) - 1 + len(ENCODER_MAX_POOL_SIZE)
-        self.fc_len         = len(ENCODER_FC_LAYERS)
+        self.topology       = topology
         self.layers         = nn.ModuleList()
 
         x_dim, y_dim        = self.compute_dim_sizes()
@@ -24,56 +22,59 @@ class EncoderVAE(nn.Module):
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
+        channels    = 0
         conv_idx    = 0
         maxpool_idx = 0
         linear_idx  = 0
-        for ii in range(len(self.description)):
-            action = self.description[ii]
+        for ii in range(len(self.topology)):
+            action = self.topology[ii]
             if 'conv' in action:
-                self.layers.append(_conv_block(ENCODER_FILTER_NUM[conv_idx],
-                                               ENCODER_FILTER_NUM[conv_idx + 1],
-                                               ENCODER_KERNEL_SIZE[conv_idx],
-                                               ENCODER_STRIDES[conv_idx],
-                                               ENCODER_PADDING[conv_idx],
+                self.layers.append(_conv_block(in_channels=action[1],
+                                               out_channels=action[2],
+                                               kernel_size=action[3],
+                                               stride=action[4],
+                                               padding=action[5],
                                                )
                                    )
                 conv_idx += 1
+                channels = action[2]
             elif 'pool' in action:
-                self.layers.append(nn.MaxPool2d(ENCODER_MAX_POOL_SIZE[maxpool_idx]))
+                self.layers.append(nn.MaxPool2d(action[1]))
                 maxpool_idx += 1
             elif 'linear' in action:
                 if linear_idx == 0:
-                    self.layers.append(_fc_block(x_dim * y_dim * ENCODER_FILTER_NUM[-1],
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                    self.midpoint_channels = channels
+                    self.layers.append(_fc_block(x_dim * y_dim * channels,
+                                                 action[1],
                                                  activation=True))
                 elif 'last' in action:
-                    self.layers.append(_fc_block(ENCODER_FC_LAYERS[linear_idx - 1],
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                    self.layers.append(_fc_block(self.topology[ii-1][1],
+                                                 action[1],
                                                  activation=False))
                 else:
-                    self.layers.append(_fc_block(ENCODER_FC_LAYERS[linear_idx - 1],
-                                                 ENCODER_FC_LAYERS[linear_idx],
+                    self.layers.append(_fc_block(self.topology[ii-1][1],
+                                                 action[1],
                                                  activation=True))
                 linear_idx += 1
+
+        self.fc_len = linear_idx
 
     def compute_dim_sizes(self):
         x_dim_size  = XQUANTIZE
         y_dim_size  = YQUANTIZE
         conv_idx    = 0
         maxpool_idx = 0
-        for ii in range(len(self.description)):
-            action = self.description[ii]
-            if 'conv' in action:
-                x_dim_size = int((x_dim_size - (ENCODER_KERNEL_SIZE[conv_idx] - ENCODER_STRIDES[conv_idx]) + 2 *
-                                  ENCODER_PADDING[conv_idx]) / ENCODER_STRIDES[conv_idx])
-                y_dim_size = int((y_dim_size - (ENCODER_KERNEL_SIZE[conv_idx] - ENCODER_STRIDES[conv_idx]) + 2 *
-                                  ENCODER_PADDING[conv_idx]) / ENCODER_STRIDES[conv_idx])
+        for ii in range(len(self.topology)):
+            action = self.topology[ii]
+            if 'conv' in action[0]:
+                x_dim_size = int((x_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
+                y_dim_size = int((y_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
                 conv_idx += 1
             elif 'pool' in action:
-                x_dim_size = int(x_dim_size / ENCODER_MAX_POOL_SIZE[maxpool_idx])
-                y_dim_size = int(y_dim_size / ENCODER_MAX_POOL_SIZE[maxpool_idx])
+                x_dim_size = int(x_dim_size / action[1])
+                y_dim_size = int(y_dim_size / action[1])
                 maxpool_idx += 1
-
+        self.conv_len = conv_idx + maxpool_idx
         return x_dim_size, y_dim_size
 
     def forward(self, x):
@@ -86,7 +87,7 @@ class EncoderVAE(nn.Module):
         # ---------------------------------------------------------
         # flattening for the FC layers
         # ---------------------------------------------------------
-        x = x.view(-1, self.x_dim * self.y_dim * ENCODER_FILTER_NUM[-1])
+        x = x.view(-1, self.x_dim * self.y_dim * self.midpoint_channels)
         # ---------------------------------------------------------
         # passing through the fully connected blocks
         # ---------------------------------------------------------

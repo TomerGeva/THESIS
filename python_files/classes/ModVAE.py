@@ -13,7 +13,7 @@ class ModVAE(nn.Module):
         super(ModVAE, self).__init__()
         self.device     = device
         self.encoder    = DenseEncoderVAE(device=device, topology=encoder_topology)
-        # self.encoder    = EncoderVAE(device=device)
+        # self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
         self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
         self.latent_dim = latent_space_dim
 
