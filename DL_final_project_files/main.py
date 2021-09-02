@@ -1,4 +1,4 @@
-from functions import *
+from database_functions import *
 from convolution_net.Config import *
 
 

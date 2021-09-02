@@ -1,9 +1,8 @@
-import os
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import IterableDataset, DataLoader
-from functions import *
+from database_functions import *
 
 
 # ==============================================================

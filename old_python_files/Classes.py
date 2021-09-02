@@ -2,7 +2,7 @@ import torch.nn as nn
 import pandas   as pd
 import torch.optim as optim
 from torch.utils.data import IterableDataset
-from functions import *
+from database_functions import *
 
 
 # ==============================================================

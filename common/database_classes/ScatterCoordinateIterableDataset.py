@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms as transforms
 from itertools import cycle, islice
 from torch.utils.data import IterableDataset, DataLoader, random_split
-from functions import micrometer2pixel, points2mat
+from database_functions import micrometer2pixel, points2mat
 
 
 # ============================================================

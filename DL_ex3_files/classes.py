@@ -7,7 +7,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from functions import save_state_train
+from database_functions import save_state_train
 
 
 class DiscriminatorDCGAN(nn.Module):

@@ -3,7 +3,7 @@ import os
 import torch
 import pandas as pd
 import random as rnd
-from functions import micrometer2pixel, points2mat
+from database_functions import micrometer2pixel, points2mat
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import Compose, ToTensor, Normalize
 

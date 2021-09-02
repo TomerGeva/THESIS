@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.optim as optim
-from functions import *
+from database_functions import *
 
 
 class Trainer:

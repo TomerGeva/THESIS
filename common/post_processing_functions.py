@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
-from functions import load_state_train
+from database_functions import load_state_train
 
 
 def log_to_plot(path):

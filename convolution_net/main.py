@@ -2,10 +2,10 @@
 # import os
 import torch
 from convolution_net.Config import *
-from convolution_net.classses.Logger import Logger, LoggerNew
-from convolution_net.classses.Trainer import Trainer, TrainerVAE
+from convolution_net.classses.Logger import Logger
+from convolution_net.classses.Trainer import Trainer
 from convolution_net.classses.ConvNet import ConvNet
-from functions                  import initialize_weights
+from database_functions import initialize_weights
 from common.database_classes.ScatterCoordinateDataset import import_data_sets
 
 
