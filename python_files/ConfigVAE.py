@@ -31,10 +31,10 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_new_gt_2e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_new_lt_2e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_new_gt_2e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_new_lt_2e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -176,7 +176,8 @@ DENSE_ENCODER_TOPOLOGY = [
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
     ['dense', 80, 6, 3, 1, 1],
     ['transition', 0.5, 3, 1, 0, 1, 0],
-    ['linear', 200],
+    ['linear', 500],
+    ['linear', 150],
     ['linear_last', 2 * LATENT_SPACE_DIM]
 ]
 

@@ -157,8 +157,9 @@ class ToTensorMap(object):
         # torch image: C X H X W
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
         grid        = self.trans_grids(grid)
-        sensitivity = (sensitivity - SENS_MEAN) / SENS_STD
         sensitivity = np.expand_dims(sensitivity, axis=0)
+        # sensitivity = np.sign(sensitivity) * (abs(sensitivity) - SENS_MEAN) / SENS_STD
+        sensitivity /= SENS_STD
         sensitivity = torch.from_numpy(np.array(sensitivity))
         return {'grid': grid,
                 'sensitivity': sensitivity}

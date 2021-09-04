@@ -112,7 +112,9 @@ if __name__ == '__main__':
     # 23_8_2021_8_16   - with mixup 0.01 - 25k database
     # 24_8_2021_16_57  - without mixup - 25k database
     # 30_8_2021_16_57  - without mixup - 30k database
-    c_path = '..\\results\\30_8_2021_16_57'
+    # 1_9_2021_16_31   - without mixup - 30k database
+    # 2_9_2021_14_2    - without mixup - 30 singed database - latent space 90
+    c_path = '..\\results\\2_9_2021_14_2'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)
