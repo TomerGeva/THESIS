@@ -135,3 +135,4 @@ dmypy.json
 convolution_net/Config.py
 databases/corner_1450_10k.csv
 python_files/ConfigVAE.py
+results/*
