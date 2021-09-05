@@ -65,7 +65,6 @@ class EncoderVAE(nn.Module):
             elif 'linear' in action[0]:
                 linear_len += 1
                 action_prev = action
-
                 if linear_len == 1:  # First linear layer
                     self.layers.append(FullyConnectedBlock(in_neurons=(x_dim * y_dim * channels),
                                                            out_neurons=action[1],

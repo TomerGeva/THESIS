@@ -180,7 +180,7 @@ class MaxPool2dPadding(nn.Module):
         This class implements max pooling block, with zero padding
     """
     def __init__(self, kernel, padding=0):
-        super(FullyConnectedBlock, self).__init__()
+        super(MaxPool2dPadding, self).__init__()
         self.kernel = kernel
         self.padding = padding
 

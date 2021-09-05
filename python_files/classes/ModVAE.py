@@ -15,11 +15,7 @@ class ModVAE(nn.Module):
         self.device         = device
         self.encoder_type   = encoder_type
 
-        if encoder_type == encoder_type_e.DENSE:
-            self.encoder      = DenseEncoderVAE(device=device, topology=encoder_topology)
-        elif encoder_type == encoder_type_e.VGG:
-            self.encoder      = EncoderVAE(device=device, topology=encoder_topology)
-
+        self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
         self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
         self.latent_dim = latent_space_dim
 
