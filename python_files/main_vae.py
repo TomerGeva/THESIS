@@ -29,11 +29,18 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
     # ================================================================================
     # Creating the net & trainer objects
     # ================================================================================
-    mod_vae = ModVAE(device=device,
-                     encoder_topology=DENSE_ENCODER_TOPOLOGY,
-                     decoder_topology=DECODER_TOPOLOGY,
-                     latent_space_dim=LATENT_SPACE_DIM,
-                     encoder_type=encoder_type)
+    if encoder_type == encoder_type_e.DENSE:
+        mod_vae = ModVAE(device=device,
+                         encoder_topology=DENSE_ENCODER_TOPOLOGY,
+                         decoder_topology=DECODER_TOPOLOGY,
+                         latent_space_dim=LATENT_SPACE_DIM,
+                         encoder_type=encoder_type)
+    elif encoder_type == encoder_type_e.VGG:
+        mod_vae = ModVAE(device=device,
+                         encoder_topology=ENCODER_TOPOLOGY,
+                         decoder_topology=DECODER_TOPOLOGY,
+                         latent_space_dim=LATENT_SPACE_DIM,
+                         encoder_type=encoder_type)
     initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
 
