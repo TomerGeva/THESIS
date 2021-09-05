@@ -32,7 +32,13 @@ def load_state_train(data_path, device=None):
     encoder_topology = checkpoint['encoder_topology']
     decoder_topology = checkpoint['decoder_topology']
     latent_dim       = checkpoint['latent_dim']
-    mod_vae = ModVAE(device=device, encoder_topology=encoder_topology, decoder_topology=decoder_topology, latent_space_dim=latent_dim)
+    encoder_type     = checkpoint['encoder_type']
+
+    mod_vae = ModVAE(device=device,
+                     encoder_topology=encoder_topology,
+                     decoder_topology=decoder_topology,
+                     latent_space_dim=latent_dim,
+                     encoder_type=encoder_type)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
     mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 

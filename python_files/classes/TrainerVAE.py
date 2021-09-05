@@ -214,15 +214,16 @@ class TrainerVAE:
             path = os.path.join(logdir, filename)
 
         data_to_save = {'epoch': epoch,
-                        'vae_state_dict': vae.state_dict(),
+                        'vae_state_dict':       vae.state_dict(),
                         'optimizer_state_dict': self.optimizer.state_dict(),
-                        'lr': lr,
-                        'mom': mom,
-                        'beta': beta,
-                        'norm_fact': norm_fact,
-                        'encoder_topology': vae.encoder.topology,
-                        'decoder_topology': vae.decoder.topology,
-                        'latent_dim': vae.latent_dim
+                        'lr':                   lr,
+                        'mom':                  mom,
+                        'beta':                 beta,
+                        'norm_fact':            norm_fact,
+                        'encoder_topology':     vae.encoder.topology,
+                        'decoder_topology':     vae.decoder.topology,
+                        'latent_dim':           vae.latent_dim,
+                        'encoder_type':         vae.encoder_type
                         }
         torch.save(data_to_save, path)
 
