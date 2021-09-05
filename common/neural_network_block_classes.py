@@ -129,13 +129,42 @@ class ConvBlock(nn.Module):
         self.drate          = dropout_rate
         self.relu           = relu
 
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
-        self.bnorm = nn.BatchNorm2d(out_channels)
-        self.drop = nn.Dropout2d(dropout_rate)
-        self.act = nn.ReLU()
+        self.conv   = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.bnorm  = nn.BatchNorm2d(out_channels)
+        self.drop   = nn.Dropout2d(dropout_rate)
+        self.act    = nn.ReLU()
 
     def forward(self, x):
         out = self.conv(x)
+        if self.bnorm:
+            out = self.bnorm(out)
+        if self.drate > 0:
+            out = self.drop(out)
+        if self.relu:
+            out = self.act(out)
+
+        return out
+
+
+class FullyConnectedBlock(nn.Module):
+    """
+        This class implements a fully connected block, support batch morn, ReLU and/or dropout
+    """
+    def __init__(self, in_neurons, out_neurons, batch_norm=True, dropout_rate=0.0, relu=True):
+        super(ConvBlock, self).__init__()
+        self.in_neurons  = in_neurons
+        self.out_neurons = out_neurons
+        self.bnorm = batch_norm
+        self.drate = dropout_rate
+        self.relu = relu
+
+        self.fc     = nn.Linear(in_neurons, out_neurons, bias=(not batch_norm))
+        self.bnorm  = nn.BatchNorm1d(out_neurons)
+        self.drop   = nn.Dropout(dropout_rate)
+        self.act    = nn.ReLU()
+
+    def forward(self, x):
+        out = self.fc(x)
         if self.bnorm:
             out = self.bnorm(out)
         if self.drate > 0:
