@@ -1,8 +1,6 @@
-from ConfigVAE import *
 import torch.nn            as nn
 from EncoderVAE         import EncoderVAE
 from DecoderVAE         import DecoderVAE
-from DenseEncoderVAE    import DenseEncoderVAE
 from global_const       import encoder_type_e
 
 

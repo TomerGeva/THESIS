@@ -164,17 +164,17 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 80, 6, 3, 1, 1],             # Dense block: growth rate, depth, kernel size, stride, padding
+    ['dense', 80, 6, 3, 1, 1, 0.5],        # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
     ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 80, 6, 3, 1, 1],             # Fully connected: Out channels
+    ['dense', 80, 6, 3, 1, 1, 0.5],             # Fully connected: Out channels
     ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 80, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1, 0.5],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1, 0.5],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1, 0.5],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1],
+    ['dense', 80, 6, 3, 1, 1, 0.5],
     ['transition', 0.5, 3, 1, 0, 1, 0],
     ['linear', 500],
     ['linear', 150],

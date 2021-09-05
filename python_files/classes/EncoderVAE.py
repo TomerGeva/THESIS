@@ -50,7 +50,8 @@ class EncoderVAE(nn.Module):
                                               growth_rate=action[1],
                                               kernel_size=action[3],
                                               stride=action[4],
-                                              padding=action[5]))
+                                              padding=action[5],
+                                              dropout_rate=action[6]))
                 channels += action[2] * action[1]
             elif 'transition' in action[0]:
                 conv_len += 1
