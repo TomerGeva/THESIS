@@ -1,5 +1,6 @@
 from ConfigVAE import *
 from torch.autograd import Variable
+from global_const import encoder_type_e
 import os
 import torch
 import torch.nn as nn
@@ -99,8 +100,10 @@ class TrainerVAE:
         # Init Log
         # ==========================================================================================
         logger.start_log()
-        # logger.log_model_arch(mod_vae)
-        logger.log_dense_model_arch(mod_vae)
+        if mod_vae.encoder_type == encoder_type_e.DENSE:
+            logger.log_dense_model_arch(mod_vae)
+        elif mod_vae.encoder_type == encoder_type_e.VGG:
+            logger.log_model_arch(mod_vae)
 
         # ==========================================================================================
         # Begin of training

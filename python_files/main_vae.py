@@ -52,4 +52,5 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
 
 
 if __name__ == '__main__':
-    main_vae()
+    enc_type = encoder_type_e.VGG
+    main_vae(enc_type)
