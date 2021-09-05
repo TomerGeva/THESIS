@@ -28,7 +28,7 @@ class EncoderVAE(nn.Module):
         linear_idx  = 0
         for ii in range(len(self.topology)):
             action = self.topology[ii]
-            if 'conv' in action:
+            if 'conv' in action[0]:
                 self.layers.append(_conv_block(in_channels=action[1],
                                                out_channels=action[2],
                                                kernel_size=action[3],
@@ -38,16 +38,16 @@ class EncoderVAE(nn.Module):
                                    )
                 conv_idx += 1
                 channels = action[2]
-            elif 'pool' in action:
+            elif 'pool' in action[0]:
                 self.layers.append(nn.MaxPool2d(action[1]))
                 maxpool_idx += 1
-            elif 'linear' in action:
+            elif 'linear' in action[0]:
                 if linear_idx == 0:
                     self.midpoint_channels = channels
                     self.layers.append(_fc_block(x_dim * y_dim * channels,
                                                  action[1],
                                                  activation=True))
-                elif 'last' in action:
+                elif 'last' in action[0]:
                     self.layers.append(_fc_block(self.topology[ii-1][1],
                                                  action[1],
                                                  activation=False))

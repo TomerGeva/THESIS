@@ -167,44 +167,43 @@ class LoggerVAE:
         conv_idx    = 0
         maxpool_idx = 0
         linear_idx  = 0
+        out_channel = 1
         # ==============================================================================================================
         # Encoder log
         # ==============================================================================================================
         self.log_title('VAE Encoder architecture')
         self.log_line('Input size: {}X{}' .format(x_dim_size, y_dim_size))
 
-        for ii in range(len(mod_vae.encoder.description)):
+        for ii in range(len(mod_vae.encoder.topology)):
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.encoder.description[ii]
-            if 'conv' in action:
-                x_dim_size = int((x_dim_size - (ENCODER_KERNEL_SIZE[conv_idx] - ENCODER_STRIDES[conv_idx]) + 2 *
-                                  ENCODER_PADDING[conv_idx]) / ENCODER_STRIDES[conv_idx])
-                y_dim_size = int((y_dim_size - (ENCODER_KERNEL_SIZE[conv_idx] - ENCODER_STRIDES[conv_idx]) + 2 *
-                                  ENCODER_PADDING[conv_idx]) / ENCODER_STRIDES[conv_idx])
-
-                self.log_line(self.get_header(action) + self._get_conv_layer_string(ENCODER_FILTER_NUM[conv_idx],
-                                                                                    ENCODER_FILTER_NUM[conv_idx+1],
-                                                                                    ENCODER_KERNEL_SIZE[conv_idx],
-                                                                                    ENCODER_STRIDES[conv_idx],
-                                                                                    ENCODER_PADDING[conv_idx],
+            action = mod_vae.encoder.topology[ii]
+            if 'conv' in action[0]:
+                x_dim_size  = int((x_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
+                y_dim_size  = int((y_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
+                out_channel = action[2]
+                self.log_line(self.get_header(action) + self._get_conv_layer_string(action[1],  # in channels
+                                                                                    action[2],  # out channels
+                                                                                    action[3],  # kernel
+                                                                                    action[4],  # stride
+                                                                                    action[5],  # padding
                                                                                     x_dim_size,
                                                                                     y_dim_size))
                 conv_idx += 1
-            elif 'pool' in action:
-                x_dim_size = int(x_dim_size / ENCODER_MAX_POOL_SIZE[maxpool_idx])
-                y_dim_size = int(y_dim_size / ENCODER_MAX_POOL_SIZE[maxpool_idx])
-
-                self.log_line(self.get_header(action) + self._get_pool_layer_string(ENCODER_MAX_POOL_SIZE[maxpool_idx],
+            elif 'pool' in action[0]:
+                x_dim_size = int(x_dim_size / action[1])
+                y_dim_size = int(y_dim_size / action[1])
+                self.log_line(self.get_header(action) + self._get_pool_layer_string(action[1],  # kernel
                                                                                     x_dim_size,
                                                                                     y_dim_size))
                 maxpool_idx += 1
-            elif 'linear' in action:
+            elif 'linear' in action[0]:
                 if linear_idx == 0:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(x_dim_size * y_dim_size * ENCODER_FILTER_NUM[-1], ENCODER_FC_LAYERS[linear_idx]))
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(x_dim_size * y_dim_size * out_channel[-1], action[1]))
                 else:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(ENCODER_FC_LAYERS[linear_idx-1], ENCODER_FC_LAYERS[linear_idx]))
+                    action_last = mod_vae.encoder.topology[ii-1]
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(action[1], action_last[1]))
                 linear_idx += 1
 
         # ==============================================================================================================
@@ -213,17 +212,17 @@ class LoggerVAE:
         self.log_title('VAE Decoder architecture')
         self.log_line('Input size: {}'.format(LATENT_SPACE_DIM))
         linear_idx = 0
-        for ii in range(len(mod_vae.decoder.description)):
+        for ii in range(len(mod_vae.decoder.topology)):
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.decoder.description[ii]
-            if 'linear' in action:
+            action = mod_vae.decoder.topology[ii]
+            if 'linear' in action[0]:
                 if linear_idx == 0:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(LATENT_SPACE_DIM, DECODER_FC_LAYERS[linear_idx]))
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(LATENT_SPACE_DIM, action[1]))
                 else:
-                    self.log_line(self.get_header(action) + self._get_linear_layer_string(DECODER_FC_LAYERS[linear_idx - 1],
-                                                                                          DECODER_FC_LAYERS[linear_idx]))
+                    action_last = mod_vae.decoder.topology[ii - 1]
+                    self.log_line(self.get_header(action) + self._get_linear_layer_string(action_last[1], action[1]))
                 linear_idx += 1
 
     def log_dense_model_arch(self, mod_vae):
