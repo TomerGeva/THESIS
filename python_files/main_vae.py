@@ -7,9 +7,10 @@ from TrainerVAE                 import TrainerVAE
 from ModVAE                     import ModVAE
 from neural_network_functions   import initialize_weights
 from ScatterCoordinateDataset   import import_data_sets
+from global_const               import encoder_type_e
 
 
-def main_vae(dense_encoder=True):
+def main_vae(encoder_type=encoder_type_e.DENSE):
     # ================================================================================
     # Setting the logger
     # ================================================================================
@@ -32,7 +33,7 @@ def main_vae(dense_encoder=True):
                      encoder_topology=DENSE_ENCODER_TOPOLOGY,
                      decoder_topology=DECODER_TOPOLOGY,
                      latent_space_dim=LATENT_SPACE_DIM,
-                     dense_encoder=dense_encoder)
+                     encoder_type=encoder_type)
     initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
 

@@ -1,23 +1,25 @@
 from ConfigVAE import *
 import torch.nn            as nn
-from EncoderVAE import EncoderVAE
-from DecoderVAE import DecoderVAE
-from DenseEncoderVAE import DenseEncoderVAE
+from EncoderVAE         import EncoderVAE
+from DecoderVAE         import DecoderVAE
+from DenseEncoderVAE    import DenseEncoderVAE
+from global_const       import encoder_type_e
 
 
 class ModVAE(nn.Module):
     """
     This class holds the modified Variational auto-encoder
     """
-    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, dense_encoder=True):
+    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, encoder_type=encoder_type_e.DENSE):
         super(ModVAE, self).__init__()
-        self.device     = device
-        if dense_encoder:
+        self.device         = device
+        self.encoder_type   = encoder_type
+
+        if encoder_type == encoder_type_e.DENSE:
             self.encoder      = DenseEncoderVAE(device=device, topology=encoder_topology)
-            self.encoder_type = 'dense'
-        else:
+        elif encoder_type == encoder_type_e.VGG:
             self.encoder      = EncoderVAE(device=device, topology=encoder_topology)
-            self.encoder_type = 'vgg'
+
         self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
         self.latent_dim = latent_space_dim
 
