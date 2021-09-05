@@ -151,7 +151,7 @@ class FullyConnectedBlock(nn.Module):
         This class implements a fully connected block, support batch morn, ReLU and/or dropout
     """
     def __init__(self, in_neurons, out_neurons, batch_norm=True, dropout_rate=0.0, relu=True):
-        super(ConvBlock, self).__init__()
+        super(FullyConnectedBlock, self).__init__()
         self.in_neurons  = in_neurons
         self.out_neurons = out_neurons
         self.bnorm = batch_norm
@@ -173,3 +173,19 @@ class FullyConnectedBlock(nn.Module):
             out = self.act(out)
 
         return out
+
+
+class MaxPool2dPadding(nn.Module):
+    """
+        This class implements max pooling block, with zero padding
+    """
+    def __init__(self, kernel, padding=0):
+        super(FullyConnectedBlock, self).__init__()
+        self.kernel = kernel
+        self.padding = padding
+
+        self.pool = nn.MaxPool2d(kernel_size=kernel)
+        self.padding  = nn.ZeroPad2d(padding)
+
+    def forward(self, x):
+        return self.pool(self.padding(x))
