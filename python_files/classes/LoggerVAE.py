@@ -8,10 +8,10 @@ class LoggerVAE:
     """
     This class holds the logger for the Variational auto-encoder
     """
-    def __init__(self, logdir=None, filename=None):
+    def __init__(self, logdir=None, filename=None, write_to_file=True):
         self.logdir         = logdir
         self.filename       = filename
-        self.write_to_file  = True
+        self.write_to_file  = write_to_file
         self.verbose        = 'INFO'
         self.header_space   = 16
         self.result_space   = 15.6
