@@ -113,7 +113,8 @@ if __name__ == '__main__':
     # 24_8_2021_16_57  - without mixup - 25k database
     # 30_8_2021_16_57  - without mixup - 30k database
     # 1_9_2021_16_31   - without mixup - 30k database
-    # 2_9_2021_14_2    - without mixup - 30 singed database - latent space 90
+    # 2_9_2021_14_2    - without mixup - 30k singed database - latent space 90
+    # 5_9_2021_13_46   - without mixup - 30k signed database - latent space 50
     c_path = '..\\results\\2_9_2021_14_2'
     c_epoch = 20
 

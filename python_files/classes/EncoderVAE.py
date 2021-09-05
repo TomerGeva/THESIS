@@ -45,16 +45,15 @@ class EncoderVAE(nn.Module):
                                                     padding=action[2]))
             elif 'dense' in action[0]:
                 conv_len += 1
-                channels += action[2] * action[1]
                 self.layers.append(DenseBlock(channels=channels,
                                               depth=action[2],
                                               growth_rate=action[1],
                                               kernel_size=action[3],
                                               stride=action[4],
                                               padding=action[5]))
+                channels += action[2] * action[1]
             elif 'transition' in action[0]:
                 conv_len += 1
-                channels = math.floor(channels * action[1])
                 self.layers.append(DenseTransitionBlock(in_channels=channels,
                                                         reduction_rate=action[1],
                                                         kernel_size=action[2],
@@ -62,10 +61,10 @@ class EncoderVAE(nn.Module):
                                                         padding=action[4],
                                                         pool_size=action[5],
                                                         pool_pad=action[6]))
+                channels = math.floor(channels * action[1])
             elif 'linear' in action[0]:
                 linear_len += 1
-                action_prev = action
-                if linear_len == 1:  # First linear layer
+                if action_prev is None:  # First linear layer
                     self.layers.append(FullyConnectedBlock(in_neurons=(x_dim * y_dim * channels),
                                                            out_neurons=action[1],
                                                            batch_norm=True))
@@ -78,6 +77,7 @@ class EncoderVAE(nn.Module):
                     self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
                                                            out_neurons=action[1],
                                                            batch_norm=True))
+                action_prev = action
 
         self.conv_len   = conv_len
         self.fc_len     = linear_len
