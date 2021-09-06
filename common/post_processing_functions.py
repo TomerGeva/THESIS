@@ -113,8 +113,10 @@ if __name__ == '__main__':
     # 24_8_2021_16_57  - without mixup - 25k database
     # 30_8_2021_16_57  - without mixup - 30k database
     # 1_9_2021_16_31   - without mixup - 30k database
-    # 2_9_2021_14_2    - without mixup - 30k singed database - latent space 90
-    # 5_9_2021_13_46   - without mixup - 30k signed database - latent space 50
+    # 2_9_2021_14_2    - without mixup - 30k singed database - latent space 90   ---> BAD CONFIG
+    # 5_9_2021_13_46   - without mixup - 30k signed database - latent space 50   ---> BAD CONFIG
+    # 5_9_2021_22_54   - without mixup - 30k signed database - with dropout 0.5  ---> BAD CONFIG
+    # 6_9_2021_7_29    - without mixup - 30k signed database - with dropout 0.01
     c_path = '..\\results\\2_9_2021_14_2'
     c_epoch = 20
 

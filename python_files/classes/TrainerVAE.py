@@ -63,12 +63,21 @@ class TrainerVAE:
         # ==========================================================================================
         mod_vae.eval()
         with torch.no_grad():
-            for sample in loader:
+            loader_iter = iter(loader)
+            for _ in range(len(loader)):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample = next(loader_iter)
+                except StopIteration:
+                    loader_iter = iter(loader)
+                    sample = next(loader_iter)
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
-                grids = Variable(sample['grid'].float()).to(mod_vae.device)
-                sensitivities = sample['sensitivity'].to(mod_vae.device)
+                grids           = Variable(sample['grid'].float()).to(mod_vae.device)
+                sensitivities   = sample['sensitivity'].to(mod_vae.device)
 
                 # ------------------------------------------------------------------------------
                 # Forward pass
@@ -152,6 +161,10 @@ class TrainerVAE:
                 cost.backward()
                 nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
                 self.optimizer.step()
+
+                # # DEBUG
+                # test_loader = test_loaders['gt_2e+05_test']
+                # self.test_model(mod_vae, test_loader)
 
             self.cost = train_cost / len(train_loader.dataset)
             # ------------------------------------------------------------------------------

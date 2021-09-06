@@ -31,10 +31,10 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_new_gt_2e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_new_lt_2e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_new_gt_2e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_new_lt_2e+05_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -55,7 +55,7 @@ MOM              = 0.9      # momentum update
 BATCH_SIZE       = 64
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
-INIT_WEIGHT_STD  = 0.2
+INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
 SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.5
@@ -164,17 +164,17 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 80, 6, 3, 1, 1, 0.5],        # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
+    ['dense', 80, 6, 3, 1, 1, 0.01],       # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
     ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 80, 6, 3, 1, 1, 0.5],             # Fully connected: Out channels
+    ['dense', 80, 6, 3, 1, 1, 0.01],       # Fully connected: Out channels
     ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 80, 6, 3, 1, 1, 0.5],
+    ['dense', 80, 6, 3, 1, 1, 0.01],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.5],
+    ['dense', 80, 6, 3, 1, 1, 0.01],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.5],
+    ['dense', 80, 6, 3, 1, 1, 0.01],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.5],
+    ['dense', 80, 6, 3, 1, 1, 0.01],
     ['transition', 0.5, 3, 1, 0, 1, 0],
     ['linear', 500],
     ['linear', 150],
@@ -190,8 +190,8 @@ conv1: 2500 --> 100
 DECODER
 """
 DECODER_TOPOLOGY = [
-    ['linear', 300],
-    ['linear', 100],
-    ['linear', 25],
-    ['linear', 1],
+    ['linear',      300],
+    ['linear',      100],
+    ['linear',       25],
+    ['linear_last',   1],
 ]
