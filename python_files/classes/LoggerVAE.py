@@ -307,7 +307,7 @@ class LoggerVAE:
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
             action = mod_vae.decoder.topology[ii]
-            if 'linear' in action:
+            if 'linear' in action[0]:
                 if action_prev is None:
                     action_prev = action
                     self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(mod_vae.latent_dim, action[1]))

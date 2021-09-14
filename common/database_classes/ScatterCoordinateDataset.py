@@ -17,13 +17,14 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, case=train, mix_factor=0):
+    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, abs_sens=True):
         """
         Args:
         :param csv_files: logdir to the file with all the database
         :param transform: transformation flag of the data
         :param      case: train of test database
         :param mix_factor: mixup parameter, should be between 0 and 1
+        :param abs_sens: if true, doing abs on the sensitivity
         """
         dirname  = os.path.dirname(__file__)
         self.csv_data = []
@@ -40,6 +41,7 @@ class ScattererCoordinateDataset(Dataset):
         self.transform    = transform
         self.case         = case
         self.mixup_factor = mix_factor
+        self.abs_sens     = abs_sens
 
     def __len__(self):
         return sum(self.csv_lens)
@@ -62,7 +64,7 @@ class ScattererCoordinateDataset(Dataset):
         # Extracting the sensitivity
         # ----------------------------------------------------------------------------------------------------------
         # print('file_idx ' + str(file_idx) + ' , row_idx ' + str(row_idx))
-        sensitivity = self.csv_data[file_idx].iloc[row_idx, 0]
+        sensitivity = abs(self.csv_data[file_idx].iloc[row_idx, 0]) if self.abs_sens else self.csv_data[file_idx].iloc[row_idx, 0]
 
         # ----------------------------------------------------------------------------------------------------------
         # extracting the points
@@ -158,8 +160,7 @@ class ToTensorMap(object):
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
         grid        = self.trans_grids(grid)
         sensitivity = np.expand_dims(sensitivity, axis=0)
-        # sensitivity = np.sign(sensitivity) * (abs(sensitivity) - SENS_MEAN) / SENS_STD
-        sensitivity /= SENS_STD
+        sensitivity = (abs(sensitivity) - SENS_MEAN) / SENS_STD if SIGNED_SENS else sensitivity / SENS_STD
         sensitivity = torch.from_numpy(np.array(sensitivity))
         return {'grid': grid,
                 'sensitivity': sensitivity}
@@ -168,23 +169,31 @@ class ToTensorMap(object):
 # ============================================================
 # defining function which manipulate the classes above
 # ============================================================
-def import_data_sets(batch_size, mixup_factor):
+def import_data_sets(batch_size, mixup_factor, abs_sens):
     """
     This function imports the train and test database
     :param batch_size: size of each batch in the databases
     :param mixup_factor: for the training dataset, possibility of performing mixup, with the mixup factor
+    :param abs_sens: if true, doing absolute value over teh sensitivity
     :return: two datasets, training and test
     """
     # --------------------------------------------------------
     # Importing complete dataset and creating dataloaders
     # --------------------------------------------------------
-    data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN, transform=ToTensorMap(), case='train', mix_factor=mixup_factor)
+    data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN,
+                                            transform=ToTensorMap(),
+                                            case='train',
+                                            mix_factor=mixup_factor,
+                                            abs_sens=abs_sens)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS)
 
     test_loaders = {}
     for dataset in PATH_DATABASE_TEST:
         data_list = [dataset]
-        temp_data = ScattererCoordinateDataset(csv_files=data_list, transform=ToTensorMap(), case='test')
+        temp_data = ScattererCoordinateDataset(csv_files=data_list,
+                                               transform=ToTensorMap(),
+                                               case='test',
+                                               abs_sens=abs_sens)
         test_loaders[dataset[-17:-4]] = DataLoader(temp_data, batch_size=batch_size, shuffle=True, num_workers=1)
 
     return train_loader, test_loaders

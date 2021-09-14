@@ -16,10 +16,11 @@ YQUANTIZE = 2500
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
 # ========================================================================================
-GRID_MEAN = 0.000232
-GRID_STD  = 0.015229786
-SENS_MEAN = 64458    # output normalization factor - mean sensitivity
-SENS_STD  = 41025
+GRID_MEAN   = 0.000232
+GRID_STD    = 0.015229786
+SENS_MEAN   = 64458    # output normalization factor - mean sensitivity
+SENS_STD    = 41025
+SIGNED_SENS = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 NUM_WORKERS    = 8
@@ -31,10 +32,12 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_gt_2e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_lt_2e+05_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_unsigned_gt_1e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_3e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_unsigned_lt_1e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_unsigned_gt_1e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_3e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30k_unsigned_lt_1e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -50,7 +53,7 @@ train     = True
 # --------------------------------------------------------
 BETA             = 1e-5     # the KL coefficient in the cost function
 EPOCH_NUM        = 80
-LR               = 3e-4     # learning rate
+LR               = 2e-4     # learning rate
 MOM              = 0.9      # momentum update
 BATCH_SIZE       = 64
 LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
@@ -164,17 +167,17 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 80, 6, 3, 1, 1, 0.01],       # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
+    ['dense', 100, 6, 3, 1, 1, 0],       # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
     ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 80, 6, 3, 1, 1, 0.01],       # Fully connected: Out channels
+    ['dense', 100, 6, 3, 1, 1, 0],       # Fully connected: Out channels
     ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 80, 6, 3, 1, 1, 0.01],
+    ['dense', 100, 6, 3, 1, 1, 0],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.01],
+    ['dense', 100, 6, 3, 1, 1, 0],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.01],
+    ['dense', 100, 6, 3, 1, 1, 0],
     ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 80, 6, 3, 1, 1, 0.01],
+    ['dense', 100, 6, 3, 1, 1, 0],
     ['transition', 0.5, 3, 1, 0, 1, 0],
     ['linear', 500],
     ['linear', 150],
