@@ -32,7 +32,6 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TYPE  = 'corner_1450_db_30k_unsigned'
 PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_unsigned_lt_1e+05_train.csv',
                        '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_1e+05_train.csv',
                        '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_3e+05_train.csv']
@@ -52,17 +51,20 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1e-5     # the KL coefficient in the cost function
+BETA             = 1e-5       # the KL coefficient in the cost function
+MSE_GROUP_WEIGHT = [1, 2, 4]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 80
-LR               = 2e-4     # learning rate
-MOM              = 0.9      # momentum update
+LR               = 2e-4  # learning rate
+SCHEDULER_STEP   = 20
+SCHEDULER_GAMMA  = 0.5
+MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
-LATENT_SPACE_DIM = 50       # number of dimensions in the latent space
+
+LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
-SCHEDULER_STEP   = 20
-SCHEDULER_GAMMA  = 0.5
+
 
 # --------------------------------------------------------
 # Encoder topology

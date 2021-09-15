@@ -24,7 +24,9 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
     # ================================================================================
     # Importing the data
     # ================================================================================
-    train_loader, test_loaders = import_data_sets(BATCH_SIZE, mixup_factor=MIXUP_FACTOR, abs_sens=SIGNED_SENS)
+    train_loader, test_loaders, thresholds = import_data_sets(BATCH_SIZE,
+                                                              mixup_factor=MIXUP_FACTOR,
+                                                              abs_sens=SIGNED_SENS)
 
     # ================================================================================
     # Creating the net & trainer objects
@@ -50,7 +52,8 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
                          beta=BETA,
                          sched_step=SCHEDULER_STEP,
                          sched_gamma=SCHEDULER_GAMMA,
-                         grad_clip=GRAD_CLIP)
+                         grad_clip=GRAD_CLIP,
+                         group_weights=MSE_GROUP_WEIGHT)
 
     # ================================================================================
     # Training

@@ -11,11 +11,12 @@ class TrainerVAE:
     """
     This class holds the Trainer for the Variational autoencoder
     """
-    def __init__(self, net, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5):
+    def __init__(self, net, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
+                 group_thresholds=None, group_weights=None):
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.reconstruction_loss = nn.MSELoss()
+        self.reconstruction_loss = weighted_mse
         self.d_kl                = d_kl
         # -------------------------------------
         # optimizer
@@ -25,7 +26,10 @@ class TrainerVAE:
         # -------------------------------------
         # Scheduler, reduces learning rate
         # -------------------------------------
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=sched_step, gamma=sched_gamma, verbose=True)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer,
+                                                   step_size=sched_step,
+                                                   gamma=sched_gamma,
+                                                   verbose=True)
         # -------------------------------------
         # Initializing the start epoch to zero
         # if not zero, the model is pre-trained
@@ -35,13 +39,15 @@ class TrainerVAE:
         # Misc training parameters
         # -------------------------------------
         self.cost           = []
+        self.group_th       = group_thresholds
+        self.group_weights  = group_weights
         self.learning_rate  = lr
         self.mom            = mom
         self.beta           = beta
         self.grad_clip      = grad_clip
 
     def compute_loss(self, targets, outputs, mu, logvar):
-        mse_loss = self.reconstruction_loss(targets, outputs) * targets.size()[0]  # nn.MSEloss returns the mean, therefore we multipy by the batch size
+        mse_loss = self.reconstruction_loss(targets, outputs, self.group_weights, self.group_th)
         kl_div   = self.d_kl(mu, logvar)
         return mse_loss, kl_div, mse_loss + self.beta * kl_div
 
@@ -255,3 +261,29 @@ def d_kl(mu, logvar):
              normal distribution form the normal distribution N(0, I)
     """
     return torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
+
+
+def weighted_mse(outputs, targets, weights, thresholds):
+    """
+    :param outputs: model outputs
+    :param targets: model targets
+    :param weights: weights of the mse according to the groups
+    :param thresholds: the thresholds between the different groups
+    :return:
+    """
+    # ==================================================================================================================
+    # Getting the weight vector
+    # ==================================================================================================================
+    if weights is None:
+        weight_vec = torch.ones_like(targets)
+    else:
+        weight_vec = (targets < thresholds[0]) * weights[0]
+        for ii in range(1, len(thresholds)):
+            weight_vec += (thresholds[ii - 1] < targets < thresholds[ii]) * weights[ii]
+        weight_vec += (targets > thresholds[-1]) * weights[-1]
+
+    # ==================================================================================================================
+    # Computing weighted MSE as a sum, not mean
+    # ==================================================================================================================
+    return torch.sum(0.5 * torch.sum((outputs - targets).pow(2) * weight_vec, dim=1))
+
