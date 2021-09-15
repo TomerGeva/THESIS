@@ -166,9 +166,9 @@ class ToTensorMap(object):
                 'sensitivity': sensitivity}
 
 
-# ============================================================
+# ======================================================================================================================
 # defining function which manipulate the classes above
-# ============================================================
+# ======================================================================================================================
 def import_data_sets(batch_size, mixup_factor, abs_sens):
     """
     This function imports the train and test database
@@ -177,9 +177,9 @@ def import_data_sets(batch_size, mixup_factor, abs_sens):
     :param abs_sens: if true, doing absolute value over teh sensitivity
     :return: two datasets, training and test
     """
-    # --------------------------------------------------------
-    # Importing complete dataset and creating dataloaders
-    # --------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------------
+    # Importing complete dataset and creating train dataloader
+    # --------------------------------------------------------------------------------------------------------------
     data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN,
                                             transform=ToTensorMap(),
                                             case='train',
@@ -187,13 +187,43 @@ def import_data_sets(batch_size, mixup_factor, abs_sens):
                                             abs_sens=abs_sens)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS)
 
-    test_loaders = {}
-    for dataset in PATH_DATABASE_TEST:
+    # --------------------------------------------------------------------------------------------------------------
+    # Importing complete dataset and creating test dataloaders
+    # --------------------------------------------------------------------------------------------------------------
+    threshold_list  = []
+    test_loaders    = {}
+    for ii, dataset in enumerate(PATH_DATABASE_TEST):
         data_list = [dataset]
         temp_data = ScattererCoordinateDataset(csv_files=data_list,
                                                transform=ToTensorMap(),
                                                case='test',
                                                abs_sens=abs_sens)
-        test_loaders[dataset[-17:-4]] = DataLoader(temp_data, batch_size=batch_size, shuffle=True, num_workers=1)
+        # ******************************************************************************************************
+        # extracting the data-loader key from the name
+        # ******************************************************************************************************
+        file_name_list  = dataset.split('\\')[-1].split('_')
+        if 'lt' in file_name_list:
+            loader_key  = '0_to_' + file_name_list[-2]
+        else:
+            loader_key  = file_name_list[-2] + '_to_' + get_next_threshold(PATH_DATABASE_TEST, ii)
+            threshold_list.append(eval(file_name_list[-2]))
+        # ******************************************************************************************************
+        # creating data-loader
+        # ******************************************************************************************************
+        test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False, num_workers=1)
 
-    return train_loader, test_loaders
+    return train_loader, test_loaders, threshold_list
+
+
+# ======================================================================================================================
+# axillary unctions
+# ======================================================================================================================
+def get_next_threshold(name_list, ii):
+    """
+    :param name_list: list of database names
+    :param ii: locaation of current database
+    :return: getting the next threshold from the list
+    """
+    if ii == len(name_list) - 1:  # last name in the list
+        return 'inf'
+    return name_list[ii+1].split('\\')[-1].split('_')[-2]
