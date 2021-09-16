@@ -263,10 +263,10 @@ def d_kl(mu, logvar):
     return torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
 
 
-def weighted_mse(outputs, targets, weights, thresholds):
+def weighted_mse(targets, outputs, weights, thresholds):
     """
-    :param outputs: model outputs
     :param targets: model targets
+    :param outputs: model outputs
     :param weights: weights of the mse according to the groups
     :param thresholds: the thresholds between the different groups
     :return:
@@ -279,11 +279,11 @@ def weighted_mse(outputs, targets, weights, thresholds):
     else:
         weight_vec = (targets < thresholds[0]) * weights[0]
         for ii in range(1, len(thresholds)):
-            weight_vec += (thresholds[ii - 1] < targets < thresholds[ii]) * weights[ii]
-        weight_vec += (targets > thresholds[-1]) * weights[-1]
+            weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
+        weight_vec += (targets >= thresholds[-1]) * weights[-1]
 
     # ==================================================================================================================
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
-    return torch.sum(0.5 * torch.sum((outputs - targets).pow(2) * weight_vec, dim=1))
+    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 

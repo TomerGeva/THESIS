@@ -120,7 +120,8 @@ if __name__ == '__main__':
     # 7_9_2021_10_28   - without mixup - 30k unsigned database - with dropout 0.01
     # 8_9_2021_8_44    - without mixup - 30k unsigned database - with dropout 0.2 and 0.01
     # 9_9_2021_7_21    - without mixup - 30k unsigned database - with dropout 0.25
-    c_path = '..\\results\\2_9_2021_14_2'
+    # 15_9_2021_10_6   - without mixup - 30k unsigned database - weighted MSE per group with uncorrected log
+    c_path = '..\\results\\15_9_2021_10_6'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)

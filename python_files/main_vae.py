@@ -53,6 +53,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
                          sched_step=SCHEDULER_STEP,
                          sched_gamma=SCHEDULER_GAMMA,
                          grad_clip=GRAD_CLIP,
+                         group_thresholds=thresholds,
                          group_weights=MSE_GROUP_WEIGHT)
 
     # ================================================================================

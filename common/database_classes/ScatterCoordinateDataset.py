@@ -212,6 +212,11 @@ def import_data_sets(batch_size, mixup_factor, abs_sens):
         # ******************************************************************************************************
         test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False, num_workers=1)
 
+    # --------------------------------------------------------------------------------------------------------------
+    # normalizing thresholds
+    # --------------------------------------------------------------------------------------------------------------
+    threshold_list = [(ii - SENS_MEAN) / SENS_STD for ii in threshold_list] if abs_sens else [ii / SENS_STD for ii in threshold_list]
+
     return train_loader, test_loaders, threshold_list
 
 
