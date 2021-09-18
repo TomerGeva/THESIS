@@ -12,7 +12,7 @@ class TrainerVAE:
     This class holds the Trainer for the Variational autoencoder
     """
     def __init__(self, net, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
-                 group_thresholds=None, group_weights=None):
+                 group_thresholds=None, group_weights=None, abs_sens=True, training=True):
         # -------------------------------------
         # cost function
         # -------------------------------------
@@ -45,9 +45,14 @@ class TrainerVAE:
         self.mom            = mom
         self.beta           = beta
         self.grad_clip      = grad_clip
+        self.abs_sens       = abs_sens
+        self.training       = training
 
     def compute_loss(self, targets, outputs, mu, logvar):
-        mse_loss = self.reconstruction_loss(targets, outputs, self.group_weights, self.group_th)
+        if self.training:
+            mse_loss = self.reconstruction_loss(targets, outputs, self.group_weights, self.group_th)
+        else:
+            mse_loss = self.reconstruction_loss(targets, outputs)
         kl_div   = self.d_kl(mu, logvar)
         return mse_loss, kl_div, mse_loss + self.beta * kl_div
 
@@ -68,6 +73,7 @@ class TrainerVAE:
         # Begin of testing
         # ==========================================================================================
         mod_vae.eval()
+        self.trainer_eval()
         with torch.no_grad():
             loader_iter = iter(loader)
             for _ in range(len(loader)):
@@ -100,6 +106,7 @@ class TrainerVAE:
                 test_cost       += cost
 
         mod_vae.train()
+        self.trainer_train()
         return test_mse_cost, test_kl_div, test_cost
 
     def train(self, mod_vae, train_loader, test_loaders, logger, save_per_epochs=1):
@@ -177,10 +184,10 @@ class TrainerVAE:
             # Normalizing and documenting training results with LoggerVAE
             # ------------------------------------------------------------------------------
             logger.log_epoch(epoch)
-            train_cost = train_cost / counter
-            train_mse_cost = train_mse_cost / counter
-            train_kl_div = train_kl_div / counter
-            logger.log_epoch_results('train', train_mse_cost, train_kl_div, train_cost)
+            train_cost      = train_cost / counter
+            train_mse_cost  = train_mse_cost / counter
+            train_kl_div    = train_kl_div / counter
+            logger.log_epoch_results_train('train_weighted', train_mse_cost, train_kl_div, train_cost)
 
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
@@ -189,11 +196,20 @@ class TrainerVAE:
             test_counters   = []
             test_costs      = []
             for key in test_loaders:
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Getting the respective group weight
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                test_mse_weight = self.get_test_group_weight(key)
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Testing the results of the current group
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
                 test_mse_cost = test_mse_cost / test_counter
                 test_cost     = test_cost / test_counter
-                logger.log_epoch_results(key, test_mse_cost, 0, test_cost)
-
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Logging
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                logger.log_epoch_results_test(key, test_mse_cost, test_mse_weight)
                 test_mse_costs.append(test_mse_cost)
                 test_counters.append(test_counter)
                 test_costs.append(test_cost)
@@ -209,7 +225,7 @@ class TrainerVAE:
                 test_counter    += count
             test_mse_cost   = test_mse_cost / test_counter
             test_cost       = test_cost / test_counter
-            logger.log_epoch_results('test_total', test_mse_cost, 0, test_cost)
+            logger.log_epoch_results_test('test_total', test_mse_cost, 0)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
@@ -249,6 +265,24 @@ class TrainerVAE:
                         }
         torch.save(data_to_save, path)
 
+    def trainer_eval(self, net=None):
+        self.training = False
+        if net is not None:
+            net.eval()
+
+    def trainer_train(self, net=None):
+        self.training = True
+        if net is not None:
+            net.train()
+
+    def get_test_group_weight(self, test_group):
+        low_threshold = eval(test_group.split('_')[0])
+        low_threshold = (abs(low_threshold) - SENS_MEAN) / SENS_STD if SIGNED_SENS else low_threshold / SENS_STD
+        for ii, th in enumerate(self.group_th):
+            if low_threshold < th:
+                return self.group_weights[ii]
+        return self.group_weights[-1]
+
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 # AUXILIARY FUNCTIONS
@@ -263,7 +297,7 @@ def d_kl(mu, logvar):
     return torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
 
 
-def weighted_mse(targets, outputs, weights, thresholds):
+def weighted_mse(targets, outputs, weights=None, thresholds=None):
     """
     :param targets: model targets
     :param outputs: model outputs
@@ -274,7 +308,7 @@ def weighted_mse(targets, outputs, weights, thresholds):
     # ==================================================================================================================
     # Getting the weight vector
     # ==================================================================================================================
-    if weights is None:
+    if (weights is None) or (thresholds is None):
         weight_vec = torch.ones_like(targets)
     else:
         weight_vec = (targets < thresholds[0]) * weights[0]

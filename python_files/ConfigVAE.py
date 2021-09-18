@@ -32,12 +32,12 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30k_unsigned_lt_1e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_1e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_3e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30k_unsigned_lt_1e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_1e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30k_unsigned_gt_3e+05_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30p5k_unsigned_lt_1e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_1e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_3e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30p5k_unsigned_lt_1e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_1e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_3e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -51,10 +51,10 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1e-5       # the KL coefficient in the cost function
-MSE_GROUP_WEIGHT = [1, 2, 4]  # weighted MSE according to sensitivity group
+BETA             = 2.44e-5       # the KL coefficient in the cost function
+MSE_GROUP_WEIGHT = [1, 4, 12]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 80
-LR               = 2e-4  # learning rate
+LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.5
 MOM              = 0.9   # momentum update

@@ -50,7 +50,7 @@ def log_to_plot(path):
             train_mse_loss.append(float(words[7]))
             train_dkl_loss.append(float(words[9]))
             train_tot_loss.append(float(words[12]))
-        elif 'cost' in line:
+        elif 'MSE' in line:
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # one of the test databases
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -59,13 +59,13 @@ def log_to_plot(path):
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # if key already exists, appends the result
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                test_results[temp_key].append(float(words[7]))
+                test_results[temp_key].append(float(words[10]))
             else:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # if key does not exist, creates a new list
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 keys_list.append(temp_key)
-                test_results[temp_key] = [float(words[7])]
+                test_results[temp_key] = [float(words[10])]
 
     # ====================================================================================================
     # Plotting the results
@@ -120,8 +120,10 @@ if __name__ == '__main__':
     # 7_9_2021_10_28   - without mixup - 30k unsigned database - with dropout 0.01
     # 8_9_2021_8_44    - without mixup - 30k unsigned database - with dropout 0.2 and 0.01
     # 9_9_2021_7_21    - without mixup - 30k unsigned database - with dropout 0.25
-    # 15_9_2021_10_6   - without mixup - 30k unsigned database - weighted MSE per group with uncorrected log
-    c_path = '..\\results\\15_9_2021_10_6'
+    # 15_9_2021_10_6   - without mixup - 30k unsigned database - weighted MSE [1, 2, 4] with uncorrected log
+    # 16_9_2021_12_27  - without mixup - 30k unsigned database - weighted MSE [1, 2, 4]
+    # 18_9_2021_8_7    - without mixup - 30p5k unsigned database - weighted MSE [1, 4, 12] lr 1e-4
+    c_path = '..\\results\\18_9_2021_8_7'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)

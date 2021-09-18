@@ -25,11 +25,17 @@ class LoggerVAE:
         temp_str = '|{0:^' + str(self.header_space) + '}| '
         return temp_str.format(self.verbose)
 
-    def _get_result_string(self, mse_loss, d_kl, cost):
-        temp_str = 'MSE loss: {0:^' + str(self.result_space) +\
+    def _get_result_string_train(self, wmse_loss, d_kl, cost):
+        temp_str = 'W_MSE loss: {0:^' + str(self.result_space) +\
                    'f} D_kl: {1:^' + str(self.result_space) +\
                    'f} Total cost: {2:^' + str(self.result_space) + 'f}'
-        return temp_str.format(mse_loss, d_kl, cost)
+        return temp_str.format(wmse_loss, d_kl, cost)
+
+    def _get_result_string_test(self, wmse_loss, weight):
+        temp_str = 'W_MSE loss: {0:^' + str(self.result_space) +\
+                   'f} MSE loss {1:^' + str(self.result_space) +\
+                   'f} Group weight: {2:^' + str(self.result_space) + 'f}'
+        return temp_str.format(wmse_loss*weight, wmse_loss, weight)
 
     # ==================================================================================================================
     # Regular VAE log functions, used to log the layer architecture from the description
@@ -147,8 +153,15 @@ class LoggerVAE:
     def log_epoch(self, epoch_num):
         self.log_line('Epoch: {0:5d}'.format(epoch_num))
 
-    def log_epoch_results(self, header, mse_loss, d_kl, cost):
-        self.log_line(self.get_header(header) + self._get_result_string(mse_loss, d_kl, cost))
+    def log_epoch_results_train(self, header, wmse_loss, d_kl, cost):
+        self.log_line(self.get_header(header) + self._get_result_string_train(wmse_loss, d_kl, cost))
+        self.end_log()
+        if self.write_to_file:
+            full_path = os.path.join(self.logdir, self.filename)
+            self.fileID = open(full_path, 'a')
+
+    def log_epoch_results_test(self, header, mse_loss, weight):
+        self.log_line(self.get_header(header) + self._get_result_string_test(mse_loss, weight))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)
