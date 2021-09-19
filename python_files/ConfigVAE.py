@@ -242,8 +242,8 @@ conv1: 2500 --> 100
 DECODER
 """
 DECODER_TOPOLOGY = [
-    ['linear',      300],
-    ['linear',      100],
-    ['linear',       25],
-    ['linear_last',   1],
+    ['linear',      300, True, 0, activation_type_e.ReLU, 0],
+    ['linear',      100, True, 0, activation_type_e.ReLU, 0],
+    ['linear',       25, True, 0, activation_type_e.ReLU, 0],
+    ['linear_last',   1, True, 0, activation_type_e.null, 0],
 ]
