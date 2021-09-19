@@ -2,6 +2,7 @@
 # This file holds the values of the global variables, which are needed throughout the operation
 # ***************************************************************************************************
 import numpy as np
+from global_const import activation_type_e
 
 # ===================================
 # Database Variables
@@ -168,23 +169,68 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------
+# Init layer:
+"""
+#   1. in channels
+#   2. out channels
+#   3. kernel size
+#   4. stride
+#   5. padding
+#   6. batch_norm
+#   7. drop_rate
+#   8. activation
+#   9. alpha
+"""
+# Dense block:
+"""
+#   1. growth rate
+#   2. depth
+#   3. kernel size
+#   4. stride
+#   5. padding
+#   6. batch_norm
+#   7. drop_rate
+#   8. activation
+#   9. alpha
+"""
+# Transition:
+"""
+#   1. reduction rate
+#   2. conv kernel
+#   3. conv stride
+#   4. conv padding
+#   5. batch_norm
+#   6. drop_rate
+#   7. activation
+#   8. alpha
+#   9. pool size
+#  10. pool padding
+"""
+# Fully connected:
+"""
+#   1. Out channels
+#   2. batch_norm
+#   3. drop_rate
+#   4. activation
+#   5. alpha
+"""
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv', 1, 6, 25, 25, 0],             # Init layer: in channels, out channels, kernel size, stride, padding
-    ['dense', 100, 6, 3, 1, 1, 0],       # Dense block: growth rate, depth, kernel size, stride, padding, drop rate
-    ['transition', 0.5, 3, 1, 1, 2, 0],    # Transition: reduction rate, conv kernel, conv stride, conv padding, pool size, pool padding
-    ['dense', 100, 6, 3, 1, 1, 0],       # Fully connected: Out channels
-    ['transition', 0.5, 3, 1, 1, 2, 0],
-    ['dense', 100, 6, 3, 1, 1, 0],
-    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 100, 6, 3, 1, 1, 0],
-    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 100, 6, 3, 1, 1, 0],
-    ['transition', 0.5, 3, 1, 1, 2, (0, 1, 1, 0)],
-    ['dense', 100, 6, 3, 1, 1, 0],
-    ['transition', 0.5, 3, 1, 0, 1, 0],
-    ['linear', 500],
-    ['linear', 150],
-    ['linear_last', 2 * LATENT_SPACE_DIM]
+    ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 1, 0],
+    ['linear', 500,                  True, 0, activation_type_e.ReLU, 0],
+    ['linear', 150,                  True, 0, activation_type_e.ReLU, 0],
+    ['linear', 2 * LATENT_SPACE_DIM, True, 0, activation_type_e.null, 0]
 ]
 
 # --------------------------------------------------------
