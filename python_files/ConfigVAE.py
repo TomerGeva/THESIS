@@ -53,7 +53,7 @@ train     = True
 # Hyper parameters
 # --------------------------------------------------------
 BETA             = 2.44e-5       # the KL coefficient in the cost function
-MSE_GROUP_WEIGHT = [1, 2, 12]  # weighted MSE according to sensitivity group
+MSE_GROUP_WEIGHT = [1, 1.5, 12]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 80
 LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 20
@@ -70,86 +70,6 @@ GRAD_CLIP        = 5
 # --------------------------------------------------------
 # Encoder topology
 # --------------------------------------------------------
-"""
-Encoder input: 2500 X 2500
-conv1: 2500 --> 100
-conv2: 100  --> 100
-pool1: 100  --> 50
-conv3: 50   --> 50
-pool2: 50   --> 25
-conv4: 25   --> 24
-pool3: 24   --> 12
-conv5: 10   --> 10
-conv6: 10   --> 8
-pool4: 8    --> 4
-conv7: 4    --> 1
-
-"""
-"""
-ENCODER_LAYER_DESCRIPTION = {0: 'conv',
-                             1: 'conv',
-                             2: 'pool',
-                             3: 'conv',
-                             4: 'pool',
-                             5: 'conv',
-                             6: 'pool',
-                             7: 'conv',
-                             8: 'conv',
-                             9: 'pool',
-                             10: 'conv',
-                             11: 'linear',
-                             12: 'linear',
-                             13: 'linear last',
-                             }
-# Number of filters in each filter layer
-ENCODER_FILTER_NUM       = [1,  # INPUT, do not change
-                            6,   # first layer
-                            16,  # second layer
-                            16,  # third layer
-                            16,  # fourth layer
-                            16,  # fifth layer
-                            32,  # sixth layer
-                            64,  # seventh layer
-                            ]
-# Filter sizes for each filter layer
-ENCODER_KERNEL_SIZE      = [25,  # first layer
-                            5,  # second layer
-                            5,  # third layer
-                            4,  # fourth layer
-                            3,  # fifth layer
-                            3,  # sixth layer
-                            4,  # seventh layer
-                            ]
-# Stride values of the convolution layers
-ENCODER_STRIDES          = [25,  # first layer
-                            1,  # second layer
-                            1,  # third layer
-                            1,  # fourth layer
-                            1,  # fifth layer
-                            1,  # sixth layer
-                            1,  # seventh layer
-                            ]
-# Padding values of the convolution layers
-ENCODER_PADDING          = [0,  # first layer
-                            2,  # second layer
-                            2,  # third layer
-                            1,  # fourth layer
-                            0,  # fifth layer
-                            0,  # sixth layer
-                            0,  # seventh layer
-                            ]
-# Max pool size
-ENCODER_MAX_POOL_SIZE    = [2,  # first max-pool
-                            2,  # second max-pool
-                            2,  # third max-pool
-                            2,  # fourth max-pool
-                            ]
-# FC layer sizes
-ENCODER_FC_LAYERS = [150,
-                     150,
-                     2 * LATENT_SPACE_DIM,
-                    ]
-"""
 ENCODER_TOPOLOGY = [
     ['conv', IMG_CHANNELS,   6, 25, 25, 0],  # conv layer: input channels, output channels, kernel, stride, padding
     ['conv',            6,  16,  5,  1, 2],
@@ -216,17 +136,17 @@ ENCODER_TOPOLOGY = [
 """
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
-    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 1, 0],
     ['linear', 500,                  True, 0, activation_type_e.ReLU, 0],
     ['linear', 150,                  True, 0, activation_type_e.ReLU, 0],

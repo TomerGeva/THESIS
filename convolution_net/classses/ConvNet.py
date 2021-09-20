@@ -1,6 +1,6 @@
 from convolution_net.Config import *
 import torch.nn as nn
-from neural_network_functions import _conv_block, _fc_block
+from old_python_files.neural_network_functions import _conv_block, _fc_block
 
 
 class ConvNet(nn.Module):

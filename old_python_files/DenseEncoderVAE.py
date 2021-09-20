@@ -2,7 +2,7 @@ from ConfigVAE import *
 import math
 import torch.nn as nn
 from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock
-from neural_network_functions import _fc_block
+from old_python_files.neural_network_functions import _fc_block
 
 
 class DenseEncoderVAE(nn.Module):

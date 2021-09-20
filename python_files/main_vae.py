@@ -5,7 +5,7 @@ from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
 from TrainerVAE                 import TrainerVAE
 from ModVAE                     import ModVAE
-from neural_network_functions   import initialize_weights
+from auxiliary_functions        import initialize_weights
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
 
