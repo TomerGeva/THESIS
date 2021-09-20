@@ -131,7 +131,7 @@ dmypy.json
 # ====================================================
 # Adding the config file to the git ignore
 # ====================================================
-*.xml
+*/.idea/*
 convolution_net/Config.py
 databases/corner_1450_10k.csv
 python_files/ConfigVAE.py
