@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import torch.nn as nn
 import torch.nn.functional as F
-from neural_network_functions import _fc_block
+from neural_network_block_classes import FullyConnectedBlock
 
 
 class DecoderVAE(nn.Module):
@@ -23,23 +23,26 @@ class DecoderVAE(nn.Module):
         for ii in range(len(self.topology)):
             action = self.topology[ii]
             if 'linear' in action[0]:
-                if linear_idx == 0:
-                    action_prev = action
-                    self.layers.append(_fc_block(latent_dim,
-                                                 action[1],
-                                                 activation=True))
-                elif 'last' in action[0]:
-                    self.layers.append(_fc_block(action_prev[1],
-                                                 action[1],
-                                                 activation=False))
-                    action_prev = action
-                else:
-                    self.layers.append(_fc_block(action_prev[1],
-                                                 action[1],
-                                                 activation=True))
-                    action_prev = action
-
                 linear_idx += 1
+                if action_prev is None:  # First linear layer
+                    self.layers.append(FullyConnectedBlock(in_neurons=latent_dim,
+                                                           out_neurons=action[1],
+                                                           batch_norm=action[2],
+                                                           dropout_rate=action[3],
+                                                           act=action[4],
+                                                           alpha=action[5]
+                                                           )
+                                       )
+                else:
+                    self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
+                                                           out_neurons=action[1],
+                                                           batch_norm=action[2],
+                                                           dropout_rate=action[3],
+                                                           act=action[4],
+                                                           alpha=action[5]
+                                                           )
+                                       )
+                action_prev = action
 
     def forward(self, x):
         # ---------------------------------------------------------

@@ -40,49 +40,65 @@ class LoggerVAE:
     # ==================================================================================================================
     # Regular VAE log functions, used to log the layer architecture from the description
     # ==================================================================================================================
-    def _get_conv_layer_string(self, in_ch, out_ch, ktilde, stride, pad, x_dim, y_dim):
+    def _get_conv_layer_string(self, in_ch, out_ch, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) +\
                    'd} Out channels:{1:^' + str(self.desc_space) +\
                    'd} K^tilde:     {2:^' + str(self.desc_space) + \
                    'd} Stride:      {3:^' + str(self.desc_space) + \
                    'd} Padding:     {4:^' + str(self.desc_space) + \
-                   'd} Output size: {5:^' + str(self.desc_space) + '}X{6:^' + str(self.desc_space) + '}'
-        return temp_str.format(in_ch, out_ch, ktilde, stride, pad, x_dim, y_dim)
+                   'd} batch_norm:  {5:^' + str(self.desc_space) + \
+                   's} drop_rate:   {6:^' + str(self.desc_space) + \
+                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   's} Output size: {8:^' + str(self.desc_space) + '}X{9:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
 
     def _get_pool_layer_string(self, ktilde, x_dim, y_dim):
         temp_str = 'K^tilde: {0:1d} Output size: {1:^' + str(self.desc_space) + '}X{2:^' + str(self.desc_space) + '}'
         return temp_str.format(ktilde, x_dim, y_dim)
 
-    def _get_linear_layer_string(self, num_in, num_out):
-        temp_str = 'Input size: {0:^' + str(self.desc_space) + '} Output size: {1:^' + str(self.desc_space) + '}'
-        return temp_str.format(num_in, num_out)
+    def _get_linear_layer_string(self, num_in, num_out, bnorm, drate, active):
+        temp_str = 'Input size:     {0:^' + str(self.desc_space) +\
+                   'd} Output size: {1:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {2:^' + str(self.desc_space) + \
+                   's} drop_rate:   {3:^' + str(self.desc_space) + \
+                   'd} activation:  {4:^' + str(self.desc_space) + 's}'
+        return temp_str.format(num_in, num_out, str(bnorm), drate, active.name)
 
     # ==================================================================================================================
     # Dense VAE log functions, used to log the layer architecture
     # ==================================================================================================================
-    def _get_dense_layer_string(self, in_ch, depth, growth, ktilde, stride, pad, x_dim, y_dim):
+    def _get_dense_layer_string(self, in_ch, depth, growth, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
                    'd} Depth:       {1:^' + str(self.desc_space) + \
                    'd} Growth rate: {2:^' + str(self.desc_space) + \
                    'd} K^tilde:     {3:^' + str(self.desc_space) + \
                    'd} Stride:      {4:^' + str(self.desc_space) + \
                    'd} Padding:     {5:^' + str(self.desc_space) + \
-                   'd} Output size: {6:^' + str(self.desc_space) + \
-                   '}X{7:^' + str(self.desc_space) +\
-                   '}X{8:^' + str(self.desc_space) + '}'
-        return temp_str.format(in_ch, depth, growth, ktilde, stride, pad, in_ch+depth*growth, x_dim, y_dim)
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + \
+                   '}X{10:^' + str(self.desc_space) +\
+                   '}X{11:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, depth, growth, ktilde, stride, pad, str(bnorm), drate, active.name,
+                               in_ch+depth*growth, x_dim, y_dim)
 
-    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, pool_size, x_dim, y_dim):
+    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, bnorm, drate, active, pool_size,
+                                     x_dim, y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
                    'd} Reduction:   {1:^' + str(self.desc_space) + \
-                   '.1f} K^tilde:     {2:^' + str(self.desc_space) + \
+                   '.1f} K^tilde:   {2:^' + str(self.desc_space) + \
                    'd} Stride:      {3:^' + str(self.desc_space) + \
                    'd} Padding:     {4:^' + str(self.desc_space) + \
-                   'd} Pool size:   {5:^' + str(self.desc_space) + \
-                   'd} Output size: {6:^' + str(self.desc_space) + \
-                   '}X{7:^' + str(self.desc_space) +\
-                   '}X{8:^' + str(self.desc_space) + '}'
-        return temp_str.format(in_ch, reduction, ktilde, stride, pad, pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
+                   'd} batch_norm:  {5:^' + str(self.desc_space) + \
+                   's} drop_rate:   {6:^' + str(self.desc_space) + \
+                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   's} Pool size:   {8:^' + str(self.desc_space) + \
+                   'd} Output size: {9:^' + str(self.desc_space) + \
+                   '}X{10:^' + str(self.desc_space) +\
+                   '}X{11:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_size,
+                               math.floor(in_ch*reduction), x_dim, y_dim)
 
     # ==================================================================================================================
     # Logging functions
@@ -270,6 +286,9 @@ class LoggerVAE:
                                                                                        action[3],
                                                                                        action[4],
                                                                                        action[5],
+                                                                                       action[6],
+                                                                                       action[7],
+                                                                                       action[8],
                                                                                        x_dim_size,
                                                                                        y_dim_size))
                 channels = action[2]
@@ -280,6 +299,9 @@ class LoggerVAE:
                                                                                         action[3],
                                                                                         action[4],
                                                                                         action[5],
+                                                                                        action[6],
+                                                                                        action[7],
+                                                                                        action[8],
                                                                                         x_dim_size,
                                                                                         y_dim_size))
                 channels  += action[1] * action[2]
@@ -298,15 +320,30 @@ class LoggerVAE:
                                                                                              action[3],
                                                                                              action[4],
                                                                                              action[5],
+                                                                                             action[6],
+                                                                                             action[7],
+                                                                                             action[9],
                                                                                              x_dim_size,
                                                                                              y_dim_size))
                 channels = math.floor(channels * action[1])
             elif 'linear' in action[0]:
                 if action_prev is None:
                     action_prev = action
-                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(x_dim_size * y_dim_size * channels, action[1]))
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(x_dim_size * y_dim_size * channels,
+                                                                                             action[1],
+                                                                                             action[2],
+                                                                                             action[3],
+                                                                                             action[4]
+                                                                                             )
+                                  )
                 else:
-                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1], action[1]))
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1],
+                                                                                             action[1],
+                                                                                             action[2],
+                                                                                             action[3],
+                                                                                             action[4]
+                                                                                             )
+                                  )
                     action_prev = action
 
         # ==============================================================================================================
@@ -322,8 +359,19 @@ class LoggerVAE:
             action = mod_vae.decoder.topology[ii]
             if 'linear' in action[0]:
                 if action_prev is None:
-                    action_prev = action
-                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(mod_vae.latent_dim, action[1]))
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(mod_vae.latent_dim,
+                                                                                             action[1],
+                                                                                             action[2],
+                                                                                             action[3],
+                                                                                             action[4]
+                                                                                             )
+                                  )
                 else:
-                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1], action[1]))
-                    action_prev = action
+                    self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action_prev[1],
+                                                                                             action[1],
+                                                                                             action[2],
+                                                                                             action[3],
+                                                                                             action[4]
+                                                                                             )
+                                  )
+                action_prev = action

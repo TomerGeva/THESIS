@@ -37,6 +37,10 @@ class EncoderVAE(nn.Module):
                                              kernel_size=action[3],
                                              stride=action[4],
                                              padding=action[5],
+                                             batch_norm=action[6],
+                                             dropout_rate=action[7],
+                                             act=action[8],
+                                             alpha=action[9]
                                              )
                                    )
             elif 'pool' in action[0]:
@@ -51,7 +55,12 @@ class EncoderVAE(nn.Module):
                                               kernel_size=action[3],
                                               stride=action[4],
                                               padding=action[5],
-                                              dropout_rate=action[6]))
+                                              batch_norm=action[6],
+                                              dropout_rate=action[7],
+                                              act=action[8],
+                                              alpha=action[9]
+                                              )
+                                   )
                 channels += action[2] * action[1]
             elif 'transition' in action[0]:
                 conv_len += 1
@@ -60,24 +69,35 @@ class EncoderVAE(nn.Module):
                                                         kernel_size=action[2],
                                                         stride=action[3],
                                                         padding=action[4],
-                                                        pool_size=action[5],
-                                                        pool_pad=action[6]))
+                                                        batch_norm=action[5],
+                                                        dropout_rate=action[5],
+                                                        act=action[7],
+                                                        alpha=action[8],
+                                                        pool_size=action[9],
+                                                        pool_pad=action[10]
+                                                        )
+                                   )
                 channels = math.floor(channels * action[1])
             elif 'linear' in action[0]:
                 linear_len += 1
                 if action_prev is None:  # First linear layer
                     self.layers.append(FullyConnectedBlock(in_neurons=(x_dim * y_dim * channels),
                                                            out_neurons=action[1],
-                                                           batch_norm=True))
-                elif 'last' in action[0]:
-                    self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
-                                                           out_neurons=action[1],
-                                                           batch_norm=False,
-                                                           relu=False))
+                                                           batch_norm=action[2],
+                                                           dropout_rate=action[3],
+                                                           act=action[4],
+                                                           alpha=action[5]
+                                                           )
+                                       )
                 else:
                     self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
                                                            out_neurons=action[1],
-                                                           batch_norm=True))
+                                                           batch_norm=action[2],
+                                                           dropout_rate=action[3],
+                                                           act=action[4],
+                                                           alpha=action[5]
+                                                           )
+                                       )
                 action_prev = action
 
         self.conv_len   = conv_len
