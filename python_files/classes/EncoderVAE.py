@@ -70,11 +70,11 @@ class EncoderVAE(nn.Module):
                                                         stride=action[3],
                                                         padding=action[4],
                                                         batch_norm=action[5],
-                                                        dropout_rate=action[5],
+                                                        dropout_rate=action[6],
                                                         act=action[7],
                                                         alpha=action[8],
-                                                        pool_size=action[9],
-                                                        pool_pad=action[10]
+                                                        pool_pad=action[9],
+                                                        pool_size=action[10]
                                                         )
                                    )
                 channels = math.floor(channels * action[1])
@@ -116,8 +116,8 @@ class EncoderVAE(nn.Module):
                 channels = action[2]
             elif 'pool' in action:
                 if type(action[2]) is not tuple:
-                    x_dim_size = int(x_dim_size / action[1])
-                    y_dim_size = int(y_dim_size / action[1])
+                    x_dim_size = int((x_dim_size + 2*action[2]) / action[1])
+                    y_dim_size = int((y_dim_size + 2*action[2]) / action[1])
                 else:
                     x_dim_size = int((x_conv_size + action[2][0] + action[2][1]) / action[1])
                     y_dim_size = int((y_conv_size + action[2][2] + action[2][3]) / action[1])
@@ -128,14 +128,14 @@ class EncoderVAE(nn.Module):
                 # ------------------------------------------------
                 # This account for the conv layer and the pooling
                 # ------------------------------------------------
-                if type(action[6]) is not tuple:
-                    x_dim_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
-                    y_dim_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                if type(action[9]) is not tuple:
+                    x_dim_size = int((x_conv_size + 2*action[9]) / action[10])
+                    y_dim_size = int((y_conv_size + 2*action[9]) / action[10])
                 else:
-                    x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                    y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                    x_dim_size = int((x_conv_size + action[6][0] + action[6][1]) / action[5])
-                    y_dim_size = int((y_conv_size + action[6][2] + action[6][3]) / action[5])
+                    x_dim_size = int((x_conv_size + action[9][0] + action[9][1]) / action[10])
+                    y_dim_size = int((y_conv_size + action[9][2] + action[9][3]) / action[10])
 
         return x_dim_size, y_dim_size, channels
 

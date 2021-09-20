@@ -123,8 +123,8 @@ ENCODER_TOPOLOGY = [
 #   6. drop_rate
 #   7. activation
 #   8. alpha
-#   9. pool size
-#  10. pool padding
+#   9. pool padding
+#  10. pool size
 """
 # Fully connected:
 """
@@ -137,17 +137,17 @@ ENCODER_TOPOLOGY = [
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 2, (0, 1, 1, 0)],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 1, 0],
+    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 0, 1],
     ['linear', 500,                  True, 0, activation_type_e.ReLU, 0],
     ['linear', 150,                  True, 0, activation_type_e.ReLU, 0],
     ['linear', 2 * LATENT_SPACE_DIM, True, 0, activation_type_e.null, 0]

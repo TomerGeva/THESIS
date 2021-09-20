@@ -29,7 +29,7 @@ class Activator(nn.Module):
             self.activator = nn.SELU()
 
     def forward(self, x):
-        if self.activaor is None:
+        if self.activator is None:
             return x
         else:
             return self.activator(x)
@@ -44,8 +44,8 @@ class MaxPool2dPadding(nn.Module):
         self.kernel = kernel
         self.padding = padding
 
+        self.pad = nn.ZeroPad2d(padding)
         self.pool = nn.MaxPool2d(kernel_size=kernel)
-        self.pad  = nn.ZeroPad2d(padding)
 
     def forward(self, x):
         return self.pool(self.pad(x))
@@ -67,7 +67,13 @@ class ConvBlock(nn.Module):
         self.bnorm          = batch_norm
         self.drate          = dropout_rate
 
-        self.conv   = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.conv   = nn.Conv2d(in_channels=in_channels,
+                                out_channels=out_channels,
+                                kernel_size=kernel_size,
+                                stride=stride,
+                                padding=padding,
+                                bias=(not batch_norm)
+                                )
         self.bnorm  = nn.BatchNorm2d(num_features=out_channels)
         self.drop   = nn.Dropout2d(dropout_rate)
         self.act    = Activator(act_type=act, alpha=alpha)
@@ -161,7 +167,7 @@ class DenseTransitionBlock(nn.Module):
     This class implements a transition block, used for pooling as well as convolving to reduce spatial size
     """
     def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01, pool_size=2, pool_pad=0):
+                 act=activation_type_e.null, alpha=0.01, pool_pad=0, pool_size=2):
         super(DenseTransitionBlock, self).__init__()
         self.in_channels    = in_channels
         self.out_channels   = math.floor(in_channels * reduction_rate)
@@ -202,7 +208,10 @@ class FullyConnectedBlock(nn.Module):
         self.bnorm = batch_norm
         self.drate = dropout_rate
 
-        self.fc     = nn.Linear(in_neurons, out_neurons, bias=(not batch_norm))
+        self.fc     = nn.Linear(in_features=in_neurons,
+                                out_features=out_neurons,
+                                bias=(not batch_norm)
+                                )
         self.bnorm  = nn.BatchNorm1d(out_neurons)
         self.drop   = nn.Dropout(dropout_rate)
         self.act   = Activator(act_type=act, alpha=alpha)

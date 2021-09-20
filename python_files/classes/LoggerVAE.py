@@ -71,7 +71,7 @@ class LoggerVAE:
         temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
                    'd} Depth:       {1:^' + str(self.desc_space) + \
                    'd} Growth rate: {2:^' + str(self.desc_space) + \
-                   'd} K^tilde:     {3:^' + str(self.desc_space) + \
+                   'd} Kernel:      {3:^' + str(self.desc_space) + \
                    'd} Stride:      {4:^' + str(self.desc_space) + \
                    'd} Padding:     {5:^' + str(self.desc_space) + \
                    'd} batch_norm:  {6:^' + str(self.desc_space) + \
@@ -87,7 +87,7 @@ class LoggerVAE:
                                      x_dim, y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
                    'd} Reduction:   {1:^' + str(self.desc_space) + \
-                   '.1f} K^tilde:   {2:^' + str(self.desc_space) + \
+                   '.1f} Kernel:      {2:^' + str(self.desc_space) + \
                    'd} Stride:      {3:^' + str(self.desc_space) + \
                    'd} Padding:     {4:^' + str(self.desc_space) + \
                    'd} batch_norm:  {5:^' + str(self.desc_space) + \
@@ -306,14 +306,14 @@ class LoggerVAE:
                                                                                         y_dim_size))
                 channels  += action[1] * action[2]
             elif 'transition' in action[0]:
-                if type(action[6]) is not tuple:
-                    x_dim_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
-                    y_dim_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3] / action[5])
+                x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
+                if type(action[9]) is not tuple:
+                    x_dim_size = int((x_conv_size + 2 * action[9]) / action[10])
+                    y_dim_size = int((y_conv_size + 2 * action[9]) / action[10])
                 else:
-                    x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                    y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                    x_dim_size  = int((x_conv_size + action[6][0] + action[6][1]) / action[5])
-                    y_dim_size  = int((y_conv_size + action[6][2] + action[6][3]) / action[5])
+                    x_dim_size = int((x_conv_size + action[9][0] + action[9][1]) / action[10])
+                    y_dim_size = int((y_conv_size + action[9][2] + action[9][3]) / action[10])
                 self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
                                                                                              action[1],
                                                                                              action[2],
@@ -322,7 +322,7 @@ class LoggerVAE:
                                                                                              action[5],
                                                                                              action[6],
                                                                                              action[7],
-                                                                                             action[9],
+                                                                                             action[10],
                                                                                              x_dim_size,
                                                                                              y_dim_size))
                 channels = math.floor(channels * action[1])
