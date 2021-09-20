@@ -25,6 +25,7 @@ def log_to_plot(path):
     keys_list      = []
     test_results   = {}
 
+    train_label    = None
     train_mse_loss = []
     train_dkl_loss = []
     train_tot_loss = []
@@ -47,6 +48,8 @@ def log_to_plot(path):
         if 'Epoch' in line:
             epoch_list.append(int(words[-1]))
         elif 'train' in line.lower():
+            if train_label is None:
+                train_label = words[3]
             train_mse_loss.append(float(words[7]))
             train_dkl_loss.append(float(words[9]))
             train_tot_loss.append(float(words[12]))
@@ -70,7 +73,7 @@ def log_to_plot(path):
     # ====================================================================================================
     # Plotting the results
     # ====================================================================================================
-    plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label='train')
+    plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label=train_label)
     for test_db in keys_list:
         if '15_22' in path:
             plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
@@ -123,7 +126,9 @@ if __name__ == '__main__':
     # 15_9_2021_10_6   - without mixup - 30k unsigned database - weighted MSE [1, 2, 4] with uncorrected log
     # 16_9_2021_12_27  - without mixup - 30k unsigned database - weighted MSE [1, 2, 4]
     # 18_9_2021_8_7    - without mixup - 30p5k unsigned database - weighted MSE [1, 4, 12] lr 1e-4
-    c_path = '..\\results\\18_9_2021_8_7'
+    # 19_9_2021_7_14   - without mixup - 30p5k unsigned database - weighted MSE [1, 2, 12] lr 1e-4 BEST RESULTS SO FAR
+    # ======== BEFORE WORKING WITH MODELS ABOVE THAN THIS POINT, WE NEED TO ROLLBACK TO EARLIER VERSIONS =============
+    c_path = '..\\results\\19_9_2021_7_14'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)

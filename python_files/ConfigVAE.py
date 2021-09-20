@@ -52,7 +52,7 @@ train     = True
 # Hyper parameters
 # --------------------------------------------------------
 BETA             = 2.44e-5       # the KL coefficient in the cost function
-MSE_GROUP_WEIGHT = [1, 4, 12]  # weighted MSE according to sensitivity group
+MSE_GROUP_WEIGHT = [1, 2, 12]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 80
 LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 20
