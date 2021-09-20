@@ -127,7 +127,11 @@ if __name__ == '__main__':
     # 16_9_2021_12_27  - without mixup - 30k unsigned database - weighted MSE [1, 2, 4]
     # 18_9_2021_8_7    - without mixup - 30p5k unsigned database - weighted MSE [1, 4, 12] lr 1e-4
     # 19_9_2021_7_14   - without mixup - 30p5k unsigned database - weighted MSE [1, 2, 12] lr 1e-4 BEST RESULTS SO FAR
-    # ======== BEFORE WORKING WITH MODELS ABOVE THAN THIS POINT, WE NEED TO ROLLBACK TO EARLIER VERSIONS =============
+    """
+    # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    # TO WORK WITH MODELS OLDER MODELS ABOVE, WE NEED TO ROLLBACK TO REVISION 5ecc9855a264e09cfb5aa92dcd8ba3729f818193
+    # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    """
     c_path = '..\\results\\19_9_2021_7_14'
     c_epoch = 20
 
