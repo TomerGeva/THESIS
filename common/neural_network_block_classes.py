@@ -1,7 +1,7 @@
 import math
 import torch
 import torch.nn as nn
-from global_const import activation_type_e
+from global_const import activation_type_e, pool_e
 from auxiliary_functions import truncated_relu
 
 
@@ -35,20 +35,37 @@ class Activator(nn.Module):
             return self.activator(x)
 
 
-class MaxPool2dPadding(nn.Module):
+class Pool2dPadding(nn.Module):
     """
         This class implements max pooling block, with zero padding
     """
-    def __init__(self, kernel, padding=0):
-        super(MaxPool2dPadding, self).__init__()
+    def __init__(self, pool_type, kernel, padding=0):
+        super(Pool2dPadding, self).__init__()
         self.kernel = kernel
         self.padding = padding
-
-        self.pad = nn.ZeroPad2d(padding)
-        self.pool = nn.MaxPool2d(kernel_size=kernel)
+        self.module_list = nn.ModuleList()
+        # -----------------------------------------------------------------------------------------
+        # Padding
+        # -----------------------------------------------------------------------------------------
+        if type(padding) is int:
+            if padding > 0:
+                self.module_list.append(nn.ZeroPad2d(padding))
+        else:
+            if sum(padding) > 0:
+                self.module_list.append(nn.ZeroPad2d(padding))
+        # -----------------------------------------------------------------------------------------
+        # Pooling
+        # -----------------------------------------------------------------------------------------
+        if pool_type is pool_e.MAX:
+            self.module_list.append(nn.MaxPool2d(kernel_size=kernel))
+        elif pool_type is pool_e.AVG:
+            self.module_list.append(nn.AvgPool2d(kernel_size=kernel))
 
     def forward(self, x):
-        return self.pool(self.pad(x))
+        for module in self.module_list:
+            x = module(x)
+
+        return x
 
 
 class ConvBlock(nn.Module):
@@ -67,26 +84,26 @@ class ConvBlock(nn.Module):
         self.bnorm          = batch_norm
         self.drate          = dropout_rate
 
-        self.conv   = nn.Conv2d(in_channels=in_channels,
-                                out_channels=out_channels,
-                                kernel_size=kernel_size,
-                                stride=stride,
-                                padding=padding,
-                                bias=(not batch_norm)
+        self.module_list = nn.ModuleList()
+        self.module_list.append(nn.Conv2d(in_channels=in_channels,
+                                          out_channels=out_channels,
+                                          kernel_size=kernel_size,
+                                          stride=stride,
+                                          padding=padding,
+                                          bias=(not batch_norm)
+                                          )
                                 )
-        self.bnorm  = nn.BatchNorm2d(num_features=out_channels)
-        self.drop   = nn.Dropout2d(dropout_rate)
-        self.act    = Activator(act_type=act, alpha=alpha)
+        if self.drate > 0:
+            self.module_list.append(nn.Dropout2d(dropout_rate))
+        if self.bnorm:
+            self.module_list.append(nn.BatchNorm2d(num_features=out_channels))
+        self.module_list.append(Activator(act_type=act, alpha=alpha))
 
     def forward(self, x):
-        out = self.conv(x)
-        if self.bnorm:
-            out = self.bnorm(out)
-        if self.drate > 0:
-            out = self.drop(out)
-        out = self.act(out)
+        for module in self.module_list:
+            x = module(x)
 
-        return out
+        return x
 
 
 class BasicDenseBlock(nn.Module):
@@ -105,19 +122,45 @@ class BasicDenseBlock(nn.Module):
         self.bnorm          = batch_norm
         self.drate          = dropout_rate
 
-        self.conv = ConvBlock(in_channels=in_channels,
-                              out_channels=growth,
-                              kernel_size=kernel_size,
-                              stride=stride,
-                              padding=padding,
-                              batch_norm=batch_norm,
-                              dropout_rate=dropout_rate,
-                              act=act, alpha=alpha)
+        self.module_list = nn.ModuleList()
+        # -----------------------------------------------------------------------------------------
+        # Convolution
+        # -----------------------------------------------------------------------------------------
+        self.module_list.append(nn.Conv2d(in_channels=in_channels,
+                                          out_channels=growth,
+                                          kernel_size=kernel_size,
+                                          stride=stride,
+                                          padding=padding,
+                                          bias=(not batch_norm)
+                                          )
+                                )
+        # -----------------------------------------------------------------------------------------
+        # Dropout
+        # -----------------------------------------------------------------------------------------
+        if self.drate > 0:
+            self.module_list.append(nn.Dropout2d(dropout_rate))
+        # -----------------------------------------------------------------------------------------
+        # Concatenation
+        # -----------------------------------------------------------------------------------------
+        # performed in the forward function
+        # -----------------------------------------------------------------------------------------
+        # Batch norm
+        # -----------------------------------------------------------------------------------------
+        if self.bnorm:
+            self.module_list.append(nn.BatchNorm2d(num_features=(in_channels + growth)))
+        # -----------------------------------------------------------------------------------------
+        # Activation
+        # -----------------------------------------------------------------------------------------
+        self.module_list.append(Activator(act_type=act, alpha=alpha))
 
     def forward(self, x):
-        out = self.conv(x)
-
-        return torch.cat([x, out], 1)  # concatenating over channel dimension
+        for module in self.module_list:
+            out = module(x)
+            if (type(module) is nn.Dropout2d) or (self.drate == 0 and type(module) is nn.Conv2d):
+                x = torch.cat([x, out], 1)  # concatenating over channel dimension
+            else:
+                x = out
+        return x
 
 
 class DenseBlock(nn.Module):
@@ -167,7 +210,7 @@ class DenseTransitionBlock(nn.Module):
     This class implements a transition block, used for pooling as well as convolving to reduce spatial size
     """
     def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01, pool_pad=0, pool_size=2):
+                 act=activation_type_e.null, alpha=0.01, pool_type=pool_e.MAX, pool_pad=0, pool_size=2):
         super(DenseTransitionBlock, self).__init__()
         self.in_channels    = in_channels
         self.out_channels   = math.floor(in_channels * reduction_rate)
@@ -178,6 +221,7 @@ class DenseTransitionBlock(nn.Module):
         self.drate          = dropout_rate
         self.activator      = act
         self.alpha          = alpha
+        self.pool_type      = pool_type
         self.pool_size      = pool_size
         self.pool_padding   = pool_pad
 
@@ -189,7 +233,9 @@ class DenseTransitionBlock(nn.Module):
                                     batch_norm=batch_norm,
                                     dropout_rate=dropout_rate,
                                     act=act, alpha=alpha)
-        self.padpool    = MaxPool2dPadding(kernel=pool_size, padding=pool_pad)
+        self.padpool    = Pool2dPadding(pool_type=pool_type,
+                                        kernel=pool_size,
+                                        padding=pool_pad)
 
     def forward(self, x):
         out = self.conv(x)
@@ -208,20 +254,20 @@ class FullyConnectedBlock(nn.Module):
         self.bnorm = batch_norm
         self.drate = dropout_rate
 
-        self.fc     = nn.Linear(in_features=in_neurons,
-                                out_features=out_neurons,
-                                bias=(not batch_norm)
+        self.module_list = nn.ModuleList()
+        self.module_list.append(nn.Linear(in_features=in_neurons,
+                                          out_features=out_neurons,
+                                          bias=(not batch_norm)
+                                          )
                                 )
-        self.bnorm  = nn.BatchNorm1d(out_neurons)
-        self.drop   = nn.Dropout(dropout_rate)
-        self.act   = Activator(act_type=act, alpha=alpha)
+        if self.bnorm:
+            self.module_list.append( nn.BatchNorm1d(out_neurons))
+        if self.drate > 0:
+            self.module_list.append(nn.Dropout(dropout_rate))
+        self.module_list.append(Activator(act_type=act, alpha=alpha))
 
     def forward(self, x):
-        out = self.fc(x)
-        if self.bnorm:
-            out = self.bnorm(out)
-        if self.drate > 0:
-            out = self.drop(out)
-        out = self.act(out)
+        for module in self.module_list:
+            x = module(x)
 
-        return out
+        return x

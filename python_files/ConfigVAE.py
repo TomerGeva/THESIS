@@ -2,7 +2,7 @@
 # This file holds the values of the global variables, which are needed throughout the operation
 # ***************************************************************************************************
 import numpy as np
-from global_const import activation_type_e
+from global_const import activation_type_e, pool_e
 
 # ===================================
 # Database Variables
@@ -24,7 +24,7 @@ SENS_STD    = 41025
 SIGNED_SENS = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
-NUM_WORKERS    = 8
+NUM_WORKERS    = 4
 
 # ---logdir for saving the database ---
 SAVE_PATH_DB = './database.pth'
@@ -66,29 +66,9 @@ INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
 
-
-# --------------------------------------------------------
-# Encoder topology
-# --------------------------------------------------------
-ENCODER_TOPOLOGY = [
-    ['conv', IMG_CHANNELS,   6, 25, 25, 0],  # conv layer: input channels, output channels, kernel, stride, padding
-    ['conv',            6,  16,  5,  1, 2],
-    ['pool', 2, 0],                             # pool layer: kernel
-    ['conv',           16,  32,  5,  1, 2],
-    ['pool', 2, 0],
-    ['conv',           32,  64,  4,  1, 1],
-    ['pool', 2, 0],
-    ['conv',           64, 128,  3,  1, 0],
-    ['conv',          128, 256,  3,  1, 0],
-    ['pool', 2, 0],
-    ['conv',          256, 512,  4,  1, 0],
-    ['linear', 200],                         # linear layer: neuron number
-    ['linear', 150],
-    ['linear_last', 2 * LATENT_SPACE_DIM]
-]
-# --------------------------------------------------------
-# Dense Encoder topology
-# --------------------------------------------------------
+# ============================================================
+# Chosen topology
+# ============================================================
 # Init layer:
 """
 #   1. in channels
@@ -123,8 +103,9 @@ ENCODER_TOPOLOGY = [
 #   6. drop_rate
 #   7. activation
 #   8. alpha
-#   9. pool padding
-#  10. pool size
+#   9. pool type
+#  10. pool padding
+#  11. pool size
 """
 # Fully connected:
 """
@@ -134,36 +115,52 @@ ENCODER_TOPOLOGY = [
 #   4. activation
 #   5. alpha
 """
+# --------------------------------------------------------
+# Encoder topology
+# --------------------------------------------------------
+ENCODER_TOPOLOGY = [
+    ['conv', IMG_CHANNELS,   6, 25, 25, 0],  # conv layer: input channels, output channels, kernel, stride, padding
+    ['conv',            6,  16,  5,  1, 2],
+    ['pool', 2, 0],                             # pool layer: kernel
+    ['conv',           16,  32,  5,  1, 2],
+    ['pool', 2, 0],
+    ['conv',           32,  64,  4,  1, 1],
+    ['pool', 2, 0],
+    ['conv',           64, 128,  3,  1, 0],
+    ['conv',          128, 256,  3,  1, 0],
+    ['pool', 2, 0],
+    ['conv',          256, 512,  4,  1, 0],
+    ['linear', 200],                         # linear layer: neuron number
+    ['linear', 150],
+    ['linear_last', 2 * LATENT_SPACE_DIM]
+]
+# --------------------------------------------------------
+# Dense Encoder topology
+# --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 0, 1],
-    ['linear', 500,                  True, 0, activation_type_e.ReLU, 0],
-    ['linear', 150,                  True, 0, activation_type_e.ReLU, 0],
-    ['linear', 2 * LATENT_SPACE_DIM, True, 0, activation_type_e.null, 0]
+    ['dense',      40,  6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
+    ['dense',      40,  6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
+    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      40, 24, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 0, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 1],
+    ['linear', 500,                  False, 0, activation_type_e.ReLU, 0],
+    ['linear', 150,                  False, 0, activation_type_e.ReLU, 0],
+    ['linear', 2 * LATENT_SPACE_DIM, False, 0, activation_type_e.null, 0]  # DO NOT CHANGE THIS LINE EVER
 ]
-
 # --------------------------------------------------------
 # Decoder topology
 # --------------------------------------------------------
-"""
-Decoder input: 2500 X 2500
-conv1: 2500 --> 100
-DECODER
-"""
 DECODER_TOPOLOGY = [
-    ['linear',      300, True, 0, activation_type_e.ReLU, 0],
-    ['linear',      100, True, 0, activation_type_e.ReLU, 0],
-    ['linear',       25, True, 0, activation_type_e.ReLU, 0],
-    ['linear_last',   1, True, 0, activation_type_e.null, 0],
+    ['linear',      300, False, 0, activation_type_e.ReLU, 0],
+    ['linear',      100, False, 0, activation_type_e.ReLU, 0],
+    ['linear',       25, False, 0, activation_type_e.ReLU, 0],
+    ['linear_last',   1, False, 0, activation_type_e.null, 0],
 ]

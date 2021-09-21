@@ -311,7 +311,7 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     if (weights is None) or (thresholds is None):
         weight_vec = torch.ones_like(targets)
     else:
-        weight_vec = (targets < thresholds[0]) * weights[0]
+        weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
         for ii in range(1, len(thresholds)):
             weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
         weight_vec += (targets >= thresholds[-1]) * weights[-1]

@@ -83,7 +83,7 @@ class LoggerVAE:
         return temp_str.format(in_ch, depth, growth, ktilde, stride, pad, str(bnorm), drate, active.name,
                                in_ch+depth*growth, x_dim, y_dim)
 
-    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, bnorm, drate, active, pool_size,
+    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, bnorm, drate, active, pool_type, pool_size,
                                      x_dim, y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
                    'd} Reduction:   {1:^' + str(self.desc_space) + \
@@ -93,12 +93,13 @@ class LoggerVAE:
                    'd} batch_norm:  {5:^' + str(self.desc_space) + \
                    's} drop_rate:   {6:^' + str(self.desc_space) + \
                    'd} activation:  {7:^' + str(self.desc_space) + \
-                   's} Pool size:   {8:^' + str(self.desc_space) + \
-                   'd} Output size: {9:^' + str(self.desc_space) + \
-                   '}X{10:^' + str(self.desc_space) +\
-                   '}X{11:^' + str(self.desc_space) + '}'
-        return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_size,
-                               math.floor(in_ch*reduction), x_dim, y_dim)
+                   's} Pool type:   {8:^' + str(self.desc_space) + \
+                   's} Pool size:   {9:^' + str(self.desc_space) + \
+                   'd} Output size: {10:^' + str(self.desc_space) + \
+                   '}X{11:^' + str(self.desc_space) +\
+                   '}X{12:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_type.name,
+                               pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
 
     # ==================================================================================================================
     # Logging functions
@@ -308,12 +309,12 @@ class LoggerVAE:
             elif 'transition' in action[0]:
                 x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
                 y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                if type(action[9]) is not tuple:
-                    x_dim_size = int((x_conv_size + 2 * action[9]) / action[10])
-                    y_dim_size = int((y_conv_size + 2 * action[9]) / action[10])
+                if type(action[10]) is not tuple:
+                    x_dim_size = int((x_conv_size + 2 * action[10]) / action[11])
+                    y_dim_size = int((y_conv_size + 2 * action[10]) / action[11])
                 else:
-                    x_dim_size = int((x_conv_size + action[9][0] + action[9][1]) / action[10])
-                    y_dim_size = int((y_conv_size + action[9][2] + action[9][3]) / action[10])
+                    x_dim_size = int((x_conv_size + action[10][0] + action[10][1]) / action[11])
+                    y_dim_size = int((y_conv_size + action[10][2] + action[10][3]) / action[11])
                 self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
                                                                                              action[1],
                                                                                              action[2],
@@ -322,7 +323,8 @@ class LoggerVAE:
                                                                                              action[5],
                                                                                              action[6],
                                                                                              action[7],
-                                                                                             action[10],
+                                                                                             action[9],
+                                                                                             action[11],
                                                                                              x_dim_size,
                                                                                              y_dim_size))
                 channels = math.floor(channels * action[1])

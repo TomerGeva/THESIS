@@ -16,3 +16,9 @@ class activation_type_e(Enum):
     tReLU   = 5  # truncated Relu --> 0 if input < 0 ; 1 if input >1 ; linear else
     # h_sig   = 6  # hard sigmoid --> 0 if x < 3 ; 1 if x > 3 ; linear else
     SELU    = 7
+
+
+class pool_e(Enum):
+    MAX = 0
+    AVG = 1
+

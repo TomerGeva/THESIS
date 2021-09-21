@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import math
 import torch.nn as nn
-from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, MaxPool2dPadding
+from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, Pool2dPadding
 
 
 class EncoderVAE(nn.Module):
@@ -45,8 +45,8 @@ class EncoderVAE(nn.Module):
                                    )
             elif 'pool' in action[0]:
                 conv_len += 1
-                self.layers.append(MaxPool2dPadding(kernel=action[1],
-                                                    padding=action[2]))
+                self.layers.append(Pool2dPadding(kernel=action[1],
+                                                 padding=action[2]))
             elif 'dense' in action[0]:
                 conv_len += 1
                 self.layers.append(DenseBlock(channels=channels,
@@ -73,8 +73,9 @@ class EncoderVAE(nn.Module):
                                                         dropout_rate=action[6],
                                                         act=action[7],
                                                         alpha=action[8],
-                                                        pool_pad=action[9],
-                                                        pool_size=action[10]
+                                                        pool_type=action[9],
+                                                        pool_pad=action[10],
+                                                        pool_size=action[11]
                                                         )
                                    )
                 channels = math.floor(channels * action[1])
@@ -130,12 +131,12 @@ class EncoderVAE(nn.Module):
                 # ------------------------------------------------
                 x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
                 y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                if type(action[9]) is not tuple:
-                    x_dim_size = int((x_conv_size + 2*action[9]) / action[10])
-                    y_dim_size = int((y_conv_size + 2*action[9]) / action[10])
+                if type(action[10]) is not tuple:
+                    x_dim_size = int((x_conv_size + 2*action[10]) / action[11])
+                    y_dim_size = int((y_conv_size + 2*action[10]) / action[11])
                 else:
-                    x_dim_size = int((x_conv_size + action[9][0] + action[9][1]) / action[10])
-                    y_dim_size = int((y_conv_size + action[9][2] + action[9][3]) / action[10])
+                    x_dim_size = int((x_conv_size + action[10][0] + action[10][1]) / action[11])
+                    y_dim_size = int((y_conv_size + action[10][2] + action[10][3]) / action[11])
 
         return x_dim_size, y_dim_size, channels
 
