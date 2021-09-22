@@ -22,7 +22,7 @@ class ConvBlockData:
 
 
 class DenseBlockData:
-    def __init__(self, depth, growth_rate, kernel_size, stride, padding, dilation=1, bias=None, batch_norm=True,
+    def __init__(self, growth_rate, depth, kernel_size, stride, padding, dilation=1, bias=None, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = None  # computed during encoder Init
         self.growth         = growth_rate
