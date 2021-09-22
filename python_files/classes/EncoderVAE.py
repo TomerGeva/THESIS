@@ -31,7 +31,7 @@ class EncoderVAE(nn.Module):
             action = self.topology[ii]
             if 'conv' in action[0]:
                 conv_len += 1
-                channels = action[2]
+                channels = action[1].out_channels
                 self.layers.append(ConvBlock(action[1]))
             elif 'pool' in action[0]:
                 conv_len += 1
@@ -41,13 +41,13 @@ class EncoderVAE(nn.Module):
                 conv_len += 1
                 action[1].in_channels = channels
                 self.layers.append(DenseBlock(action[1]))
-                channels += action[2] * action[1]
+                channels += action[1].growth * action[1].depth
             elif 'transition' in action[0]:
                 conv_len += 1
                 action[1].set_in_out_channels(in_channels=channels)
                 self.layers.append(DenseTransitionBlock(action[1])
                                    )
-                channels = math.floor(channels * action[1])
+                channels = math.floor(channels * action[1].reduction_rate)
             elif 'linear' in action[0]:
                 linear_len += 1
                 if action_prev is None:  # First linear layer
@@ -68,9 +68,9 @@ class EncoderVAE(nn.Module):
         for ii in range(len(self.topology)):
             action = self.topology[ii]
             if 'conv' in action[0]:
-                x_dim_size = int((x_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
-                y_dim_size = int((y_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
-                channels = action[2]
+                x_dim_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                y_dim_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                channels = action[1].out_channels
             elif 'pool' in action:
                 if type(action[2]) is not tuple:
                     x_dim_size = int((x_dim_size + 2*action[2]) / action[1])
@@ -79,20 +79,20 @@ class EncoderVAE(nn.Module):
                     x_dim_size = int((x_conv_size + action[2][0] + action[2][1]) / action[1])
                     y_dim_size = int((y_conv_size + action[2][2] + action[2][3]) / action[1])
             elif 'dense' in action[0]:
-                channels += action[1] * action[2]
+                channels += action[1].growth * action[1].depth
             elif 'transition' in action[0]:
-                channels = math.floor(channels * action[1])
+                channels = math.floor(channels * action[1].reduction_rate)
                 # ------------------------------------------------
                 # This account for the conv layer and the pooling
                 # ------------------------------------------------
-                x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                if type(action[9]) is not tuple:
-                    x_dim_size = int((x_conv_size + 2*action[9]) / action[10])
-                    y_dim_size = int((y_conv_size + 2*action[9]) / action[10])
+                x_conv_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                y_conv_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                if type(action[1].pool_padding) is not tuple:
+                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
+                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
                 else:
-                    x_dim_size = int((x_conv_size + action[9][0] + action[9][1]) / action[10])
-                    y_dim_size = int((y_conv_size + action[9][2] + action[9][3]) / action[10])
+                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding[0] + 2*action[1].pool_padding[1]) / action[1].pool_size)
+                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding[2] + 2*action[1].pool_padding[3]) / action[1].pool_size)
 
         return x_dim_size, y_dim_size, channels
 
