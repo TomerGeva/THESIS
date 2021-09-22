@@ -56,34 +56,28 @@ class ConvBlock(nn.Module):
     This class implements a convolution block, support batch morn, dropout and activations
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01):
+    def __init__(self, conv_data):
         super(ConvBlock, self).__init__()
-        self.in_channels    = in_channels
-        self.out_channels   = out_channels
-        self.kernel         = kernel_size
-        self.stride         = stride
-        self.padding        = padding
-        self.bnorm          = batch_norm
-        self.drate          = dropout_rate
+        self.data = conv_data
 
-        self.conv   = nn.Conv2d(in_channels=in_channels,
-                                out_channels=out_channels,
-                                kernel_size=kernel_size,
-                                stride=stride,
-                                padding=padding,
-                                bias=(not batch_norm)
+        self.conv   = nn.Conv2d(in_channels=conv_data.in_channels,
+                                out_channels=conv_data.out_channels,
+                                kernel_size=conv_data.kernel,
+                                stride=conv_data.stride,
+                                padding=conv_data.padding,
+                                dilation=conv_data.dilation,
+                                bias=conv_data.bias
                                 )
-        self.bnorm  = nn.BatchNorm2d(num_features=out_channels)
-        self.drop   = nn.Dropout2d(dropout_rate)
-        self.act    = Activator(act_type=act, alpha=alpha)
+        self.bnorm  = nn.BatchNorm2d(num_features=conv_data.out_channels)
+        self.drop   = nn.Dropout2d(conv_data.drate)
+        self.act    = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
 
     def forward(self, x):
         out = self.conv(x)
-        if self.bnorm:
-            out = self.bnorm(out)
         if self.drate > 0:
             out = self.drop(out)
+        if self.bnorm:
+            out = self.bnorm(out)
         out = self.act(out)
 
         return out
