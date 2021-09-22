@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import math
 import torch.nn as nn
-from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, MaxPool2dPadding
+from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, Pool2dPadding
 
 
 class EncoderVAE(nn.Module):
@@ -35,8 +35,8 @@ class EncoderVAE(nn.Module):
                 self.layers.append(ConvBlock(action[1]))
             elif 'pool' in action[0]:
                 conv_len += 1
-                self.layers.append(MaxPool2dPadding(kernel=action[1],
-                                                    padding=action[2]))
+                self.layers.append(Pool2dPadding(kernel=action[1],
+                                                 padding=action[2]))
             elif 'dense' in action[0]:
                 conv_len += 1
                 action[1].in_channels = channels

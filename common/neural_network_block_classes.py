@@ -1,7 +1,7 @@
 import math
 import torch
 import torch.nn as nn
-from global_const import activation_type_e
+from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData
 from auxiliary_functions import truncated_relu
 
@@ -36,20 +36,32 @@ class Activator(nn.Module):
             return self.activator(x)
 
 
-class MaxPool2dPadding(nn.Module):
+class Pool2dPadding(nn.Module):
     """
         This class implements max pooling block, with zero padding
     """
-    def __init__(self, kernel, padding=0):
-        super(MaxPool2dPadding, self).__init__()
+    def __init__(self, pool_type, kernel, padding=0):
+        super(Pool2dPadding, self).__init__()
         self.kernel = kernel
         self.padding = padding
 
-        self.pad = nn.ZeroPad2d(padding)
-        self.pool = nn.MaxPool2d(kernel_size=kernel)
+        if type(padding) is int:
+            self.pad = nn.ZeroPad2d(padding) if padding > 0 else None
+        else:
+            self.pad = nn.ZeroPad2d(padding) if sum(padding) > 0 else None
+        if pool_type is pool_e.MAX:
+            self.pool = nn.MaxPool2d(kernel_size=kernel) if kernel > 1 else None
+        elif pool_type is pool_e.AVG:
+            self.pool = nn.AVGPool2d(kernel_size=kernel) if kernel > 1 else None
+        else:
+            self.pool = None
 
     def forward(self, x):
-        return self.pool(self.pad(x))
+        if self.pad is not None:
+            x = self.pad(x)
+        if self.pool is not None:
+            x = self.pool(x)
+        return x
 
 
 class ConvBlock(nn.Module):
@@ -165,7 +177,7 @@ class DenseTransitionBlock(nn.Module):
                                     batch_norm=batch_norm,
                                     dropout_rate=dropout_rate,
                                     act=act, alpha=alpha)
-        self.padpool    = MaxPool2dPadding(kernel=pool_size, padding=pool_pad)
+        self.padpool    = Pool2dPadding(kernel=pool_size, padding=pool_pad)
 
     def forward(self, x):
         out = self.conv(x)
