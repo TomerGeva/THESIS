@@ -2,7 +2,7 @@
 # This file holds the values of the global variables, which are needed throughout the operation
 # ***************************************************************************************************
 import numpy as np
-from global_const import activation_type_e
+from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData, DenseBlockData, TransBloackData, FCBlockData
 
 # ===================================
@@ -136,19 +136,19 @@ ENCODER_TOPOLOGY = [
 #   5. alpha
 """
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['dense', DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, (0, 1, 1, 0), 2],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, 0, 1],
+    ['conv',      ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBloackData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=1)],
     ['linear', 500,                  True, 0, activation_type_e.ReLU, 0],
     ['linear', 150,                  True, 0, activation_type_e.ReLU, 0],
     ['linear', 2 * LATENT_SPACE_DIM, True, 0, activation_type_e.null, 0]

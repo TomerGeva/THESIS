@@ -52,7 +52,7 @@ class Pool2dPadding(nn.Module):
         if pool_type is pool_e.MAX:
             self.pool = nn.MaxPool2d(kernel_size=kernel) if kernel > 1 else None
         elif pool_type is pool_e.AVG:
-            self.pool = nn.AVGPool2d(kernel_size=kernel) if kernel > 1 else None
+            self.pool = nn.AvgPool2d(kernel_size=kernel) if kernel > 1 else None
         else:
             self.pool = None
 
@@ -154,30 +154,26 @@ class DenseTransitionBlock(nn.Module):
     """
     This class implements a transition block, used for pooling as well as convolving to reduce spatial size
     """
-    def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01, pool_pad=0, pool_size=2):
+    def __init__(self, transition_data):
         super(DenseTransitionBlock, self).__init__()
-        self.in_channels    = in_channels
-        self.out_channels   = math.floor(in_channels * reduction_rate)
-        self.kernel         = kernel_size
-        self.stride         = stride
-        self.padding        = padding
-        self.bnorm          = batch_norm
-        self.drate          = dropout_rate
-        self.activator      = act
-        self.alpha          = alpha
-        self.pool_size      = pool_size
-        self.pool_padding   = pool_pad
+        self.data = transition_data
 
-        self.conv       = ConvBlock(in_channels=in_channels,
-                                    out_channels=self.out_channels,
-                                    kernel_size=kernel_size,
-                                    stride=stride,
-                                    padding=padding,
-                                    batch_norm=batch_norm,
-                                    dropout_rate=dropout_rate,
-                                    act=act, alpha=alpha)
-        self.padpool    = Pool2dPadding(kernel=pool_size, padding=pool_pad)
+        self.conv       = ConvBlock(ConvBlockData(in_channels=transition_data.in_channels,
+                                                  out_channels=transition_data.out_channels,
+                                                  kernel_size=transition_data.kernel,
+                                                  stride=transition_data.stride,
+                                                  padding=transition_data.padding,
+                                                  dilation=transition_data.dilation,
+                                                  bias=transition_data.bias,
+                                                  batch_norm=transition_data.bnorm,
+                                                  dropout_rate=transition_data.drate,
+                                                  activation=transition_data.act,
+                                                  alpha=transition_data.alpha
+                                                  )
+                                    )
+        self.padpool    = Pool2dPadding(pool_type=transition_data.pool_type,
+                                        kernel=transition_data.pool_size,
+                                        padding=transition_data.pool_padding)
 
     def forward(self, x):
         out = self.conv(x)

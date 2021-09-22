@@ -42,12 +42,12 @@ class DenseBlockData:
 
 
 class TransBloackData:
-    def __init__(self, in_channels, reduction_rate, kernel_size, stride, padding, dilation=1, bias=None,
+    def __init__(self, reduction_rate, kernel_size, stride, padding, dilation=1, bias=None,
                  batch_norm=True, dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01,
                  pool_type=pool_e.MAX, pool_pad=0, pool_size=2):
-        self.in_channels    = in_channels
+        self.in_channels    = None  # computed during encoder Init
         self.reduction_rate = reduction_rate
-        self.out_channels   = math.floor(in_channels * reduction_rate)
+        self.out_channels   = None
         self.kernel         = kernel_size
         self.stride         = stride
         self.padding        = padding
@@ -63,6 +63,10 @@ class TransBloackData:
         self.pool_type      = pool_type
         self.pool_size      = pool_size
         self.pool_padding   = pool_pad
+
+    def set_in_out_channels(self, in_channels):
+        self.in_channels = in_channels
+        self.out_channels = math.floor(in_channels * self.reduction_rate)
 
 
 class FCBlockData:
