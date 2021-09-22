@@ -41,7 +41,7 @@ class DenseBlockData:
         self.alpha          = alpha
 
 
-class TransBloackData:
+class TransBlockData:
     def __init__(self, reduction_rate, kernel_size, stride, padding, dilation=1, bias=None,
                  batch_norm=True, dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01,
                  pool_type=pool_e.MAX, pool_pad=0, pool_size=2):
