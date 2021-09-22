@@ -93,19 +93,7 @@ class BasicDenseBlock(nn.Module):
         super(BasicDenseBlock, self).__init__()
         self.data = basic_dense_data
 
-        self.conv = ConvBlock(ConvBlockData(in_channels=basic_dense_data.in_channels,
-                                            out_channels=basic_dense_data.out_channels,
-                                            kernel_size=basic_dense_data.kernel,
-                                            stride=basic_dense_data.stride,
-                                            padding=basic_dense_data.padding,
-                                            dilation=ConvBlockData.dilation,
-                                            bias=ConvBlockData.bias,
-                                            batch_norm=basic_dense_data.batch_norm,
-                                            dropout_rate=basic_dense_data.dropout_rate,
-                                            activation=basic_dense_data.act,
-                                            alpha=basic_dense_data.alpha
-                                            )
-                              )
+        self.conv = ConvBlock(basic_dense_data)
 
     def forward(self, x):
         out = self.conv(x)
