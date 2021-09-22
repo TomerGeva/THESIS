@@ -139,22 +139,23 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
-    ['dense',      40,  6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
-    ['dense',      40,  6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
-    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
-    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
-    ['dense',      40, 12, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 1, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
-    ['dense',      40, 24, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
-    ['transition', 0.5,    3, 1, 0, False, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 1],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, (0, 1, 1, 0), 2],
+    ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
+    ['transition', 0.5,    3, 1, 0, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 1],
     ['linear', 500,                  False, 0, activation_type_e.ReLU, 0],
     ['linear', 150,                  False, 0, activation_type_e.ReLU, 0],
     ['linear', 2 * LATENT_SPACE_DIM, False, 0, activation_type_e.null, 0]  # DO NOT CHANGE THIS LINE EVER
 ]
+
 # --------------------------------------------------------
 # Decoder topology
 # --------------------------------------------------------
