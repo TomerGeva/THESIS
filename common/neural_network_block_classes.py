@@ -81,8 +81,8 @@ class ConvBlock(nn.Module):
                                 dilation=conv_data.dilation,
                                 bias=conv_data.bias
                                 )
-        self.bnorm  = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
         self.drop   = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
+        self.bnorm  = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
         self.act    = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
 
     def forward(self, x):
@@ -100,17 +100,36 @@ class BasicDenseBlock(nn.Module):
     """
     This basic block implements convolution and then concatenation of the input to the output over the channels.
     This block supports batch normalization and / or dropout, and activations
+
+    Input ---> conv2D ---> dropout ---> concatenation ---> batch_norm ---> activation ---> Output
+
     """
     def __init__(self, basic_dense_data):
         super(BasicDenseBlock, self).__init__()
         self.data = basic_dense_data
 
-        self.conv = ConvBlock(basic_dense_data)
+        self.conv = nn.Conv2d(in_channels=basic_dense_data.in_channels,
+                              out_channels=basic_dense_data.out_channels,
+                              kernel_size=basic_dense_data.kernel,
+                              stride=basic_dense_data.stride,
+                              padding=basic_dense_data.padding,
+                              dilation=basic_dense_data.dilation,
+                              bias=basic_dense_data.bias
+                              )
+        self.drop = nn.Dropout(basic_dense_data.drate) if basic_dense_data.drate > 0 else None
+        self.bnorm = nn.BatchNorm2d(num_features=(basic_dense_data.out_channels+basic_dense_data.in_channels)) if basic_dense_data.bnorm is True else None
+        self.act = Activator(act_type=basic_dense_data.act, alpha=basic_dense_data.alpha)
 
     def forward(self, x):
         out = self.conv(x)
+        if self.data.drate > 0:
+            out = self.drop(out)
+        out = torch.cat([x, out], 1)  # concatenating over channel dimension
+        if self.data.bnorm is True:
+            out = self.bnorm(out)
+        self.act(out)
 
-        return torch.cat([x, out], 1)  # concatenating over channel dimension
+        return out
 
 
 class DenseBlock(nn.Module):
