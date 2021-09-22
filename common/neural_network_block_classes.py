@@ -73,31 +73,25 @@ class ConvBlock(nn.Module):
     This class implements a convolution block, support batch morn, dropout and activations
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01):
+    def __init__(self, conv_data):
         super(ConvBlock, self).__init__()
-        self.in_channels    = in_channels
-        self.out_channels   = out_channels
-        self.kernel         = kernel_size
-        self.stride         = stride
-        self.padding        = padding
-        self.bnorm          = batch_norm
-        self.drate          = dropout_rate
+        self.data = conv_data
 
         self.module_list = nn.ModuleList()
-        self.module_list.append(nn.Conv2d(in_channels=in_channels,
-                                          out_channels=out_channels,
-                                          kernel_size=kernel_size,
-                                          stride=stride,
-                                          padding=padding,
-                                          bias=(not batch_norm)
+        self.module_list.append(nn.Conv2d(in_channels=conv_data.in_channels,
+                                          out_channels=conv_data.out_channels,
+                                          kernel_size=conv_data.kernel,
+                                          stride=conv_data.stride,
+                                          padding=conv_data.padding,
+                                          dilation=conv_data.dilation,
+                                          bias=conv_data.bias
                                           )
                                 )
-        if self.drate > 0:
-            self.module_list.append(nn.Dropout2d(dropout_rate))
-        if self.bnorm:
-            self.module_list.append(nn.BatchNorm2d(num_features=out_channels))
-        self.module_list.append(Activator(act_type=act, alpha=alpha))
+        if conv_data.drate > 0:
+            self.module_list.append(nn.Dropout2d(conv_data.drate))
+        if conv_data.bnorm:
+            self.module_list.append(nn.BatchNorm2d(num_features=conv_data.out_channels))
+        self.module_list.append(Activator(act_type=conv_data.act, alpha=conv_data.alpha))
 
     def forward(self, x):
         for module in self.module_list:

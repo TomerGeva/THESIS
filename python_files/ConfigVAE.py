@@ -3,6 +3,7 @@
 # ***************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e
+from global_struct import ConvBlockData, DenseBlockData, TransBloackData, FCBlockData
 
 # ===================================
 # Database Variables
@@ -138,7 +139,7 @@ ENCODER_TOPOLOGY = [
 # Dense Encoder topology
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv',       1, 6, 25, 25, 0, True, 0, activation_type_e.ReLU, 0],
+    ['conv', ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, alpha=0)],
     ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, pool_e.AVG, 0, 2],
     ['dense',      100, 6, 3, 1, 1, True, 0, activation_type_e.ReLU, 0],
