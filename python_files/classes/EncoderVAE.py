@@ -32,35 +32,15 @@ class EncoderVAE(nn.Module):
             if 'conv' in action[0]:
                 conv_len += 1
                 channels = action[2]
-                self.layers.append(ConvBlock(in_channels=action[1],
-                                             out_channels=action[2],
-                                             kernel_size=action[3],
-                                             stride=action[4],
-                                             padding=action[5],
-                                             batch_norm=action[6],
-                                             dropout_rate=action[7],
-                                             act=action[8],
-                                             alpha=action[9]
-                                             )
-                                   )
+                self.layers.append(ConvBlock(action[1]))
             elif 'pool' in action[0]:
                 conv_len += 1
                 self.layers.append(MaxPool2dPadding(kernel=action[1],
                                                     padding=action[2]))
             elif 'dense' in action[0]:
                 conv_len += 1
-                self.layers.append(DenseBlock(channels=channels,
-                                              depth=action[2],
-                                              growth_rate=action[1],
-                                              kernel_size=action[3],
-                                              stride=action[4],
-                                              padding=action[5],
-                                              batch_norm=action[6],
-                                              dropout_rate=action[7],
-                                              act=action[8],
-                                              alpha=action[9]
-                                              )
-                                   )
+                action[1].in_channels = channels
+                self.layers.append(DenseBlock(action[1]))
                 channels += action[2] * action[1]
             elif 'transition' in action[0]:
                 conv_len += 1

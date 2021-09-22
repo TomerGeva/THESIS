@@ -137,7 +137,7 @@ ENCODER_TOPOLOGY = [
 """
 DENSE_ENCODER_TOPOLOGY = [
     ['conv', ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
+    ['dense', DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],
     ['dense',      100, 6, 3, 1, 1, False, 0, activation_type_e.ReLU, 0],
     ['transition', 0.5,    3, 1, 1, True, 0, activation_type_e.ReLU, 0, 0, 2],

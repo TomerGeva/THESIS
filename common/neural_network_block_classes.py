@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn as nn
 from global_const import activation_type_e
+from global_struct import ConvBlockData
 from auxiliary_functions import truncated_relu
 
 
@@ -68,15 +69,15 @@ class ConvBlock(nn.Module):
                                 dilation=conv_data.dilation,
                                 bias=conv_data.bias
                                 )
-        self.bnorm  = nn.BatchNorm2d(num_features=conv_data.out_channels)
-        self.drop   = nn.Dropout2d(conv_data.drate)
+        self.bnorm  = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
+        self.drop   = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
         self.act    = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
 
     def forward(self, x):
         out = self.conv(x)
-        if self.drate > 0:
+        if self.data.drate > 0:
             out = self.drop(out)
-        if self.bnorm:
+        if self.data.bnorm:
             out = self.bnorm(out)
         out = self.act(out)
 
@@ -88,25 +89,23 @@ class BasicDenseBlock(nn.Module):
     This basic block implements convolution and then concatenation of the input to the output over the channels.
     This block supports batch normalization and / or dropout, and activations
     """
-    def __init__(self, in_channels, growth, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01):
+    def __init__(self, basic_dense_data):
         super(BasicDenseBlock, self).__init__()
-        self.in_channels    = in_channels
-        self.growth         = growth
-        self.kernel         = kernel_size
-        self.stride         = stride
-        self.padding        = padding
-        self.bnorm          = batch_norm
-        self.drate          = dropout_rate
+        self.data = basic_dense_data
 
-        self.conv = ConvBlock(in_channels=in_channels,
-                              out_channels=growth,
-                              kernel_size=kernel_size,
-                              stride=stride,
-                              padding=padding,
-                              batch_norm=batch_norm,
-                              dropout_rate=dropout_rate,
-                              act=act, alpha=alpha)
+        self.conv = ConvBlock(ConvBlockData(in_channels=basic_dense_data.in_channels,
+                                            out_channels=basic_dense_data.out_channels,
+                                            kernel_size=basic_dense_data.kernel,
+                                            stride=basic_dense_data.stride,
+                                            padding=basic_dense_data.padding,
+                                            dilation=ConvBlockData.dilation,
+                                            bias=ConvBlockData.bias,
+                                            batch_norm=basic_dense_data.batch_norm,
+                                            dropout_rate=basic_dense_data.dropout_rate,
+                                            activation=basic_dense_data.act,
+                                            alpha=basic_dense_data.alpha
+                                            )
+                              )
 
     def forward(self, x):
         out = self.conv(x)
@@ -120,35 +119,30 @@ class DenseBlock(nn.Module):
     All blocks share similar architecture, i.e. kernels, strides, padding, batchnorm and dropout settings
     (may be expanded in the future)
     """
-    def __init__(self, channels, depth, growth_rate, kernel_size, stride, padding, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01):
+    def __init__(self, dense_data):
         super(DenseBlock, self).__init__()
-        self.in_channels    = channels
-        self.growth         = growth_rate
-        self.layers         = depth
-        self.kernel         = kernel_size
-        self.stride         = stride
-        self.padding        = padding
-        self.bnorm          = batch_norm
-        self.drate          = dropout_rate
-        self.activator      = act
-        self.alpha          = alpha
+        self.data = dense_data
 
         self.module_list    = nn.ModuleList()
 
         # ---------------------------------------------------------
         # Creating the Blocks according to the inputs
         # ---------------------------------------------------------
-        for ii in range(depth):
-            self.module_list.append(BasicDenseBlock(in_channels=channels+ii*growth_rate,
-                                                    growth=growth_rate,
-                                                    kernel_size=kernel_size,
-                                                    stride=stride,
-                                                    padding=padding,
-                                                    batch_norm=batch_norm,
-                                                    dropout_rate=dropout_rate,
-                                                    act=act,
-                                                    alpha=alpha))
+        for ii in range(dense_data.depth):
+            self.module_list.append(BasicDenseBlock(ConvBlockData(in_channels=dense_data.in_channels+ii*dense_data.growth,
+                                                                  out_channels=dense_data.growth,
+                                                                  kernel_size=dense_data.kernel,
+                                                                  stride=dense_data.stride,
+                                                                  padding=dense_data.padding,
+                                                                  dilation=dense_data.dilation,
+                                                                  bias=dense_data.bias,
+                                                                  batch_norm=dense_data.bnorm,
+                                                                  dropout_rate=dense_data.drate,
+                                                                  activation=dense_data.act,
+                                                                  alpha=dense_data.alpha
+                                                                  )
+                                                    )
+                                    )
 
     def forward(self, x):
         for basic_block in self.module_list:
