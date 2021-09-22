@@ -1,4 +1,3 @@
-import math
 import torch
 import torch.nn as nn
 from global_const import activation_type_e, pool_e
