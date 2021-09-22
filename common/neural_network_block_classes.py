@@ -184,28 +184,24 @@ class FullyConnectedBlock(nn.Module):
     """
         This class implements a fully connected block, support batch morn, ReLU and/or dropout
     """
-    def __init__(self, in_neurons, out_neurons, batch_norm=True, dropout_rate=0.0,
-                 act=activation_type_e.null, alpha=0.01):
+    def __init__(self, fc_data):
         super(FullyConnectedBlock, self).__init__()
-        self.in_neurons  = in_neurons
-        self.out_neurons = out_neurons
-        self.bnorm = batch_norm
-        self.drate = dropout_rate
+        self.data = fc_data
 
-        self.fc     = nn.Linear(in_features=in_neurons,
-                                out_features=out_neurons,
-                                bias=(not batch_norm)
+        self.fc     = nn.Linear(in_features=fc_data.in_neurons,
+                                out_features=fc_data.out_neurons,
+                                bias=fc_data.bias
                                 )
-        self.bnorm  = nn.BatchNorm1d(out_neurons)
-        self.drop   = nn.Dropout(dropout_rate)
-        self.act   = Activator(act_type=act, alpha=alpha)
+        self.bnorm  = nn.BatchNorm1d(fc_data.out_neurons) if fc_data.bnorm is True else None
+        self.drop   = nn.Dropout(fc_data.drate) if fc_data.drate > 0 else None
+        self.act   = Activator(act_type=fc_data.act, alpha=fc_data.alpha)
 
     def forward(self, x):
         out = self.fc(x)
-        if self.bnorm:
-            out = self.bnorm(out)
-        if self.drate > 0:
+        if self.data.drate > 0:
             out = self.drop(out)
+        if self.data.bnorm:
+            out = self.bnorm(out)
         out = self.act(out)
 
         return out

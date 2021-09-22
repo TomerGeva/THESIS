@@ -44,40 +44,17 @@ class EncoderVAE(nn.Module):
                 channels += action[2] * action[1]
             elif 'transition' in action[0]:
                 conv_len += 1
-                self.layers.append(DenseTransitionBlock(in_channels=channels,
-                                                        reduction_rate=action[1],
-                                                        kernel_size=action[2],
-                                                        stride=action[3],
-                                                        padding=action[4],
-                                                        batch_norm=action[5],
-                                                        dropout_rate=action[6],
-                                                        act=action[7],
-                                                        alpha=action[8],
-                                                        pool_pad=action[9],
-                                                        pool_size=action[10]
-                                                        )
+                action[1].set_in_out_channels(in_channels=channels)
+                self.layers.append(DenseTransitionBlock(action[1])
                                    )
                 channels = math.floor(channels * action[1])
             elif 'linear' in action[0]:
                 linear_len += 1
                 if action_prev is None:  # First linear layer
-                    self.layers.append(FullyConnectedBlock(in_neurons=(x_dim * y_dim * channels),
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = x_dim * y_dim * channels
                 else:
-                    self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = action_prev[1].out_neurons
+                self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
 
         self.conv_len   = conv_len
