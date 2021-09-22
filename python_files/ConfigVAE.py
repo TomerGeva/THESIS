@@ -163,8 +163,9 @@ conv1: 2500 --> 100
 DECODER
 """
 DECODER_TOPOLOGY = [
-    ['linear',      300, True, 0, activation_type_e.ReLU, 0],
-    ['linear',      100, True, 0, activation_type_e.ReLU, 0],
-    ['linear',       25, True, 0, activation_type_e.ReLU, 0],
-    ['linear_last',   1, True, 0, activation_type_e.null, 0],
+    ['linear', FCBlockData(300, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear', FCBlockData(100, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear', FCBlockData(25,  batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear', FCBlockData(1,   batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)]
+
 ]
