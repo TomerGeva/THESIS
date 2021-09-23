@@ -66,6 +66,9 @@ class Pool2dPadding(nn.Module):
 class ConvBlock(nn.Module):
     """
     This class implements a convolution block, support batch morn, dropout and activations
+
+    Input ---> conv2D ---> dropout ---> batch_norm ---> activation ---> Output
+
     """
 
     def __init__(self, conv_data):
