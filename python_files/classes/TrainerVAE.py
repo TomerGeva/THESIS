@@ -130,6 +130,7 @@ class TrainerVAE:
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
+        mse_last_group = 1e5  # if mse of last group is better, save the epoch results
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
         train_loader_iter = iter(train_loader)
@@ -235,8 +236,10 @@ class TrainerVAE:
             # Saving the training state
             # save every x epochs and on the last epoch
             # ------------------------------------------------------------------------------
-            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
+            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1 or test_mse_costs[-1] < mse_last_group:
                 self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, SENS_STD)
+                if test_mse_costs[-1] < mse_last_group:
+                    mse_last_group = test_mse_costs[-1]
 
     def save_state_train(self, logdir, vae, epoch, lr, mom, beta, norm_fact, filename=None):
         """Saving model and optimizer to drive, as well as current epoch and loss

@@ -31,74 +31,30 @@ class EncoderVAE(nn.Module):
             action = self.topology[ii]
             if 'conv' in action[0]:
                 conv_len += 1
-                channels = action[2]
-                self.layers.append(ConvBlock(in_channels=action[1],
-                                             out_channels=action[2],
-                                             kernel_size=action[3],
-                                             stride=action[4],
-                                             padding=action[5],
-                                             batch_norm=action[6],
-                                             dropout_rate=action[7],
-                                             act=action[8],
-                                             alpha=action[9]
-                                             )
-                                   )
+                channels = action[1].out_channels
+                self.layers.append(ConvBlock(action[1]))
             elif 'pool' in action[0]:
                 conv_len += 1
                 self.layers.append(Pool2dPadding(kernel=action[1],
                                                  padding=action[2]))
             elif 'dense' in action[0]:
                 conv_len += 1
-                self.layers.append(DenseBlock(channels=channels,
-                                              depth=action[2],
-                                              growth_rate=action[1],
-                                              kernel_size=action[3],
-                                              stride=action[4],
-                                              padding=action[5],
-                                              batch_norm=action[6],
-                                              dropout_rate=action[7],
-                                              act=action[8],
-                                              alpha=action[9]
-                                              )
-                                   )
-                channels += action[2] * action[1]
+                action[1].in_channels = channels
+                self.layers.append(DenseBlock(action[1]))
+                channels += action[1].growth * action[1].depth
             elif 'transition' in action[0]:
                 conv_len += 1
-                self.layers.append(DenseTransitionBlock(in_channels=channels,
-                                                        reduction_rate=action[1],
-                                                        kernel_size=action[2],
-                                                        stride=action[3],
-                                                        padding=action[4],
-                                                        batch_norm=action[5],
-                                                        dropout_rate=action[6],
-                                                        act=action[7],
-                                                        alpha=action[8],
-                                                        pool_type=action[9],
-                                                        pool_pad=action[10],
-                                                        pool_size=action[11]
-                                                        )
+                action[1].set_in_out_channels(in_channels=channels)
+                self.layers.append(DenseTransitionBlock(action[1])
                                    )
-                channels = math.floor(channels * action[1])
+                channels = math.floor(channels * action[1].reduction_rate)
             elif 'linear' in action[0]:
                 linear_len += 1
                 if action_prev is None:  # First linear layer
-                    self.layers.append(FullyConnectedBlock(in_neurons=(x_dim * y_dim * channels),
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = x_dim * y_dim * channels
                 else:
-                    self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = action_prev[1].out_neurons
+                self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
 
         self.conv_len   = conv_len
@@ -112,9 +68,9 @@ class EncoderVAE(nn.Module):
         for ii in range(len(self.topology)):
             action = self.topology[ii]
             if 'conv' in action[0]:
-                x_dim_size = int((x_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
-                y_dim_size = int((y_dim_size - (action[3] - action[4]) + 2 * action[5]) / action[4])
-                channels = action[2]
+                x_dim_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                y_dim_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                channels = action[1].out_channels
             elif 'pool' in action:
                 if type(action[2]) is not tuple:
                     x_dim_size = int((x_dim_size + 2*action[2]) / action[1])
@@ -123,20 +79,20 @@ class EncoderVAE(nn.Module):
                     x_dim_size = int((x_conv_size + action[2][0] + action[2][1]) / action[1])
                     y_dim_size = int((y_conv_size + action[2][2] + action[2][3]) / action[1])
             elif 'dense' in action[0]:
-                channels += action[1] * action[2]
+                channels += action[1].growth * action[1].depth
             elif 'transition' in action[0]:
-                channels = math.floor(channels * action[1])
+                channels = math.floor(channels * action[1].reduction_rate)
                 # ------------------------------------------------
                 # This account for the conv layer and the pooling
                 # ------------------------------------------------
-                x_conv_size = int((x_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                y_conv_size = int((y_dim_size - (action[2] - action[3]) + 2 * action[4]) / action[3])
-                if type(action[10]) is not tuple:
-                    x_dim_size = int((x_conv_size + 2*action[10]) / action[11])
-                    y_dim_size = int((y_conv_size + 2*action[10]) / action[11])
+                x_conv_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                y_conv_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+                if type(action[1].pool_padding) is not tuple:
+                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
+                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
                 else:
-                    x_dim_size = int((x_conv_size + action[10][0] + action[10][1]) / action[11])
-                    y_dim_size = int((y_conv_size + action[10][2] + action[10][3]) / action[11])
+                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding[0] + 2*action[1].pool_padding[1]) / action[1].pool_size)
+                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding[2] + 2*action[1].pool_padding[3]) / action[1].pool_size)
 
         return x_dim_size, y_dim_size, channels
 

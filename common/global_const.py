@@ -21,4 +21,3 @@ class activation_type_e(Enum):
 class pool_e(Enum):
     MAX = 0
     AVG = 1
-

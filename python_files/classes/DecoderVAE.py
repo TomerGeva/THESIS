@@ -25,23 +25,10 @@ class DecoderVAE(nn.Module):
             if 'linear' in action[0]:
                 linear_idx += 1
                 if action_prev is None:  # First linear layer
-                    self.layers.append(FullyConnectedBlock(in_neurons=latent_dim,
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = latent_dim
                 else:
-                    self.layers.append(FullyConnectedBlock(in_neurons=action_prev[1],
-                                                           out_neurons=action[1],
-                                                           batch_norm=action[2],
-                                                           dropout_rate=action[3],
-                                                           act=action[4],
-                                                           alpha=action[5]
-                                                           )
-                                       )
+                    action[1].in_neurons = action_prev[1].out_neurons
+                    self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
 
     def forward(self, x):
