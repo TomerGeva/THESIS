@@ -132,7 +132,8 @@ if __name__ == '__main__':
     # TO WORK WITH MODELS OLDER MODELS ABOVE, WE NEED TO ROLLBACK TO REVISION 5ecc9855a264e09cfb5aa92dcd8ba3729f818193
     # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     """
-    c_path = '..\\results\\19_9_2021_7_14'
+    # 22_9_2021_21_52 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 12] lr 3e-4, without bias in conv and FC
+    c_path = '..\\results\\22_9_2021_21_52'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)

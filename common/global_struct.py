@@ -3,7 +3,7 @@ import math
 
 
 class ConvBlockData:
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, bias=None, batch_norm=True,
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels
         self.out_channels   = out_channels
@@ -22,7 +22,7 @@ class ConvBlockData:
 
 
 class DenseBlockData:
-    def __init__(self, growth_rate, depth, kernel_size, stride, padding, dilation=1, bias=None, batch_norm=True,
+    def __init__(self, growth_rate, depth, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = None  # computed during encoder Init
         self.growth         = growth_rate
@@ -42,7 +42,7 @@ class DenseBlockData:
 
 
 class TransBlockData:
-    def __init__(self, reduction_rate, kernel_size, stride, padding, dilation=1, bias=None,
+    def __init__(self, reduction_rate, kernel_size, stride, padding, dilation=1, bias=True,
                  batch_norm=True, dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01,
                  pool_type=pool_e.MAX, pool_pad=0, pool_size=2):
         self.in_channels    = None  # computed during encoder Init
@@ -70,7 +70,7 @@ class TransBlockData:
 
 
 class FCBlockData:
-    def __init__(self, out_neurons, bias=None, batch_norm=True, dropout_rate=0.0,
+    def __init__(self, out_neurons, bias=True, batch_norm=True, dropout_rate=0.0,
                  activation=activation_type_e.null, alpha=0.01):
         self.in_neurons     = None  # computed during encoder Init
         self.out_neurons    = out_neurons

@@ -28,7 +28,7 @@ class DecoderVAE(nn.Module):
                     action[1].in_neurons = latent_dim
                 else:
                     action[1].in_neurons = action_prev[1].out_neurons
-                    self.layers.append(FullyConnectedBlock(action[1]))
+                self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
 
     def forward(self, x):
