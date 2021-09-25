@@ -132,8 +132,9 @@ if __name__ == '__main__':
     # TO WORK WITH MODELS OLDER MODELS ABOVE, WE NEED TO ROLLBACK TO REVISION 5ecc9855a264e09cfb5aa92dcd8ba3729f818193
     # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     """
-    # 22_9_2021_21_52 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 12] lr 3e-4, without bias in conv and FC
-    c_path = '..\\results\\22_9_2021_21_52'
+    # 22_9_2021_21_52 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 12] lr 3e-, without bias in conv and FC
+    # 23_9_2021_23_29 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 12] lr 3e-4 BEST RESULTS SO FAR NEW CONFIGS
+    c_path = '..\\results\\23_9_2021_23_29'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)

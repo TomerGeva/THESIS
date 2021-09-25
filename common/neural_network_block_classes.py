@@ -103,7 +103,7 @@ class BasicDenseBlock(nn.Module):
     This basic block implements convolution and then concatenation of the input to the output over the channels.
     This block supports batch normalization and / or dropout, and activations
 
-    Input ---> conv2D ---> dropout ---> concatenation ---> batch_norm ---> activation ---> Output
+    Input ---> conv2D ---> dropout  ---> batch_norm ---> activation ---> concatenation ---> Output
 
     """
     def __init__(self, basic_dense_data):
@@ -119,18 +119,18 @@ class BasicDenseBlock(nn.Module):
                               bias=basic_dense_data.bias
                               )
         self.drop = nn.Dropout(basic_dense_data.drate) if basic_dense_data.drate > 0 else None
-        self.bnorm = nn.BatchNorm2d(num_features=(basic_dense_data.out_channels+basic_dense_data.in_channels)) if basic_dense_data.bnorm is True else None
+        self.bnorm = nn.BatchNorm2d(num_features=basic_dense_data.out_channels) if basic_dense_data.bnorm is True else None
         self.act = Activator(act_type=basic_dense_data.act, alpha=basic_dense_data.alpha)
 
     def forward(self, x):
         out = self.conv(x)
         if self.data.drate > 0:
             out = self.drop(out)
-        out = torch.cat([x, out], 1)  # concatenating over channel dimension
         if self.data.bnorm is True:
             out = self.bnorm(out)
         self.act(out)
 
+        out = torch.cat([x, out], 1)  # concatenating over channel dimension
         return out
 
 

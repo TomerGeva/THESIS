@@ -280,7 +280,7 @@ class TrainerVAE:
 
     def get_test_group_weight(self, test_group):
         low_threshold = eval(test_group.split('_')[0])
-        low_threshold = (abs(low_threshold) - SENS_MEAN) / SENS_STD if SIGNED_SENS else low_threshold / SENS_STD
+        low_threshold = (abs(low_threshold) - SENS_MEAN) / SENS_STD if ABS_SENS else low_threshold / SENS_STD
         for ii, th in enumerate(self.group_th):
             if low_threshold < th:
                 return self.group_weights[ii]
