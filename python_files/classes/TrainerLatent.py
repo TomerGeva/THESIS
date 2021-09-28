@@ -11,7 +11,8 @@ class TrainerLatent:
     """
     This class holds the Trainer for the Variational autoencoder
     """
-    def __init__(self, input_vec, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5, training=True):
+    def __init__(self, input_vec, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5, training=True,
+                 abs_sens=True, sens_std=SENS_STD, sens_mean=SENS_MEAN):
         # -------------------------------------
         # optimizer
         # -------------------------------------
@@ -33,25 +34,42 @@ class TrainerLatent:
         # Misc training parameters
         # -------------------------------------
         self.cost = []
-        self.learning_rate = lr
-        self.mom = mom
-        self.beta = beta
-        self.grad_clip = grad_clip
-        self.training = training
+        self.learning_rate  = lr
+        self.mom            = mom
+        self.beta           = beta
+        self.grad_clip      = grad_clip
+        self.training       = training
+        self.abs_sens       = abs_sens
+        self.sens_std       = sens_std
+        self.sens_mean      = sens_mean
 
-    def optimize_input(self, input_vec, decoder, steps, save_per_epoch=1):
+    def optimize_input(self, input_vec, decoder, steps, logger, save_per_epoch=1):
         """
         :param input_vec: The input vector we want to optimize
         :param decoder: the trained decoder predicting the sensitivity from the latent space
         :param steps: number of optimization steps the trainer performs
+        :param logger: the logger for the training
         :param save_per_epoch:  flag indicating if you want to save
         :return: the function changes the input to yield maximal sensitivity
         """
+        # ==========================================================================================
+        # Init Log
+        # ==========================================================================================
+        logger.start_log(filename='logger_latent.txt')
+        logger.log_start_setup(input_vec.size)
+        # ==========================================================================================
+        # Begin of training
+        # ==========================================================================================
         for step in range(steps):
             # ------------------------------------------------------------------------------
             # Forward pass
             # ------------------------------------------------------------------------------
             sensitivity = decoder(input_vec)
+            # ------------------------------------------------------------------------------
+            # Normalizing and documenting training results with LoggerLatent
+            # ------------------------------------------------------------------------------
+            sensitivity = ((sensitivity * self.sens_std) + self.sens_mean) if self.abs_sens else sensitivity * self.sens_std
+            logger.log_step(step, sensitivity)
             # ------------------------------------------------------------------------------
             # Backward computations
             # ------------------------------------------------------------------------------

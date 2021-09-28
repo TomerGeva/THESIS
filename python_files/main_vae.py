@@ -3,7 +3,9 @@
 import torch
 from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
+from LoggerLatent               import LoggerLatent
 from TrainerVAE                 import TrainerVAE
+from TrainerLatent              import TrainerLatent
 from ModVAE                     import ModVAE
 from auxiliary_functions        import initialize_weights
 from ScatterCoordinateDataset   import import_data_sets
@@ -66,8 +68,32 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
 
 
 def main_optim_latent(path=None):
+    # ================================================================================
+    # Loading the decoder creating the input vector TODO: need to set a path to a requested model folder
+    # ================================================================================
     decoder, latent_dim = load_decoder()
     input_vec = torch.rand(latent_dim)
+    # ================================================================================
+    # Setting the logger - TODO: need to set a path to a requested model folder
+    # ================================================================================
+    logger = LoggerLatent(path=PATH_LOGS)
+    # ================================================================================
+    # Creating the trainer object
+    # ================================================================================
+    trainer = TrainerLatent(input_vec=input_vec,
+                            lr=LR,
+                            mom=MOM,
+                            beta=BETA,
+                            sched_step=SCHEDULER_STEP,
+                            sched_gamma=SCHEDULER_GAMMA,
+                            grad_clip=GRAD_CLIP,
+                            abs_sens=ABS_SENS,
+                            sens_std=SENS_STD,
+                            sens_mean=SENS_MEAN)
+    # ================================================================================
+    # Training
+    # ================================================================================
+    trainer.optimize_input(input_vec, decoder, 2000, logger, save_per_epoch=1)
 
 
 if __name__ == '__main__':
