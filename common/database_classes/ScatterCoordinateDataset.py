@@ -17,13 +17,14 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, abs_sens=True):
+    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, mix_prob=0, abs_sens=True):
         """
         Args:
         :param csv_files: logdir to the file with all the database
         :param transform: transformation flag of the data
         :param      case: train of test database
         :param mix_factor: mixup parameter, should be between 0 and 1
+        :param mix_prob: probability to do mixup when calling __get_item__(), should be between 0 and 1
         :param abs_sens: if true, doing abs on the sensitivity
         """
         dirname  = os.path.dirname(__file__)
@@ -41,6 +42,7 @@ class ScattererCoordinateDataset(Dataset):
         self.transform    = transform
         self.case         = case
         self.mixup_factor = mix_factor
+        self.mixup_prob   = mix_prob
         self.abs_sens     = abs_sens
 
     def __len__(self):
@@ -98,12 +100,12 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # Doing mixup, if indicated and possible
         # ----------------------------------------------------------------------------------------------------------
-        if mixup and self.case == 'train' and len(self.csv_lens) > 1:
+        if mixup and self.case == 'train' and len(self.csv_lens) > 1 and self.mixup_prob > 0:
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # Randomly deciding to do mixup or not
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             eps = rnd.random()
-            if eps >= 0:  # 0.11:
+            if eps >= self.mixup_prob:  # 0.1:
                 return sample
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # Raffling a different group
@@ -169,11 +171,12 @@ class ToTensorMap(object):
 # ======================================================================================================================
 # defining function which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets(batch_size, mixup_factor, abs_sens):
+def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True):
     """
     This function imports the train and test database
     :param batch_size: size of each batch in the databases
-    :param mixup_factor: for the training dataset, possibility of performing mixup, with the mixup factor
+    :param mixup_factor: for the training dataset,  the mixup factor
+    :param mixup_prob: for the training dataset, probability of performing mixup with the mixup factor
     :param abs_sens: if true, doing absolute value over teh sensitivity
     :return: two datasets, training and test
     """
@@ -184,6 +187,7 @@ def import_data_sets(batch_size, mixup_factor, abs_sens):
                                             transform=ToTensorMap(),
                                             case='train',
                                             mix_factor=mixup_factor,
+                                            mix_prob=mixup_prob,
                                             abs_sens=abs_sens)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS)
 

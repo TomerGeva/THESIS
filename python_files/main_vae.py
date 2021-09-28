@@ -26,6 +26,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
     # ================================================================================
     train_loader, test_loaders, thresholds = import_data_sets(BATCH_SIZE,
                                                               mixup_factor=MIXUP_FACTOR,
+                                                              mixup_prob=MIXUP_PROB,
                                                               abs_sens=ABS_SENS)
 
     # ================================================================================

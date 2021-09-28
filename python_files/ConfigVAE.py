@@ -25,6 +25,7 @@ SENS_STD    = 41025
 ABS_SENS    = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
+MIXUP_PROB     = 0.1  # mixup probability
 NUM_WORKERS    = 8
 
 # ---logdir for saving the database ---
@@ -34,12 +35,14 @@ SAVE_PATH_NET = './trained_nn.pth'
 # -------------- paths --------------
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30p5k_unsigned_lt_1e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_1e+05_train.csv',
-                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_3e+05_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30p5k_unsigned_lt_1e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_1e+05_test.csv',
-                       '..\\..\\databases\\corner_1450_db_30p5k_unsigned_gt_3e+05_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30p5k_signed_lt_1e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_1e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_2e+05_train.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_3e+05_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30p5k_signed_lt_1e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_1e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_2e+05_test.csv',
+                       '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_3e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # ==================================
 # Flow Control Variables
@@ -53,8 +56,8 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 2.44e-5       # the KL coefficient in the cost function
-MSE_GROUP_WEIGHT = [1, 1.5, 12]  # weighted MSE according to sensitivity group
+BETA             = 2.44e-5          # the KL coefficient in the cost function
+MSE_GROUP_WEIGHT = [1, 1.5, 2, 12]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 80
 LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 20

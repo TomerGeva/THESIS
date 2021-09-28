@@ -133,8 +133,10 @@ if __name__ == '__main__':
     # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     """
     # 22_9_2021_21_52 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 12] lr 3e-, without bias in conv and FC
-    # 23_9_2021_23_29 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 12] lr 3e-4 BEST RESULTS SO FAR NEW CONFIGS
-    c_path = '..\\results\\23_9_2021_23_29'
+    # 23_9_2021_23_29 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 12] lr 3e-4
+    # 25_9_2021_17_24 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 3, 12] lr 1e-4
+    # 26_9_2021_11_25 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 2, 12] lr 1e-4 BEST RESULTS SO FAR NEW CONFIGS
+    c_path = '..\\results\\26_9_2021_11_25'
     c_epoch = 20
 
     # load_and_batch(c_path, c_epoch)
