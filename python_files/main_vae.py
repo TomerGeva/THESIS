@@ -8,6 +8,7 @@ from ModVAE                     import ModVAE
 from auxiliary_functions        import initialize_weights
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
+from database_functions         import load_decoder
 
 
 def main_vae(encoder_type=encoder_type_e.DENSE):
@@ -64,6 +65,21 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
     trainer.train(mod_vae, train_loader, test_loaders, logger, save_per_epochs=20)
 
 
+def main_optim_latent(path=None):
+    decoder, latent_dim = load_decoder()
+    input_vec = torch.rand(latent_dim)
+
+
 if __name__ == '__main__':
-    enc_type = encoder_type_e.DENSE
-    main_vae(enc_type)
+    phase = 2
+    # ================================================================================
+    # Training VAE on scatterer arrays and matching sensitivities
+    # ================================================================================
+    if phase == 1:
+        enc_type = encoder_type_e.DENSE
+        main_vae(enc_type)
+    # ================================================================================
+    # Using the decoder to maximize sensitivity prediction
+    # ================================================================================
+    if phase == 2:
+        main_optim_latent()
