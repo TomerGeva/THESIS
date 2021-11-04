@@ -91,11 +91,11 @@ def load_and_batch(path, epoch):
     """
     :return: This function loads a saves model, and tests the MSE of the target error
     """
-    data_path                       = os.path.join(path, 'VAE_model_data_lr_0.0001_epoch_' + str(epoch) + '.tar')
-    train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
-    mod_vae, trainer                = load_state_train(data_path)
+    data_path                   = os.path.join(path, 'VAE_model_data_lr_0.0003_epoch_' + str(epoch) + '.tar')
+    train_loader, test_loader   = import_data_sets(BATCH_SIZE, 0.15)
+    mod_vae, trainer            = load_state_train(data_path)
 
-    smapled_batch   = next(iter(test_loaders['0_to_1e+05']))
+    smapled_batch   = next(iter(test_loader))
     grids           = Variable(smapled_batch['grid'].float()).to(mod_vae.device)
     sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
 
@@ -136,25 +136,9 @@ if __name__ == '__main__':
     # 23_9_2021_23_29 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 12] lr 3e-4
     # 25_9_2021_17_24 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 3, 12] lr 1e-4
     # 26_9_2021_11_25 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 2, 12] lr 1e-4 BEST RESULTS SO FAR NEW CONFIGS
-    # 28_9_2021_7_12  - without mixup, 30p5k unsigned database - weighted MSE [1, 3, 2, 12] lr 1e-4
-    # 30_9_2021_8_45  - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 2, 12] lr 1e-4 beta 1e-2
-    # 2_10_2021_9_40  - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 2, 12] lr 1e-4 beta 1e-1
-    # 4_10_2021_11_50 - without mixup, 30p5k unsigned database - weighted MSE [1, 1.5, 2, 20] lr 1e-4 beta 1e-1
-    # 11_10_2021_15_49 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1
-    # ---------------- BEGINNING LATENT SPACE REDUCTION ----------------------
-    # 17_10_2021_6_51 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers, Latent size 90  42000!!!
-    # 24_10_2021_7_1 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 70
-    # 24_10_2021_15_19 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 50 - 40500!!!
-    # 25_10_2021_11_7 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 40 - 40500
-    # 26_10_2021_9_50 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 30 - 44700
-    # 28_10_2021_14_11 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 20 -42500
-    # 30_10_2021_15_50 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 110 - 39300
-    # 31_10_2021_18_13 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 10 - 43800
-    # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
+    c_path = '..\\results\\26_9_2021_11_25'
+    c_epoch = 20
 
-    c_path = '..\\results\\2_11_2021_8_9'
-    c_epoch = 12
-
-    load_and_batch(c_path, c_epoch)
+    # load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

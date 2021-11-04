@@ -25,7 +25,7 @@ SENS_STD    = 41025
 ABS_SENS    = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
-MIXUP_PROB     = 0  # mixup probability
+MIXUP_PROB     = 0.1  # mixup probability
 NUM_WORKERS    = 8
 
 # ---logdir for saving the database ---
@@ -56,19 +56,19 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1  # 2.44e-5          # the KL coefficient in the cost function
-MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
-EPOCH_NUM        = 200
+BETA             = 2.44e-5          # the KL coefficient in the cost function
+MSE_GROUP_WEIGHT = [1, 1.5, 2, 12]  # weighted MSE according to sensitivity group
+EPOCH_NUM        = 80
 LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.5
 MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
 
-LATENT_SPACE_DIM = 10    # number of dimensions in the latent space
+LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
-GRAD_CLIP        = 3
+GRAD_CLIP        = 5
 
 
 # --------------------------------------------------------
@@ -139,20 +139,6 @@ ENCODER_TOPOLOGY = [
 #   5. alpha
 """
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv',      ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=8)],
-    ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
-]
-"""
-DENSE_ENCODER_TOPOLOGY = [
     ['conv',      ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
@@ -167,10 +153,9 @@ DENSE_ENCODER_TOPOLOGY = [
     ['dense',    DenseBlockData(100, 6, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=1)],
     ['linear', FCBlockData(500,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(180,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear', FCBlockData(150,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
-"""
 
 # --------------------------------------------------------
 # Decoder topology
