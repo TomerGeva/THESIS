@@ -97,7 +97,7 @@ def main_optim_latent(path=None):
 
 
 if __name__ == '__main__':
-    phase = 2
+    phase = 1
     # ================================================================================
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
