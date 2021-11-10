@@ -3,7 +3,7 @@
 # ***************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e
-from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData
+from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ConvTransposeBlockData
 
 # ===================================
 # Database Variables
@@ -147,7 +147,7 @@ DENSE_ENCODER_TOPOLOGY = [
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=8)],
+    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
     ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
@@ -182,8 +182,7 @@ DECODER
 """
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(100, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(25,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(1,   batch_norm=False, dropout_rate=0, activation=activation_type_e.null)]  # DO NOT CHANGE THIS LINE EVER
-
+    ['linear', FCBlockData(501, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['convTrans', ConvTransposeBlockData(1, 256, 7, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['convTrans', ConvTransposeBlockData(256, 128, 4, 2, 0, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
