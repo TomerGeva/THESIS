@@ -114,6 +114,7 @@ class ConvTransposeBlock(nn.Module):
                                          kernel_size=conv_data.kernel,
                                          stride=conv_data.stride,
                                          padding=conv_data.padding,
+                                         output_padding=conv_data.output_padding,
                                          dilation=conv_data.dilation,
                                          bias=conv_data.bias
                                          )

@@ -17,7 +17,7 @@ class DecoderVAE(nn.Module):
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
         linear_idx      = 0
-        convTrans_idx   = 0
+        conv_trans_idx   = 0
         action_prev     = None
         in_channels     = 0
         for ii in range(len(self.topology)):
@@ -31,12 +31,12 @@ class DecoderVAE(nn.Module):
                 self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
             elif 'convTrans' in action[0]:
-                convTrans_idx += 1
+                conv_trans_idx += 1
                 in_channels = action[1].out_channels
                 self.layers.append(ConvTransposeBlock(action[1]))
 
         self.fc_len         = linear_idx
-        self.convTrans_len  = convTrans_idx
+        self.convTrans_len  = conv_trans_idx
 
     def forward(self, x):
         # ---------------------------------------------------------
@@ -54,7 +54,7 @@ class DecoderVAE(nn.Module):
         # ---------------------------------------------------------
         # restoring the array
         # ---------------------------------------------------------
-        z = z.view(-1, x.size(1), 1, 1)
+        z = z.view(-1, z.size(1), 1, 1)
         for ii in range(self.convTrans_len):
             layer = self.layers[self.fc_len + ii]
             z = layer(z)

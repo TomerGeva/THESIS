@@ -22,14 +22,15 @@ class ConvBlockData:
 
 
 class ConvTransposeBlockData:
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
-                 dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, output_padding=0, bias=True,
+                 batch_norm=True, dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels
         self.out_channels   = out_channels
         self.kernel         = kernel_size
         self.stride         = stride
         self.padding        = padding
         self.dilation       = dilation
+        self.output_padding = output_padding
         if bias is None:
             self.bias = not batch_norm
         else:

@@ -26,7 +26,7 @@ ABS_SENS    = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 MIXUP_PROB     = 0  # mixup probability
-NUM_WORKERS    = 8
+NUM_WORKERS    = 4
 
 # ---logdir for saving the database ---
 SAVE_PATH_DB = './database.pth'
@@ -146,6 +146,8 @@ DENSE_ENCODER_TOPOLOGY = [
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense', DenseBlockData(64, 8, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
     ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -183,6 +185,10 @@ DECODER
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(501, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(1, 256, 7, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(256, 128, 4, 2, 0, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+    ['convTrans', ConvTransposeBlockData(500, 128, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                       # 1  --> 8
+    ['convTrans', ConvTransposeBlockData(128, 64, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 8  --> 29
+    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 29 --> 91
+    ['convTrans', ConvTransposeBlockData(32,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 91 --> 276
+    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 276 --> 832
+    ['convTrans', ConvTransposeBlockData(4,    1, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],    # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
