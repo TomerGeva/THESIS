@@ -116,10 +116,10 @@ DENSE_ENCODER_TOPOLOGY = [
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(501, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(500, 64, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                      # 1  --> 8
-    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 8  --> 29
-    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 29 --> 91
-    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 91 --> 276
-    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 276 --> 832
-    ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.sig)],    # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
+    ['convTrans', ConvTransposeBlockData(500, 64, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                     # 1  --> 8
+    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],   # 8  --> 29
+    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],   # 29 --> 91
+    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],   # 91 --> 276
+    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],   # 276 --> 832
+    ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.sig)],   # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]

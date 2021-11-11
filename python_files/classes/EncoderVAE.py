@@ -2,6 +2,7 @@ from ConfigVAE import *
 import math
 import torch.nn as nn
 from neural_network_block_classes import ConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, Pool2dPadding
+from auxiliary_functions import compute_output_dim
 
 
 class EncoderVAE(nn.Module):
@@ -65,34 +66,8 @@ class EncoderVAE(nn.Module):
         y_dim_size  = YQUANTIZE
         channels    = 0
 
-        for ii in range(len(self.topology)):
-            action = self.topology[ii]
-            if 'conv' in action[0]:
-                x_dim_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                y_dim_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                channels = action[1].out_channels
-            elif 'pool' in action:
-                if type(action[2]) is not tuple:
-                    x_dim_size = int((x_dim_size + 2*action[2]) / action[1])
-                    y_dim_size = int((y_dim_size + 2*action[2]) / action[1])
-                else:
-                    x_dim_size = int((x_conv_size + action[2][0] + action[2][1]) / action[1])
-                    y_dim_size = int((y_conv_size + action[2][2] + action[2][3]) / action[1])
-            elif 'dense' in action[0]:
-                channels += action[1].growth * action[1].depth
-            elif 'transition' in action[0]:
-                channels = math.floor(channels * action[1].reduction_rate)
-                # ------------------------------------------------
-                # This account for the conv layer and the pooling
-                # ------------------------------------------------
-                x_conv_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                y_conv_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                if type(action[1].pool_padding) is not tuple:
-                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
-                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding) / action[1].pool_size)
-                else:
-                    x_dim_size = int((x_conv_size + 2*action[1].pool_padding[0] + 2*action[1].pool_padding[1]) / action[1].pool_size)
-                    y_dim_size = int((y_conv_size + 2*action[1].pool_padding[2] + 2*action[1].pool_padding[3]) / action[1].pool_size)
+        for action in self.topology:
+            x_dim_size, y_dim_size, channels = compute_output_dim(x_dim_size, y_dim_size, channels, action)
 
         return x_dim_size, y_dim_size, channels
 

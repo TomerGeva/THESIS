@@ -2,6 +2,7 @@ import os
 import math
 from ConfigVAE import *
 from LoggerGeneric import LoggerGeneric
+from auxiliary_functions import compute_output_dim
 
 
 class LoggerVAE(LoggerGeneric):
@@ -42,6 +43,20 @@ class LoggerVAE(LoggerGeneric):
                    'd} activation:  {7:^' + str(self.desc_space) + \
                    's} Output size: {8:^' + str(self.desc_space) + '}X{9:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
+
+    def _get_conv_transpose_layer_string(self, in_ch, out_ch, ktilde, stride, pad, out_pad, bnorm, drate, active, x_dim,
+                                         y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) +\
+                   'd} Out channels:{1:^' + str(self.desc_space) +\
+                   'd} Kernel:      {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
+                   'd} Out Padding: {5:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, ktilde, stride, pad, out_pad, str(bnorm), drate, active.name, x_dim, y_dim)
 
     def _get_pool_layer_string(self, ktilde, x_dim, y_dim):
         temp_str = 'K^tilde: {0:1d} Output size: {1:^' + str(self.desc_space) + '}X{2:^' + str(self.desc_space) + '}'
@@ -91,6 +106,62 @@ class LoggerVAE(LoggerGeneric):
                    '}X{12:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_type.name,
                                pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
+
+    def _get_layer_log_string(self, x_dim_size, y_dim_size, channels, action):
+        if 'conv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_conv_layer_string(action[1].in_channels,
+                                                                                   action[1].out_channels,
+                                                                                   action[1].kernel,
+                                                                                   action[1].stride,
+                                                                                   action[1].padding,
+                                                                                   action[1].bnorm,
+                                                                                   action[1].drate,
+                                                                                   action[1].act,
+                                                                                   x_dim_size,
+                                                                                   y_dim_size))
+        elif 'dense' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_dense_layer_string(channels,
+                                                                                    action[1].depth,
+                                                                                    action[1].growth,
+                                                                                    action[1].kernel,
+                                                                                    action[1].stride,
+                                                                                    action[1].padding,
+                                                                                    action[1].bnorm,
+                                                                                    action[1].drate,
+                                                                                    action[1].act,
+                                                                                    x_dim_size,
+                                                                                    y_dim_size))
+        elif 'transition' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
+                                                                                         action[1].reduction_rate,
+                                                                                         action[1].kernel,
+                                                                                         action[1].stride,
+                                                                                         action[1].padding,
+                                                                                         action[1].bnorm,
+                                                                                         action[1].drate,
+                                                                                         action[1].act,
+                                                                                         action[1].pool_type,
+                                                                                         action[1].pool_size,
+                                                                                         x_dim_size,
+                                                                                         y_dim_size))
+        elif 'linear' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
+                                                                                     action[1].out_neurons,
+                                                                                     action[1].bnorm,
+                                                                                     action[1].drate,
+                                                                                     action[1].act))
+        elif 'convTrans' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_conv_transpose_layer_string(action[1].in_channels,
+                                                                                             action[1].out_channels,
+                                                                                             action[1].kernel,
+                                                                                             action[1].stride,
+                                                                                             action[1].padding,
+                                                                                             action[1].output_padding,
+                                                                                             action[1].bnorm,
+                                                                                             action[1].drate,
+                                                                                             action[1].act,
+                                                                                             x_dim_size,
+                                                                                             y_dim_size))
 
     # ==================================================================================================================
     # Logging functions
@@ -200,78 +271,25 @@ class LoggerVAE(LoggerGeneric):
         # ==============================================================================================================
         self.log_title('VAE Dense Encoder architecture')
         self.log_line('Input size: {}X{}X{}'.format(channels, x_dim_size, y_dim_size))
-        for ii in range(len(mod_vae.encoder.topology)):
+        for action in mod_vae.encoder.topology:
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.encoder.topology[ii]
-            if 'conv' in action[0]:
-                x_dim_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                y_dim_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-
-                self.log_line(self.get_header(action[0]) + self._get_conv_layer_string(action[1].in_channels,
-                                                                                       action[1].out_channels,
-                                                                                       action[1].kernel,
-                                                                                       action[1].stride,
-                                                                                       action[1].padding,
-                                                                                       action[1].bnorm,
-                                                                                       action[1].drate,
-                                                                                       action[1].act,
-                                                                                       x_dim_size,
-                                                                                       y_dim_size))
-                channels = action[1].out_channels
-            elif 'dense' in action[0]:
-                self.log_line(self.get_header(action[0]) + self._get_dense_layer_string(channels,
-                                                                                        action[1].depth,
-                                                                                        action[1].growth,
-                                                                                        action[1].kernel,
-                                                                                        action[1].stride,
-                                                                                        action[1].padding,
-                                                                                        action[1].bnorm,
-                                                                                        action[1].drate,
-                                                                                        action[1].act,
-                                                                                        x_dim_size,
-                                                                                        y_dim_size))
-                channels  += action[1].depth * action[1].growth
-            elif 'transition' in action[0]:
-                x_conv_size = int((x_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                y_conv_size = int((y_dim_size - (action[1].kernel - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-                if type(action[1].pool_padding) is not tuple:
-                    x_dim_size = int((x_conv_size + 2 * action[1].pool_padding) / action[1].pool_size)
-                    y_dim_size = int((y_conv_size + 2 * action[1].pool_padding) / action[1].pool_size)
-                else:
-                    x_dim_size = int((x_conv_size + 2 * action[1].pool_padding[0] + 2 * action[1].pool_padding[1]) / action[1].pool_size)
-                    y_dim_size = int((y_conv_size + 2 * action[1].pool_padding[2] + 2 * action[1].pool_padding[3]) / action[1].pool_size)
-                self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
-                                                                                             action[1].reduction_rate,
-                                                                                             action[1].kernel,
-                                                                                             action[1].stride,
-                                                                                             action[1].padding,
-                                                                                             action[1].bnorm,
-                                                                                             action[1].drate,
-                                                                                             action[1].act,
-                                                                                             action[1].pool_type,
-                                                                                             action[1].pool_size,
-                                                                                             x_dim_size,
-                                                                                             y_dim_size))
-                channels = action[1].out_channels
-            elif 'linear' in action[0]:
-                self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
-                                                                                         action[1].out_neurons,
-                                                                                         action[1].bnorm,
-                                                                                         action[1].drate,
-                                                                                         action[1].act))
-
+            x_dim_size, y_dim_size, channels_temp = compute_output_dim(x_dim_size, y_dim_size, channels, action)
+            self._get_layer_log_string(x_dim_size, y_dim_size, channels, action)
+            channels = channels_temp
         # ==============================================================================================================
         # Decoder log
         # ==============================================================================================================
         self.log_title('VAE Decoder architecture')
         self.log_line('Input size: {}'.format(mod_vae.latent_dim))
-        for ii in range(len(mod_vae.decoder.topology)):
+        for action in mod_vae.decoder.topology:
             # ------------------------------------------------------------------------------------------------------
             # For each action, computing the output size and logging
             # ------------------------------------------------------------------------------------------------------
-            action = mod_vae.decoder.topology[ii]
+            x_dim_size, y_dim_size, channels_temp = compute_output_dim(x_dim_size, y_dim_size, channels, action)
+            self._get_layer_log_string(x_dim_size, y_dim_size, channels, action)
+            channels = channels_temp
             if 'linear' in action[0]:
                 self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
                                                                                          action[1].out_neurons,
