@@ -56,7 +56,8 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-BETA             = 1  # 2.44e-5          # the KL coefficient in the cost function
+BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost function
+BETA_GRID        = 1
 MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 200
 LR               = 1e-4  # learning rate
@@ -93,51 +94,6 @@ ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------
-# Init layer:
-"""
-#   1. in channels
-#   2. out channels
-#   3. kernel size
-#   4. stride
-#   5. padding
-#   6. batch_norm
-#   7. drop_rate
-#   8. activation
-#   9. alpha
-"""
-# Dense block:
-"""
-#   1. growth rate
-#   2. depth
-#   3. kernel size
-#   4. stride
-#   5. padding
-#   6. batch_norm
-#   7. drop_rate
-#   8. activation
-#   9. alpha
-"""
-# Transition:
-"""
-#   1. reduction rate
-#   2. conv kernel
-#   3. conv stride
-#   4. conv padding
-#   5. batch_norm
-#   6. drop_rate
-#   7. activation
-#   8. alpha
-#   9. pool padding
-#  10. pool size
-"""
-# Fully connected:
-"""
-#   1. Out channels
-#   2. batch_norm
-#   3. drop_rate
-#   4. activation
-#   5. alpha
-"""
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',      ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -146,8 +102,8 @@ DENSE_ENCODER_TOPOLOGY = [
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
-    ['dense', DenseBlockData(64, 8, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition', TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense', DenseBlockData(64, 8, 3, 1, 1,     batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
     ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
     ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -177,18 +133,13 @@ DENSE_ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 # Decoder topology
 # --------------------------------------------------------
-"""
-Decoder input: 2500 X 2500
-conv1: 2500 --> 100
-DECODER
-"""
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(501, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(500, 128, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                       # 1  --> 8
+    ['convTrans', ConvTransposeBlockData(500, 128, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                      # 1  --> 8
     ['convTrans', ConvTransposeBlockData(128, 64, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 8  --> 29
     ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 29 --> 91
     ['convTrans', ConvTransposeBlockData(32,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 91 --> 276
     ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 276 --> 832
-    ['convTrans', ConvTransposeBlockData(4,    1, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],    # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
+    ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.sig)],    # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]

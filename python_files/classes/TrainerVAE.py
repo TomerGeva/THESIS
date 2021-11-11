@@ -9,14 +9,15 @@ import torch.optim as optim
 
 class TrainerVAE:
     """
-    This class holds the Trainer for the Variational autoencoder
+    This class holds the Trainer for the Variational auto-encoder
     """
-    def __init__(self, net, lr=1e-2, mom=0.9, beta=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
+    def __init__(self, net, lr=1e-2, mom=0.9, beta_dkl=1, beta_grid=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
                  group_thresholds=None, group_weights=None, abs_sens=True, training=True):
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.reconstruction_loss = weighted_mse
+        self.reconstruction_loss = grid_mse
+        self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         # -------------------------------------
         # optimizer
@@ -43,18 +44,21 @@ class TrainerVAE:
         self.group_weights  = group_weights
         self.learning_rate  = lr
         self.mom            = mom
-        self.beta           = beta
+        self.beta_dkl       = beta_dkl
+        self.beta_grid      = beta_grid
         self.grad_clip      = grad_clip
         self.abs_sens       = abs_sens
         self.training       = training
 
-    def compute_loss(self, targets, outputs, mu, logvar):
+    def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets, grid_outputs):
         if self.training:
-            mse_loss = self.reconstruction_loss(targets, outputs, self.group_weights, self.group_th)
+            sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs, self.group_weights, self.group_th)
         else:
-            mse_loss = self.reconstruction_loss(targets, outputs)
-        kl_div   = self.d_kl(mu, logvar)
-        return mse_loss, kl_div, mse_loss + self.beta * kl_div
+            sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs)
+        kl_div          = self.d_kl(mu, logvar)
+        grid_mse_loss   = self.reconstruction_loss(grid_targets, grid_outputs)
+
+        return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
     def test_model(self, mod_vae, loader):
         """
@@ -66,8 +70,9 @@ class TrainerVAE:
         # Init variables
         # ==========================================================================================
         test_cost       = 0.0
-        test_mse_cost   = 0.0
-        test_kl_div     = 0.0
+        test_sens_mse   = 0.0
+        test_grid_mse   = 0.0
+        counter         = 0
 
         # ==========================================================================================
         # Begin of testing
@@ -88,26 +93,28 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
-                grids           = Variable(sample['grid'].float()).to(mod_vae.device)
-                sensitivities   = sample['sensitivity'].to(mod_vae.device)
+                grids           = Variable(sample['grid_in'].float()).to(mod_vae.device)
+                sensitivities   = sample['sensitivity'].float().to(mod_vae.device)
+                grid_targets    = sample['grid_target'].float().to(mod_vae.device)
 
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
-                outputs, mu, logvar = mod_vae(grids)
+                grid_out, sens_out, mu, logvar = mod_vae(grids)
 
                 # ------------------------------------------------------------------------------
                 # Cost computations
                 # ------------------------------------------------------------------------------
-                mse_loss, kl_div, cost = self.compute_loss(sensitivities, outputs, mu, logvar)
+                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out)
 
-                test_mse_cost   += mse_loss
-                test_kl_div     += sensitivities.size(0)
+                test_sens_mse   += sens_mse_loss
+                counter         += sensitivities.size(0)
+                test_grid_mse   += grid_mse_loss
                 test_cost       += cost
 
         mod_vae.train()
         self.trainer_train()
-        return test_mse_cost, test_kl_div, test_cost
+        return test_sens_mse, test_grid_mse, counter, test_cost
 
     def train(self, mod_vae, train_loader, test_loaders, logger, save_per_epochs=1):
         """
@@ -137,8 +144,9 @@ class TrainerVAE:
         train_loader_iter = iter(train_loader)
         for epoch in range(self.epoch, EPOCH_NUM):
             train_cost      = 0.0
-            train_mse_cost  = 0.0
+            train_sens_mse  = 0.0
             train_kl_div    = 0.0
+            train_grid_mse  = 0.0
             counter         = 0
             for _ in range(len(train_loader)):
                 # ------------------------------------------------------------------------------
@@ -148,25 +156,26 @@ class TrainerVAE:
                     sample_batched = next(train_loader_iter)
                 except StopIteration:
                     train_loader_iter = iter(train_loader)
-                    sample_batched = next(train_loader_iter)
+                    sample_batched    = next(train_loader_iter)
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
-                grids         = Variable(sample_batched['grid'].float()).to(mod_vae.device)
+                grids         = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
                 sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
-
+                grid_targets  = Variable(sample_batched['grid_target'].float()).to(mod_vae.device)
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
-                outputs, mu, logvar = mod_vae(grids)
+                grid_out, sens_out, mu, logvar = mod_vae(grids)
 
                 # ------------------------------------------------------------------------------
                 # Backward computations
                 # ------------------------------------------------------------------------------
-                mse_loss, kl_div, cost = self.compute_loss(sensitivities, outputs, mu, logvar)
+                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out)
                 train_cost      += cost.item()
-                train_mse_cost  += mse_loss.item()
+                train_sens_mse  += sens_mse_loss.item()
                 train_kl_div    += kl_div.item()
+                train_grid_mse  += grid_mse_loss.item()
                 counter         += sensitivities.size(0)
 
                 # ------------------------------------------------------------------------------
@@ -187,16 +196,18 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             logger.log_epoch(epoch)
             train_cost      = train_cost / counter
-            train_mse_cost  = train_mse_cost / counter
+            train_sens_mse  = train_sens_mse / counter
             train_kl_div    = train_kl_div / counter
-            logger.log_epoch_results_train('train_weighted', train_mse_cost, train_kl_div, train_cost)
+            train_grid_mse  = train_grid_mse / counter
+            logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_cost)
 
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
             # ------------------------------------------------------------------------------
-            test_mse_costs  = []
-            test_counters   = []
-            test_costs      = []
+            test_sens_mse_vec = []
+            test_grid_mse_vec = []
+            test_counters_vec = []
+            test_costs_vec    = []
             for key in test_loaders:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Getting the respective group weight
@@ -205,29 +216,34 @@ class TrainerVAE:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Testing the results of the current group
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                test_mse_cost, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
-                test_mse_cost = test_mse_cost / test_counter
+                test_sens_mse, test_grid_mse, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
+                test_sens_mse = test_sens_mse / test_counter
+                test_grid_mse = test_grid_mse / test_counter
                 test_cost     = test_cost / test_counter
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Logging
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                logger.log_epoch_results_test(key, test_mse_cost, test_mse_weight)
-                test_mse_costs.append(test_mse_cost)
-                test_counters.append(test_counter)
-                test_costs.append(test_cost)
+                logger.log_epoch_results_test(key, test_sens_mse, test_mse_weight)
+                test_sens_mse_vec.append(test_sens_mse)
+                test_grid_mse_vec.append(test_grid_mse)
+                test_counters_vec.append(test_counter)
+                test_costs_vec.append(test_cost)
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # Computing total cost for all test loaders and logging with LoggerVAE
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            test_mse_cost   = 0
+            test_sens_mse   = 0.0
+            test_grid_mse   = 0.0
             test_counter    = 0
-            test_cost       = 0
-            for mse, count, cost in zip(test_mse_costs, test_counters, test_costs):
-                test_mse_cost   += (mse * count)
-                test_cost       += (cost * count)
-                test_counter    += count
-            test_mse_cost   = test_mse_cost / test_counter
+            test_cost       = 0.0
+            for sens_mse, grid_mse, count, cost in zip(test_sens_mse_vec, test_grid_mse_vec, test_counters_vec, test_costs_vec):
+                test_sens_mse += (sens_mse * count)
+                test_grid_mse += (grid_mse * count)
+                test_cost     += (cost * count)
+                test_counter  += count
+            test_sens_mse   = test_sens_mse / test_counter
+            test_grid_mse   = test_grid_mse / test_counter
             test_cost       = test_cost / test_counter
-            logger.log_epoch_results_test('test_total', test_mse_cost, 0)
+            logger.log_epoch_results_test('test_total', test_sens_mse, test_grid_mse, 0)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
@@ -237,12 +253,12 @@ class TrainerVAE:
             # Saving the training state
             # save every x epochs and on the last epoch
             # ------------------------------------------------------------------------------
-            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1 or test_mse_costs[-1] < mse_last_group:
-                self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta, SENS_STD)
-                if test_mse_costs[-1] < mse_last_group:
-                    mse_last_group = test_mse_costs[-1]
+            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1 or test_sens_mse_vec[-1] < mse_last_group:
+                self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta_dkl, self.beta_grid, SENS_STD)
+                if test_sens_mse_vec[-1] < mse_last_group:
+                    mse_last_group = test_sens_mse_vec[-1]
 
-    def save_state_train(self, logdir, vae, epoch, lr, mom, beta, norm_fact, filename=None):
+    def save_state_train(self, logdir, vae, epoch, lr, mom, beta_dkl, beta_grid, norm_fact, filename=None):
         """Saving model and optimizer to drive, as well as current epoch and loss
         # When saving a general checkpoint, to be used for either inference or resuming training, you must save more
         # than just the model’s state_dict.
@@ -260,7 +276,8 @@ class TrainerVAE:
                         'optimizer_state_dict': self.optimizer.state_dict(),
                         'lr':                   lr,
                         'mom':                  mom,
-                        'beta':                 beta,
+                        'beta_dkl':             beta_dkl,
+                        'beta_grid':            beta_grid,
                         'norm_fact':            norm_fact,
                         'encoder_topology':     vae.encoder.topology,
                         'decoder_topology':     vae.decoder.topology,
@@ -324,4 +341,8 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
     return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
+
+
+def grid_mse(targets, outputs):
+    return 0.5 * torch.sum((targets - outputs).pow(2))
 

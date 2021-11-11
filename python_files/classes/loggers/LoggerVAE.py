@@ -14,17 +14,19 @@ class LoggerVAE(LoggerGeneric):
     # ==================================================================================================================
     # Basic help functions, internal
     # ==================================================================================================================
-    def _get_result_string_train(self, wmse_loss, d_kl, cost):
-        temp_str = 'W_MSE loss: {0:^' + str(self.result_space) +\
-                   'f} D_kl: {1:^' + str(self.result_space) +\
-                   'f} Total cost: {2:^' + str(self.result_space) + 'f}'
-        return temp_str.format(wmse_loss, d_kl, cost)
+    def _get_result_string_train(self, sens_wmse_loss, d_kl, grid_mse_loss, cost):
+        temp_str = 'Sensitivity W_MSE: {0:^' + str(self.result_space) +\
+                   'f} D_kl: {1:^' + str(self.result_space) + \
+                   'f} Grid MSE : {2:^' + str(self.result_space) + \
+                   'f} Total cost: {3:^' + str(self.result_space) + 'f}'
+        return temp_str.format(sens_wmse_loss, d_kl, grid_mse_loss, cost)
 
-    def _get_result_string_test(self, wmse_loss, weight):
-        temp_str = 'W_MSE loss: {0:^' + str(self.result_space) +\
-                   'f} MSE loss {1:^' + str(self.result_space) +\
-                   'f} Group weight: {2:^' + str(self.result_space) + 'f}'
-        return temp_str.format(wmse_loss*weight, wmse_loss, weight)
+    def _get_result_string_test(self, sens_mse, grid_mse, weight):
+        temp_str = 'Sensitivity W_MSE: {0:^' + str(self.result_space) +\
+                   'f} Sensitivity MSE {1:^' + str(self.result_space) + \
+                   'f} Grid MSE: {2:^' + str(self.result_space) + \
+                   'f} Group weight: {3:^' + str(self.result_space) + 'f}'
+        return temp_str.format(sens_mse*weight, sens_mse, grid_mse, weight)
 
     # ==================================================================================================================
     # Regular VAE log functions, used to log the layer architecture from the description
@@ -96,15 +98,15 @@ class LoggerVAE(LoggerGeneric):
     def log_epoch(self, epoch_num):
         self.log_line('Epoch: {0:5d}'.format(epoch_num))
 
-    def log_epoch_results_train(self, header, wmse_loss, d_kl, cost):
-        self.log_line(self.get_header(header) + self._get_result_string_train(wmse_loss, d_kl, cost))
+    def log_epoch_results_train(self, header, sens_wmse, d_kl, grid_mse, cost):
+        self.log_line(self.get_header(header) + self._get_result_string_train(sens_wmse, d_kl, grid_mse, cost))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)
             self.fileID = open(full_path, 'a')
 
-    def log_epoch_results_test(self, header, mse_loss, weight):
-        self.log_line(self.get_header(header) + self._get_result_string_test(mse_loss, weight))
+    def log_epoch_results_test(self, header, sens_mse, grid_mse, weight):
+        self.log_line(self.get_header(header) + self._get_result_string_test(sens_mse, grid_mse, weight))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)

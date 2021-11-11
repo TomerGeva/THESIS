@@ -37,10 +37,10 @@ class ModVAE(nn.Module):
             sampled_latent = mu
 
         # -------------------------------------------------------------------------
-        # Decoding, outputs a 28 X 28 1 channel picture
+        # Decoding, outputs a 2500 X 2500 X 1 channel grid and a sensitivity value
         # -------------------------------------------------------------------------
         # __________Reshaping to enter the decoder__________
         sampled_latent = sampled_latent.view(-1, self.latent_dim)
-        decoder_out = self.decoder(sampled_latent)
+        grid_out, sens_out = self.decoder(sampled_latent)
 
-        return decoder_out, mu, logvar
+        return grid_out, sens_out, mu, logvar

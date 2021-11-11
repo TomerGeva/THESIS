@@ -96,7 +96,7 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         if self.transform:
             sample = self.transform(sample)
-
+        """
         # ----------------------------------------------------------------------------------------------------------
         # Doing mixup, if indicated and possible
         # ----------------------------------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ class ScattererCoordinateDataset(Dataset):
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             sample['grid'] = sample['grid'] * self.mixup_factor + mix_sample['grid'] * (1 - self.mixup_factor)
             sample['sensitivity'] = sample['sensitivity'] * self.mixup_factor + mix_sample['sensitivity'] * (1 - self.mixup_factor)
-
+        """
         return sample
 
 
@@ -160,11 +160,12 @@ class ToTensorMap(object):
         # numpy image: H x W x C
         # torch image: C X H X W
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
-        grid        = self.trans_grids(grid)
+        grid_normalized = self.trans_grids(grid)
         sensitivity = np.expand_dims(sensitivity, axis=0)
         sensitivity = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
         sensitivity = torch.from_numpy(np.array(sensitivity))
-        return {'grid': grid,
+        return {'grid_target': grid,
+                'grid_in': grid_normalized,
                 'sensitivity': sensitivity}
 
 
