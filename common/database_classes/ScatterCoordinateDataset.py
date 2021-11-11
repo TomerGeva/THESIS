@@ -149,6 +149,7 @@ class ToTensorMap(object):
             ToTensor(),
             Normalize(mean=[GRID_MEAN]*IMG_CHANNELS, std=[GRID_STD]*IMG_CHANNELS)
         ])
+        self.to_tensor = ToTensor()
         self.trans_sens = Compose([
             Normalize(mean=[SENS_MEAN]*IMG_CHANNELS, std=[SENS_STD]*IMG_CHANNELS)
         ])
@@ -164,7 +165,7 @@ class ToTensorMap(object):
         sensitivity = np.expand_dims(sensitivity, axis=0)
         sensitivity = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
         sensitivity = torch.from_numpy(np.array(sensitivity))
-        return {'grid_target': grid,
+        return {'grid_target': self.to_tensor(grid),
                 'grid_in': grid_normalized,
                 'sensitivity': sensitivity}
 

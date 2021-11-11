@@ -5,6 +5,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from GPUtil import showUtilization as gpu_usage  # for debug only
 
 
 class TrainerVAE:
@@ -138,6 +139,8 @@ class TrainerVAE:
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
+        # torch.backends.cudnn.benchmark  = True
+        # torch.backends.cudnn.enabled    = True
         mse_last_group = 1e5  # if mse of last group is better, save the epoch results
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
@@ -163,6 +166,8 @@ class TrainerVAE:
                 grids         = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
                 sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
                 grid_targets  = Variable(sample_batched['grid_target'].float()).to(mod_vae.device)
+                del sample_batched
+
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
@@ -177,18 +182,18 @@ class TrainerVAE:
                 train_kl_div    += kl_div.item()
                 train_grid_mse  += grid_mse_loss.item()
                 counter         += sensitivities.size(0)
+                del sens_mse_loss, kl_div, grid_mse_loss
+                del grids, grid_targets, sensitivities
 
                 # ------------------------------------------------------------------------------
                 # Back propagation
                 # ------------------------------------------------------------------------------
                 self.optimizer.zero_grad()
+                torch.cuda.empty_cache()
+                # gpu_usage()  # DEBUG
                 cost.backward()
                 nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
                 self.optimizer.step()
-
-                # # DEBUG
-                # test_loader = test_loaders['gt_2e+05_test']
-                # self.test_model(mod_vae, test_loader)
 
             self.cost = train_cost / len(train_loader.dataset)
             # ------------------------------------------------------------------------------

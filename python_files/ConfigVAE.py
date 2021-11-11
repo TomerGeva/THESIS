@@ -26,7 +26,7 @@ ABS_SENS    = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 MIXUP_PROB     = 0  # mixup probability
-NUM_WORKERS    = 4
+NUM_WORKERS    = 1
 
 # ---logdir for saving the database ---
 SAVE_PATH_DB = './database.pth'
@@ -69,45 +69,25 @@ BATCH_SIZE       = 64
 LATENT_SPACE_DIM = 10    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
-GRAD_CLIP        = 3
+GRAD_CLIP        = 5
 
-
-# --------------------------------------------------------
-# Encoder topology
-# --------------------------------------------------------
-ENCODER_TOPOLOGY = [
-    ['conv', IMG_CHANNELS,   6, 25, 25, 0],  # conv layer: input channels, output channels, kernel, stride, padding
-    ['conv',            6,  16,  5,  1, 2],
-    ['pool', 2, 0],                             # pool layer: kernel
-    ['conv',           16,  32,  5,  1, 2],
-    ['pool', 2, 0],
-    ['conv',           32,  64,  4,  1, 1],
-    ['pool', 2, 0],
-    ['conv',           64, 128,  3,  1, 0],
-    ['conv',          128, 256,  3,  1, 0],
-    ['pool', 2, 0],
-    ['conv',          256, 512,  4,  1, 0],
-    ['linear', 200],                         # linear layer: neuron number
-    ['linear', 150],
-    ['linear_last', 2 * LATENT_SPACE_DIM]
-]
 # --------------------------------------------------------
 # Dense Encoder topology
 # --------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
-    ['conv',      ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
-    ['dense', DenseBlockData(64, 8, 3, 1, 1,     batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition', TransBlockData(0.5, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
-    ['dense',    DenseBlockData(64, 8, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['transition',  TransBlockData(0.5, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
-    ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+    ['conv',       ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
+    ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
+    ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=2)],
+    ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
+    ['linear',     FCBlockData(300,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 """
 DENSE_ENCODER_TOPOLOGY = [
@@ -136,10 +116,10 @@ DENSE_ENCODER_TOPOLOGY = [
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['linear', FCBlockData(501, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(500, 128, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                      # 1  --> 8
-    ['convTrans', ConvTransposeBlockData(128, 64, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 8  --> 29
-    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 29 --> 91
-    ['convTrans', ConvTransposeBlockData(32,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 91 --> 276
+    ['convTrans', ConvTransposeBlockData(500, 64, 8, 2, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],                      # 1  --> 8
+    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 8  --> 29
+    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 29 --> 91
+    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 91 --> 276
     ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],    # 276 --> 832
     ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.sig)],    # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
