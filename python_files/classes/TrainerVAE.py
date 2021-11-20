@@ -51,13 +51,16 @@ class TrainerVAE:
         self.abs_sens       = abs_sens
         self.training       = training
 
-    def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets, grid_outputs):
+    def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets=0, grid_outputs=0, model_out=model_output_e.BOTH):
         if self.training:
             sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs, self.group_weights, self.group_th)
         else:
             sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs)
         kl_div          = self.d_kl(mu, logvar)
-        grid_mse_loss   = self.reconstruction_loss(grid_targets, grid_outputs)
+        if model_out is model_output_e.SENS:
+            grid_mse_loss = torch.zeros(1).to(kl_div.device)
+        else:
+            grid_mse_loss   = self.reconstruction_loss(grid_targets, grid_outputs)
 
         return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
@@ -106,12 +109,12 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Cost computations
                 # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out)
+                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
 
-                test_sens_mse   += sens_mse_loss
+                test_sens_mse   += sens_mse_loss.item()
                 counter         += sensitivities.size(0)
-                test_grid_mse   += grid_mse_loss
-                test_cost       += cost
+                test_grid_mse   += grid_mse_loss.item()
+                test_cost       += cost.item()
 
         mod_vae.train()
         self.trainer_train()
@@ -176,14 +179,14 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Backward computations
                 # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out)
+                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
                 train_cost      += cost.item()
                 train_sens_mse  += sens_mse_loss.item()
                 train_kl_div    += kl_div.item()
                 train_grid_mse  += grid_mse_loss.item()
                 counter         += sensitivities.size(0)
-                del sens_mse_loss, kl_div, grid_mse_loss
-                del grids, grid_targets, sensitivities
+                # del sens_mse_loss, kl_div, grid_mse_loss
+                # del grids, grid_targets, sensitivities
 
                 # ------------------------------------------------------------------------------
                 # Back propagation
@@ -191,7 +194,12 @@ class TrainerVAE:
                 self.optimizer.zero_grad()
                 torch.cuda.empty_cache()
                 # gpu_usage()  # DEBUG
-                cost.backward()
+                if mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.SENS:
+                    sens_mse_loss.backward()
+                elif mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.GRID:
+                    grid_mse_loss.backward()
+                else:
+                    cost.backward()
                 nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
                 self.optimizer.step()
 
@@ -228,7 +236,7 @@ class TrainerVAE:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Logging
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                logger.log_epoch_results_test(key, test_sens_mse, test_mse_weight)
+                logger.log_epoch_results_test(key, test_sens_mse, test_grid_mse, test_mse_weight)
                 test_sens_mse_vec.append(test_sens_mse)
                 test_grid_mse_vec.append(test_grid_mse)
                 test_counters_vec.append(test_counter)

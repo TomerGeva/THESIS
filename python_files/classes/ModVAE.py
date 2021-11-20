@@ -1,20 +1,22 @@
-import torch.nn            as nn
+import torch.nn         as nn
 from EncoderVAE         import EncoderVAE
 from DecoderVAE         import DecoderVAE
-from global_const       import encoder_type_e
+from global_const       import encoder_type_e, mode_e, model_output_e
 
 
 class ModVAE(nn.Module):
     """
     This class holds the modified Variational auto-encoder
     """
-    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, encoder_type=encoder_type_e.DENSE):
+    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, encoder_type=encoder_type_e.DENSE, mode=mode_e.VAE, model_out=model_output_e.BOTH):
         super(ModVAE, self).__init__()
         self.device         = device
         self.encoder_type   = encoder_type
+        self.mode           = mode
+        self.model_out      = model_out
 
         self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
-        self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim)
+        self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim, model_out=model_out)
         self.latent_dim = latent_space_dim
 
     def forward(self, x):
@@ -29,7 +31,7 @@ class ModVAE(nn.Module):
         # -------------------------------------------------------------------------
         # Generating gaussian samples, and performing the re-parameterization trick
         # -------------------------------------------------------------------------
-        if self.training:
+        if self.training and self.mode is mode_e.VAE:
             std = logvar.mul(0.5).exp_()
             zeta = std.data.new(std.size()).normal_()
             sampled_latent = zeta.mul(std).add_(mu)

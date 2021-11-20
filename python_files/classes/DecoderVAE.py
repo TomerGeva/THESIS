@@ -1,18 +1,22 @@
 from ConfigVAE import *
 import torch.nn as nn
+from torch import zeros as t_zeros
 from neural_network_block_classes import FullyConnectedBlock, ConvTransposeBlock
 
 
 class DecoderVAE(nn.Module):
     """
     This class holds the Variational auto-encoder Decoder part
+    IMPORTANT:
+        - If the model output is sensitivity, the decoder should have ONLY linear layers, where the last layer has
+          the size of 1
     """
-    def __init__(self, device, topology, latent_dim):
+    def __init__(self, device, topology, latent_dim, model_out):
         super(DecoderVAE, self).__init__()
         self.device         = device
         self.topology       = topology
         self.layers         = nn.ModuleList()
-
+        self.model_out      = model_out
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
@@ -45,14 +49,15 @@ class DecoderVAE(nn.Module):
         for ii in range(self.fc_len):
             layer = self.layers[ii]
             x = layer(x)
-
+        if self.model_out is model_output_e.SENS:
+            return t_zeros(1).to(self.device), x
         # ---------------------------------------------------------
         # Extracting the sensitivity
         # ---------------------------------------------------------
         sensitivity = x[:, -1]
         z           = x[:, 0:-1]
         # ---------------------------------------------------------
-        # restoring the array
+        # Restoring the grid
         # ---------------------------------------------------------
         z = z.view(-1, z.size(1), 1, 1)
         for ii in range(self.convTrans_len):

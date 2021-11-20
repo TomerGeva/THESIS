@@ -40,7 +40,9 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
                          encoder_topology=DENSE_ENCODER_TOPOLOGY,
                          decoder_topology=DECODER_TOPOLOGY,
                          latent_space_dim=LATENT_SPACE_DIM,
-                         encoder_type=encoder_type)
+                         encoder_type=encoder_type,
+                         mode=MODE,
+                         model_out=MODEL_OUT)
     elif encoder_type == encoder_type_e.VGG:
         mod_vae = ModVAE(device=device,
                          encoder_topology=ENCODER_TOPOLOGY,

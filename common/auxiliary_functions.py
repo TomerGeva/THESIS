@@ -37,10 +37,10 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
     :param action: layer description
     :return:
     """
-    if 'conv' in action[0]:  # :   [                       K_tilde                                ]         S                          P                    S
-        x_dim_size = int((x_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
-        y_dim_size = int((y_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+    if 'convTrans' in action[0]:
         channels = action[1].out_channels
+        x_dim_size = (x_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
+        y_dim_size = (y_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
     elif 'pool' in action:
         if type(action[1].pool_padding) is not tuple:
             x_dim_size = int((x_dim + 2 * action[1].pool_padding) / action[1].kernel)
@@ -66,10 +66,10 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         else:
             x_dim_size = int((x_conv_size + 2 * action[1].pool_padding[0] + 2 * action[1].pool_padding[1]) / action[1].pool_size)
             y_dim_size = int((y_conv_size + 2 * action[1].pool_padding[2] + 2 * action[1].pool_padding[3]) / action[1].pool_size)
-    elif 'convTrans' in action[0]:
+    elif 'conv' in action[0]:  # :   [                       K_tilde                                ]         S                          P                    S
+        x_dim_size = int((x_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
+        y_dim_size = int((y_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
         channels = action[1].out_channels
-        x_dim_size = (x_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
-        y_dim_size = (y_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
     else:  # linear case
         x_dim_size = x_dim
         y_dim_size = y_dim

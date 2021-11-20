@@ -15,7 +15,7 @@ def log_to_plot(path):
     # ====================================================================================================
     # Local variables
     # ====================================================================================================
-    filename    = os.path.join(path, 'logger.txt')
+    filename    = os.path.join(path, 'logger_vae.txt')
     fileID      = open(filename, 'r')
     lines       = fileID.readlines()
     fileID.close()
@@ -52,7 +52,7 @@ def log_to_plot(path):
                 train_label = words[3]
             train_mse_loss.append(float(words[7]))
             train_dkl_loss.append(float(words[9]))
-            train_tot_loss.append(float(words[12]))
+            train_tot_loss.append(float(words[16]))
         elif 'MSE' in line:
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # one of the test databases
@@ -151,10 +151,11 @@ if __name__ == '__main__':
     # 30_10_2021_15_50 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 110 - 39300
     # 31_10_2021_18_13 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 10 - 43800
     # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
+    # 18_11_2021_8_21 - normal regerssion
 
-    c_path = '..\\results\\2_11_2021_8_9'
+    c_path = '..\\results\\18_11_2021_8_21'
     c_epoch = 12
 
-    load_and_batch(c_path, c_epoch)
+    # load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

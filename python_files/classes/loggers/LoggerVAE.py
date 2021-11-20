@@ -269,6 +269,7 @@ class LoggerVAE(LoggerGeneric):
         # ==============================================================================================================
         # Encoder log
         # ==============================================================================================================
+        self.log_title('Mode is {} ; Model output is {}' .format(mod_vae.mode.name, mod_vae.model_out.name))
         self.log_title('VAE Dense Encoder architecture')
         self.log_line('Input size: {}X{}X{}'.format(channels, x_dim_size, y_dim_size))
         for action in mod_vae.encoder.topology:
@@ -290,9 +291,3 @@ class LoggerVAE(LoggerGeneric):
             x_dim_size, y_dim_size, channels_temp = compute_output_dim(x_dim_size, y_dim_size, channels, action)
             self._get_layer_log_string(x_dim_size, y_dim_size, channels, action)
             channels = channels_temp
-            if 'linear' in action[0]:
-                self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
-                                                                                         action[1].out_neurons,
-                                                                                         action[1].bnorm,
-                                                                                         action[1].drate,
-                                                                                         action[1].act))

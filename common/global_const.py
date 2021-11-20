@@ -21,3 +21,14 @@ class activation_type_e(Enum):
 class pool_e(Enum):
     MAX = 0
     AVG = 1
+
+
+class mode_e(Enum):
+    AUTOENCODER = 0
+    VAE         = 1
+
+
+class model_output_e(Enum):
+    SENS = 0
+    GRID = 1
+    BOTH = 2
