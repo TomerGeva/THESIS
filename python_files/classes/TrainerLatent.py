@@ -17,7 +17,7 @@ class TrainerLatent:
         # optimizer
         # -------------------------------------
         # self.optimizer = optim.SGD(input_vec.parameters(), lr=lr, momentum=mu)
-        self.optimizer = optim.Adam(input_vec.parameters(), lr=lr)
+        self.optimizer = optim.Adam([input_vec], lr=lr)
         # -------------------------------------
         # Scheduler, reduces learning rate
         # -------------------------------------
@@ -55,32 +55,37 @@ class TrainerLatent:
         # ==========================================================================================
         # Init Log
         # ==========================================================================================
-        logger.start_log(filename='logger_latent.txt')
+        logger.start_log()
         logger.log_start_setup(input_vec.size)
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
+        # input_vec = Variable(input_vec).to(decoder.device)
+        # input_vec.requires_grad_(True)
+        # input_vec.to(decoder.device)
+        decoder.eval()
         for step in range(steps):
             # ------------------------------------------------------------------------------
             # Forward pass
             # ------------------------------------------------------------------------------
-            sensitivity = decoder(input_vec)
+            _, sensitivity, _, _ = decoder(input_vec)
             # ------------------------------------------------------------------------------
             # Normalizing and documenting training results with LoggerLatent
             # ------------------------------------------------------------------------------
-            sensitivity = ((sensitivity * self.sens_std) + self.sens_mean) if self.abs_sens else sensitivity * self.sens_std
+            self.optimizer.zero_grad()
+            # sensitivity = ((sensitivity * self.sens_std) + self.sens_mean) if self.abs_sens else sensitivity * self.sens_std
             logger.log_step(step, sensitivity)
             # ------------------------------------------------------------------------------
             # Backward computations
             # ------------------------------------------------------------------------------
-            cost = -1 * torch.abs(sensitivity)
+            cost = 1e15 / torch.abs(sensitivity)
             cost.backward()
             nn.utils.clip_grad_norm_(input_vec, self.grad_clip)
             self.optimizer.step()
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
-            self.scheduler.step()
+            # self.scheduler.step()
             # ------------------------------------------------------------------------------
             # Saving the training state
             # save every x steps and on the last epoch

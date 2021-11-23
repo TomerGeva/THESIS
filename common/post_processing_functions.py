@@ -91,16 +91,25 @@ def load_and_batch(path, epoch):
     """
     :return: This function loads a saves model, and tests the MSE of the target error
     """
-    data_path                       = os.path.join(path, 'VAE_model_data_lr_0.0001_epoch_' + str(epoch) + '.tar')
-    train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
-    mod_vae, trainer                = load_state_train(data_path)
+    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
+    if epoch is None:
+        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
+        epoch = max(epoch_nums)
+    chosen_file = [d for d in save_files if str(epoch) in d][0]
 
-    smapled_batch   = next(iter(test_loaders['0_to_1e+05']))
-    grids           = Variable(smapled_batch['grid'].float()).to(mod_vae.device)
+    train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
+    mod_vae, trainer                = load_state_train(chosen_file)
+
+    mod_vae.mode = mode_e.AUTOENCODER
+    mod_vae.model_out = model_output_e.SENS
+    mod_vae.decoder.model_out = model_output_e.SENS
+
+    smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
+    grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
     sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
 
     mod_vae.eval()
-    outputs, mu, logvar = mod_vae(grids)
+    _, outputs, mu, logvar = mod_vae(grids)
     print('Outputs: ' + str(outputs))
     print('Targets: ' + str(sensitivities))
 
@@ -156,6 +165,6 @@ if __name__ == '__main__':
     c_path = '..\\results\\18_11_2021_8_21'
     c_epoch = 12
 
-    # load_and_batch(c_path, c_epoch)
+    load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

@@ -42,12 +42,12 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         x_dim_size = (x_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
         y_dim_size = (y_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
     elif 'pool' in action:
-        if type(action[1].pool_padding) is not tuple:
-            x_dim_size = int((x_dim + 2 * action[1].pool_padding) / action[1].kernel)
-            y_dim_size = int((y_dim + 2 * action[1].pool_padding) / action[1].kernel)
+        if type(action[1].pad) is not tuple:
+            x_dim_size = int((x_dim + 2 * action[1].pad) / action[1].kernel)
+            y_dim_size = int((y_dim + 2 * action[1].pad) / action[1].kernel)
         else:
-            x_dim_size = int((x_dim + 2 * action[1].pool_padding[0] + 2 * action[1].pool_padding[1]) / action[1].pool_size)
-            y_dim_size = int((y_dim + 2 * action[1].pool_padding[2] + 2 * action[1].pool_padding[3]) / action[1].pool_size)
+            x_dim_size = int((x_dim + action[1].pad[0] + action[1].pad[1]) / action[1].kernel)
+            y_dim_size = int((y_dim + action[1].pad[2] + action[1].pad[3]) / action[1].kernel)
         channels = ch_num
     elif 'dense' in action[0]:
         channels = ch_num + action[1].growth * action[1].depth

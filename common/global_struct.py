@@ -102,3 +102,10 @@ class FCBlockData:
         self.drate          = dropout_rate
         self.act            = activation
         self.alpha          = alpha
+
+
+class PadPoolData:
+    def __init__(self, pool_type, pad=0, pool_kernel=2):
+        self.pool_type      = pool_type
+        self.pad            = pad
+        self.pool_kernel    = pool_kernel

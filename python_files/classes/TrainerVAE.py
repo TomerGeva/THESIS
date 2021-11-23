@@ -17,7 +17,7 @@ class TrainerVAE:
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.reconstruction_loss = grid_mse
+        self.reconstruction_loss = nn.BCEWithLogitsLoss()
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         # -------------------------------------
@@ -295,7 +295,9 @@ class TrainerVAE:
                         'encoder_topology':     vae.encoder.topology,
                         'decoder_topology':     vae.decoder.topology,
                         'latent_dim':           vae.latent_dim,
-                        'encoder_type':         vae.encoder_type
+                        'encoder_type':         vae.encoder_type,
+                        'mode':                 vae.mode,
+                        'model_out':            vae.model_out
                         }
         torch.save(data_to_save, path)
 

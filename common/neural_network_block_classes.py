@@ -35,23 +35,23 @@ class Activator(nn.Module):
             return self.activator(x)
 
 
-class Pool2dPadding(nn.Module):
+class PadPool(nn.Module):
     """
         This class implements max pooling block, with zero padding
     """
-    def __init__(self, pool_type, kernel, padding=0):
-        super(Pool2dPadding, self).__init__()
-        self.kernel = kernel
-        self.padding = padding
+    def __init__(self, padpool_data):
+        super(PadPool, self).__init__()
+        self.kernel = padpool_data.pool_kernel
+        self.padding = padpool_data.pad
 
-        if type(padding) is int:
-            self.pad = nn.ZeroPad2d(padding) if padding > 0 else None
+        if type(self.padding) is int:
+            self.pad = nn.ZeroPad2d(self.padding) if self.padding > 0 else None
         else:
-            self.pad = nn.ZeroPad2d(padding) if sum(padding) > 0 else None
-        if pool_type is pool_e.MAX:
-            self.pool = nn.MaxPool2d(kernel_size=kernel) if kernel > 1 else None
-        elif pool_type is pool_e.AVG:
-            self.pool = nn.AvgPool2d(kernel_size=kernel) if kernel > 1 else None
+            self.pad = nn.ZeroPad2d(self.padding) if sum(self.padding) > 0 else None
+        if padpool_data.pool_type is pool_e.MAX:
+            self.pool = nn.MaxPool2d(kernel_size=self.kernel) if self.kernel > 1 else None
+        elif padpool_data.pool_type is pool_e.AVG:
+            self.pool = nn.AvgPool2d(kernel_size=self.kernel) if self.kernel > 1 else None
         else:
             self.pool = None
 

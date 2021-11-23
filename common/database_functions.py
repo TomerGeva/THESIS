@@ -42,7 +42,7 @@ def load_state_train(data_path, device=None):
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
     mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 
-    trainer = TrainerVAE(mod_vae, lr=checkpoint['lr'], mom=MOM, beta=BETA)
+    trainer = TrainerVAE(mod_vae, lr=checkpoint['lr'], mom=MOM, beta_dkl=checkpoint['beta_dkl'], beta_grid=checkpoint['beta_grid'])
     trainer.start_epoch = checkpoint['epoch']
     trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
