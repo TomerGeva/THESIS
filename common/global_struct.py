@@ -105,7 +105,7 @@ class FCBlockData:
 
 
 class PadPoolData:
-    def __init__(self, pool_type, pad=0, pool_kernel=2):
-        self.pool_type      = pool_type
-        self.pad            = pad
-        self.pool_kernel    = pool_kernel
+    def __init__(self, pool_type, pad=0, kernel=2):
+        self.pool_type = pool_type  # MAX or AVG
+        self.pad       = pad        # padding, can be either an index or a tuple with size of 4
+        self.kernel    = kernel     # pooling kernel size

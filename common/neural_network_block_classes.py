@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from global_const import activation_type_e, pool_e
-from global_struct import ConvBlockData
+from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
 
 
@@ -41,7 +41,7 @@ class PadPool(nn.Module):
     """
     def __init__(self, padpool_data):
         super(PadPool, self).__init__()
-        self.kernel = padpool_data.pool_kernel
+        self.kernel = padpool_data.kernel
         self.padding = padpool_data.pad
 
         if type(self.padding) is int:
@@ -227,9 +227,9 @@ class DenseTransitionBlock(nn.Module):
                                                   alpha=transition_data.alpha
                                                   )
                                     )
-        self.padpool    = Pool2dPadding(pool_type=transition_data.pool_type,
-                                        kernel=transition_data.pool_size,
-                                        padding=transition_data.pool_padding)
+        self.padpool    = PadPool(PadPoolData(pool_type=transition_data.pool_type,
+                                              kernel=transition_data.pool_size,
+                                              pad=transition_data.pool_padding))
 
     def forward(self, x):
         out = self.conv(x)
