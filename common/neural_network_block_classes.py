@@ -229,7 +229,9 @@ class DenseTransitionBlock(nn.Module):
                                     )
         self.padpool    = PadPool(PadPoolData(pool_type=transition_data.pool_type,
                                               kernel=transition_data.pool_size,
-                                              pad=transition_data.pool_padding))
+                                              pad=transition_data.pool_padding
+                                              )
+                                  )
 
     def forward(self, x):
         out = self.conv(x)
