@@ -63,6 +63,7 @@ class TrainerLatent:
         # input_vec = Variable(input_vec).to(decoder.device)
         # input_vec.requires_grad_(True)
         # input_vec.to(decoder.device)
+        sigmoid = nn.Sigmoid()
         decoder.eval()
         for step in range(steps):
             # ------------------------------------------------------------------------------
@@ -73,13 +74,13 @@ class TrainerLatent:
             # Normalizing and documenting training results with LoggerLatent
             # ------------------------------------------------------------------------------
             self.optimizer.zero_grad()
-            # sensitivity = ((sensitivity * self.sens_std) + self.sens_mean) if self.abs_sens else sensitivity * self.sens_std
+            sensitivity = ((sensitivity * self.sens_std) + self.sens_mean) if self.abs_sens else sensitivity * self.sens_std
             logger.log_step(step, sensitivity)
             # ------------------------------------------------------------------------------
             # Backward computations
             # ------------------------------------------------------------------------------
-            cost = 1e15 / torch.abs(sensitivity)
-            cost.backward()
+            cost = 1 / torch.abs(sensitivity)
+            cost.backward(retain_graph=True)
             nn.utils.clip_grad_norm_(input_vec, self.grad_clip)
             self.optimizer.step()
             # ------------------------------------------------------------------------------
@@ -90,4 +91,4 @@ class TrainerLatent:
             # Saving the training state
             # save every x steps and on the last epoch
             # ------------------------------------------------------------------------------
-        pass
+        return input_vec

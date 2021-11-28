@@ -8,7 +8,7 @@ from LoggerLatent               import LoggerLatent
 from TrainerVAE                 import TrainerVAE
 from TrainerLatent              import TrainerLatent
 from ModVAE                     import ModVAE
-from auxiliary_functions        import initialize_weights
+from auxiliary_functions        import initialize_weights, plot_grid
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
 from database_functions         import load_decoder
@@ -50,7 +50,9 @@ def main_vae(encoder_type=encoder_type_e.DENSE):
                          encoder_topology=VGG_ENCODER_TOPOLOGY,
                          decoder_topology=DECODER_TOPOLOGY,
                          latent_space_dim=LATENT_SPACE_DIM,
-                         encoder_type=encoder_type)
+                         encoder_type=encoder_type,
+                         mode=MODE,
+                         model_out=MODEL_OUT                         )
     initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
 
@@ -77,10 +79,12 @@ def main_optim_input(path=None, epoch=None):
     # creating full file path
     # ================================================================================
     save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
+    file_names = [d for d in os.listdir(path) if "epoch" in d]
     if epoch is None:
         epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
         epoch = max(epoch_nums)
-    chosen_file = [d for d in save_files if str(epoch) in d][0]
+    chosen_file = [d for d in file_names if str(epoch) in d][0]
+    chosen_file = os.path.join(path, chosen_file)
     # ================================================================================
     # Loading the decoder creating the input vector
     # ================================================================================
@@ -111,7 +115,8 @@ def main_optim_input(path=None, epoch=None):
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.optimize_input(input_mat, mod_vae, 2000, logger, save_per_epoch=1)
+    optim_mat = trainer.optimize_input(input_mat, mod_vae, 2000, logger, save_per_epoch=1)
+    plot_grid(optim_mat)
 
 
 def main_optim_latent(path=None, epoch=None):
@@ -158,12 +163,13 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        enc_type = encoder_type_e.DENSE
+        # enc_type = encoder_type_e.DENSE
+        enc_type = encoder_type_e.VGG
         main_vae(enc_type)
     # ================================================================================
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================
     if phase == 2:
-        c_path = '..\\results\\18_11_2021_8_21'
-        epoch = 12
+        c_path = '..\\results\\23_11_2021_17_48'
+        epoch = 20
         main_optim_input(path=c_path, epoch=epoch)

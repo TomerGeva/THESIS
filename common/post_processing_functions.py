@@ -162,9 +162,9 @@ if __name__ == '__main__':
     # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
     # 18_11_2021_8_21 - normal regerssion
 
-    c_path = '..\\results\\18_11_2021_8_21'
+    c_path = '..\\results\\23_11_2021_17_48'
     c_epoch = 12
 
-    load_and_batch(c_path, c_epoch)
+    # load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

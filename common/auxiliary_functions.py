@@ -1,5 +1,8 @@
+import torch
 from torch import clamp
 import torch.nn as nn
+import matplotlib.pyplot as plt
+import numpy as np
 import math
 
 
@@ -76,3 +79,19 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         channels   = ch_num
 
     return x_dim_size, y_dim_size, channels
+
+
+# ==================================================================================================================
+# Function used to plot the 2d grid of arrays
+# ==================================================================================================================
+def plot_grid(grid):
+    """
+    :param grid: 1 X 1 X 2500 X 2500 grid tensor
+    :return: plot the grid
+    """
+    grid_np = grid.cpu().squeeze().detach().numpy()
+    grid_np = np.round((grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255)
+    grid_np = np.where(grid_np > 127, 255, 0)
+    imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
+    plt.show()
+    pass
