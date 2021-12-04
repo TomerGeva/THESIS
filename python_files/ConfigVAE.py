@@ -56,21 +56,21 @@ train     = True
 # --------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------
-MODEL_OUT        = model_output_e.SENS
-# MODEL_OUT        = model_output_e.BOTH
+# MODEL_OUT        = model_output_e.SENS
+MODEL_OUT        = model_output_e.BOTH
 BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost function
-BETA_GRID        = 1
+BETA_GRID        = 1.6e-5
 MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
-EPOCH_NUM        = 200
-LR               = 2e-4  # learning rate
+EPOCH_NUM        = 300
+LR               = 3e-4  # learning rate
 SCHEDULER_STEP   = 20
-SCHEDULER_GAMMA  = 0.5
+SCHEDULER_GAMMA  = 0.75
 MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
 
-MODE             = mode_e.AUTOENCODER
-# MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 100    # number of dimensions in the latent space
+# MODE             = mode_e.AUTOENCODER
+MODE             = mode_e.VAE
+LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
@@ -132,7 +132,7 @@ DENSE_ENCODER_TOPOLOGY = [
 # --------------------------------------------------------
 # Decoder topology
 # --------------------------------------------------------
-
+"""
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
@@ -140,12 +140,13 @@ DECODER_TOPOLOGY = [
 
 """
 DECODER_TOPOLOGY = [
-    ['linear', FCBlockData(301, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['convTrans', ConvTransposeBlockData(300, 64, 8, 2, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],   # 1  --> 8
-    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],   # 8  --> 29
-    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],   # 29 --> 91
-    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],   # 91 --> 276
-    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.ReLU)],   # 276 --> 832
+    ['linear',      FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['convTrans', ConvTransposeBlockData(400, 64, 8, 2, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 1  --> 8
+    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 8  --> 29
+    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 29 --> 91
+    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 91 --> 276
+    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 276 --> 832
     ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
-"""
+# """

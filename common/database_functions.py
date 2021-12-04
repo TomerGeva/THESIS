@@ -33,12 +33,20 @@ def load_state_train(data_path, device=None):
     decoder_topology = checkpoint['decoder_topology']
     latent_dim       = checkpoint['latent_dim']
     encoder_type     = checkpoint['encoder_type']
+    try:
+        mode = checkpoint['mode']
+        model_out = checkpoint['model_out']
+    except:
+        mode = mode_e.AUTOENCODER
+        model_out = model_output_e.SENS
 
     mod_vae = ModVAE(device=device,
                      encoder_topology=encoder_topology,
                      decoder_topology=decoder_topology,
                      latent_space_dim=latent_dim,
-                     encoder_type=encoder_type)
+                     encoder_type=encoder_type,
+                     mode=mode,
+                     model_out=model_out)
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
     mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 
@@ -72,6 +80,12 @@ def load_decoder(data_path=None, device=None):
     decoder_topology = checkpoint['decoder_topology']
     latent_dim = checkpoint['latent_dim']
     encoder_type = checkpoint['encoder_type']
+    try:
+        mode = checkpoint['mode']
+        model_out = checkpoint['model_out']
+    except:
+        mode = mode_e.AUTOENCODER
+        model_out = model_output_e.SENS
 
     mod_vae = ModVAE(device=device,
                      encoder_topology=encoder_topology,
@@ -82,7 +96,7 @@ def load_decoder(data_path=None, device=None):
     # --------------------------------------------------------------------------------------------------------------
     # Extracting the decoder
     # --------------------------------------------------------------------------------------------------------------
-    decoder = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_dim)
+    decoder = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_dim, model_out=model_out)
     decoder.load_state_dict(mod_vae.decoder.state_dict())
 
     return decoder, latent_dim

@@ -24,8 +24,10 @@ def initialize_weights(net, mean, std):
     :return: nothing, just adjusts the weights
     """
     for module in net.modules():
-        if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear)):
+        if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
             nn.init.normal_(module.weight.data, mean, std)
+            if isinstance(module, nn.Linear):
+                pass
 
 
 # ==================================================================================================================
@@ -90,7 +92,7 @@ def plot_grid(grid):
     :return: plot the grid
     """
     grid_np = grid.cpu().squeeze().detach().numpy()
-    grid_np = np.round((grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255)
+    grid_np = (grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255
     grid_np = np.where(grid_np > 127, 255, 0)
     imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
     plt.show()

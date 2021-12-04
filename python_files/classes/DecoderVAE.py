@@ -21,9 +21,9 @@ class DecoderVAE(nn.Module):
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
         linear_idx      = 0
-        conv_trans_idx   = 0
+        conv_trans_idx  = 0
         action_prev     = None
-        in_channels     = 0
+        sens_in_neurons = None
         for ii in range(len(self.topology)):
             action = self.topology[ii]
             if 'linear' in action[0]:
@@ -34,10 +34,19 @@ class DecoderVAE(nn.Module):
                     action[1].in_neurons = action_prev[1].out_neurons
                 self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
+                if 'last' in action[0]:
+                    sens_in_neurons = action[1].out_neurons
             elif 'convTrans' in action[0]:
                 conv_trans_idx += 1
                 in_channels = action[1].out_channels
                 self.layers.append(ConvTransposeBlock(action[1]))
+        # ---------------------------------------------------------
+        # Adding additional layer for the sensitivity output
+        # ---------------------------------------------------------
+        if self.model_out == model_output_e.BOTH:
+            self.sens_out_layer = FullyConnectedBlock(FCBlockData(1, in_neurons=sens_in_neurons, batch_norm=False, dropout_rate=0, activation=activation_type_e.null))
+        else:
+            self.sens_out_layer = None
 
         self.fc_len         = linear_idx
         self.convTrans_len  = conv_trans_idx
@@ -54,14 +63,16 @@ class DecoderVAE(nn.Module):
         # ---------------------------------------------------------
         # Extracting the sensitivity
         # ---------------------------------------------------------
-        sensitivity = x[:, -1]
-        z           = x[:, 0:-1]
+        if self.model_out is model_output_e.BOTH:
+            sensitivity = self.sens_out_layer(x)
+        else:
+            sensitivity = t_zeros(1).to(self.device)
         # ---------------------------------------------------------
         # Restoring the grid
         # ---------------------------------------------------------
-        z = z.view(-1, z.size(1), 1, 1)
+        x = x.view(-1, x.size(1), 1, 1)
         for ii in range(self.convTrans_len):
             layer = self.layers[self.fc_len + ii]
-            z = layer(z)
+            x = layer(x)
 
-        return z, sensitivity
+        return x, sensitivity

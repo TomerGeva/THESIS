@@ -17,7 +17,7 @@ class TrainerVAE:
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.reconstruction_loss = nn.BCEWithLogitsLoss()
+        self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum')
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         # -------------------------------------
@@ -60,7 +60,7 @@ class TrainerVAE:
         if model_out is model_output_e.SENS:
             grid_mse_loss = torch.zeros(1).to(kl_div.device)
         else:
-            grid_mse_loss   = self.reconstruction_loss(grid_targets, grid_outputs)
+            grid_mse_loss   = self.reconstruction_loss(grid_outputs, grid_targets)
 
         return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
@@ -192,7 +192,7 @@ class TrainerVAE:
                 # Back propagation
                 # ------------------------------------------------------------------------------
                 self.optimizer.zero_grad()
-                torch.cuda.empty_cache()
+                # torch.cuda.empty_cache()
                 # gpu_usage()  # DEBUG
                 if mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.SENS:
                     sens_mse_loss.backward()

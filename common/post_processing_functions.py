@@ -100,10 +100,6 @@ def load_and_batch(path, epoch):
     train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
     mod_vae, trainer                = load_state_train(chosen_file)
 
-    mod_vae.mode = mode_e.AUTOENCODER
-    mod_vae.model_out = model_output_e.SENS
-    mod_vae.decoder.model_out = model_output_e.SENS
-
     smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
     grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
     sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
@@ -161,10 +157,11 @@ if __name__ == '__main__':
     # 31_10_2021_18_13 - without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 10 - 43800
     # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
     # 18_11_2021_8_21 - normal regerssion
+    # 23_11_2021_17_48 - VGG
+    # 24_11_2021_21_34 - VGG with more channels
+    c_path = '..\\results\\1_12_2021_10_30'
+    c_epoch = 20
 
-    c_path = '..\\results\\23_11_2021_17_48'
-    c_epoch = 12
-
-    # load_and_batch(c_path, c_epoch)
+    load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

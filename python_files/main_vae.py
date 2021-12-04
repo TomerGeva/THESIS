@@ -170,6 +170,6 @@ if __name__ == '__main__':
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================
     if phase == 2:
-        c_path = '..\\results\\23_11_2021_17_48'
-        epoch = 20
+        c_path = '..\\results\\24_11_2021_21_34'
+        epoch = 13
         main_optim_input(path=c_path, epoch=epoch)

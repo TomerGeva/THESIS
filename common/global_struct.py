@@ -90,9 +90,9 @@ class TransBlockData:
 
 
 class FCBlockData:
-    def __init__(self, out_neurons, bias=True, batch_norm=True, dropout_rate=0.0,
+    def __init__(self, out_neurons, in_neurons=None, bias=True, batch_norm=True, dropout_rate=0.0,
                  activation=activation_type_e.null, alpha=0.01):
-        self.in_neurons     = None  # computed during encoder Init
+        self.in_neurons     = in_neurons  # computed during encoder Init
         self.out_neurons    = out_neurons
         if bias is None:
             self.bias = not batch_norm
