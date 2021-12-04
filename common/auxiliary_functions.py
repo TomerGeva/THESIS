@@ -4,6 +4,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import os
 
 
 # ==================================================================================================================
@@ -97,3 +98,15 @@ def plot_grid(grid):
     imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
     plt.show()
     pass
+
+
+# ================================================================================
+# creating full file path
+# ================================================================================
+def get_full_path(path, epoch=None):
+    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
+    if epoch is None:
+        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
+        epoch = max(epoch_nums)
+    chosen_file = [d for d in save_files if str(epoch) in d.split('\\')[-1]][0]
+    return chosen_file

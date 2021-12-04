@@ -8,7 +8,7 @@ from LoggerLatent               import LoggerLatent
 from TrainerVAE                 import TrainerVAE
 from TrainerLatent              import TrainerLatent
 from ModVAE                     import ModVAE
-from auxiliary_functions        import initialize_weights, plot_grid
+from auxiliary_functions        import initialize_weights, plot_grid, get_full_path
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
 from database_functions         import load_decoder
@@ -78,13 +78,7 @@ def main_optim_input(path=None, epoch=None):
     # ================================================================================
     # creating full file path
     # ================================================================================
-    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
-    file_names = [d for d in os.listdir(path) if "epoch" in d]
-    if epoch is None:
-        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
-        epoch = max(epoch_nums)
-    chosen_file = [d for d in file_names if str(epoch) in d][0]
-    chosen_file = os.path.join(path, chosen_file)
+    chosen_file = get_full_path(path, epoch=epoch)
     # ================================================================================
     # Loading the decoder creating the input vector
     # ================================================================================
@@ -123,21 +117,16 @@ def main_optim_latent(path=None, epoch=None):
     # ================================================================================
     # creating full file path
     # ================================================================================
-    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
-    if epoch is None:
-        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
-        epoch = max(epoch_nums)
-    chosen_file = [d for d in save_files if str(epoch) in d][0]
-
+    chosen_file = get_full_path(path, epoch=epoch)
     # ================================================================================
-    # Loading the decoder creating the input vector TODO: need to set a path to a requested model folder
+    # Loading the decoder creating the input vector
     # ================================================================================
-    decoder, latent_dim = load_decoder(data_path=path)
-    input_vec = torch.rand(latent_dim)
+    decoder, latent_dim = load_decoder(data_path=chosen_file)
+    input_vec  = torch.nn.Parameter(torch.randn([1, latent_dim], device=decoder.device), requires_grad=True)
     # ================================================================================
-    # Setting the logger - TODO: need to set a path to a requested model folder
+    # Setting the logger
     # ================================================================================
-    logger = LoggerLatent(path=PATH_LOGS)
+    logger = LoggerLatent(logdir=path)
     # ================================================================================
     # Creating the trainer object
     # ================================================================================
@@ -154,11 +143,11 @@ def main_optim_latent(path=None, epoch=None):
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.optimize_input(input_vec, decoder, 2000, logger, save_per_epoch=1)
+    trainer.optimize_input(input_vec, decoder, 100000, logger, save_per_epoch=1)
 
 
 if __name__ == '__main__':
-    phase = 1
+    phase = 2
     # ================================================================================
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
@@ -170,6 +159,8 @@ if __name__ == '__main__':
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================
     if phase == 2:
-        c_path = '..\\results\\24_11_2021_21_34'
-        epoch = 13
-        main_optim_input(path=c_path, epoch=epoch)
+        c_path = '..\\results\\1_12_2021_10_30'
+        epoch = 20
+        # main_optim_input(path=c_path, epoch=epoch)
+        main_optim_latent(path=c_path, epoch=epoch)
+

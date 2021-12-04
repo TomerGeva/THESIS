@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
 from database_functions import load_state_train
+from auxiliary_functions import get_full_path
 
 
 def log_to_plot(path):
@@ -91,12 +92,13 @@ def load_and_batch(path, epoch):
     """
     :return: This function loads a saves model, and tests the MSE of the target error
     """
-    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
-    if epoch is None:
-        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
-        epoch = max(epoch_nums)
-    chosen_file = [d for d in save_files if str(epoch) in d][0]
-
+    # ======================================================================================
+    # Extracting the full file path
+    # ======================================================================================
+    chosen_file = get_full_path(path, epoch)
+    # ======================================================================================
+    # Loading the needed models and data
+    # ======================================================================================
     train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
     mod_vae, trainer                = load_state_train(chosen_file)
 
@@ -108,6 +110,71 @@ def load_and_batch(path, epoch):
     _, outputs, mu, logvar = mod_vae(grids)
     print('Outputs: ' + str(outputs))
     print('Targets: ' + str(sensitivities))
+
+
+def get_latent_statistics(path, epoch):
+    """
+    :param path: path to a model training results folder
+    :param epoch: wanted epoch to load
+    :return: the function prints out plot of the statistics regarding the latent space
+    """
+    # ======================================================================================
+    # Extracting the full file path
+    # ======================================================================================
+    chosen_file = get_full_path(path, epoch)
+    # ======================================================================================
+    # Loading the needed models and data
+    # ======================================================================================
+    train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE)
+    mod_vae, trainer = load_state_train(chosen_file)
+
+    # ======================================================================================
+    # Extracting statistics
+    # ======================================================================================
+    test_loader_iter = iter(test_loaders['3e+05_to_inf'])
+    mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+    std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+    mod_vae.eval()
+    for ii in range(len(train_loader)):
+        # ------------------------------------------------------------------------------
+        # Working with iterables, much faster
+        # ------------------------------------------------------------------------------
+        try:
+            sample_batched = next(test_loader_iter)
+        except StopIteration:
+            break
+        # ------------------------------------------------------------------------------
+        # Extracting the grids and sensitivities, passing through the model
+        # ------------------------------------------------------------------------------
+        grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
+        sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
+        _, outputs, mu, logvar = mod_vae(grids)
+        # ------------------------------------------------------------------------------
+        # Logging mean mu and mean std values
+        # ------------------------------------------------------------------------------
+        mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
+        std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
+    # ======================================================================================
+    # Plotting statistics
+    # ======================================================================================
+    mu_dim = np.mean(mu_means, axis=1)
+    std_dim = np.mean(std_means, axis=1)
+    plt.figure()
+    ax1 = plt.subplot(2, 1, 1)
+    plt.plot(mu_dim)
+    plt.title('Expectation mean per index, latent space')
+    plt.xlabel('index')
+    plt.ylabel('mean')
+    ax2 = plt.subplot(2, 1, 2)
+    plt.plot(std_dim)
+    plt.title('Variance mean per index, latent space')
+    plt.xlabel('index')
+    plt.ylabel('mean')
+    plt.show()
+    pass
+
+
+
 
 
 def plot_grid_histogram(grid, bins=10):
@@ -162,6 +229,8 @@ if __name__ == '__main__':
     c_path = '..\\results\\1_12_2021_10_30'
     c_epoch = 20
 
-    load_and_batch(c_path, c_epoch)
+    get_latent_statistics(c_path, c_epoch)
+
+    # load_and_batch(c_path, c_epoch)
 
     log_to_plot(c_path)

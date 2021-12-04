@@ -98,6 +98,7 @@ def load_decoder(data_path=None, device=None):
     # --------------------------------------------------------------------------------------------------------------
     decoder = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_dim, model_out=model_out)
     decoder.load_state_dict(mod_vae.decoder.state_dict())
+    decoder.to(decoder.device)
 
     return decoder, latent_dim
 

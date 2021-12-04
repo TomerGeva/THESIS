@@ -69,7 +69,10 @@ class TrainerLatent:
             # ------------------------------------------------------------------------------
             # Forward pass
             # ------------------------------------------------------------------------------
-            _, sensitivity, _, _ = decoder(input_vec)
+            try:
+                _, sensitivity, _, _ = decoder(input_vec)
+            except ValueError:
+                _, sensitivity = decoder(input_vec)
             # ------------------------------------------------------------------------------
             # Normalizing and documenting training results with LoggerLatent
             # ------------------------------------------------------------------------------
