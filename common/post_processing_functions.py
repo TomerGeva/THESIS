@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
 from database_functions import load_state_train
-from auxiliary_functions import get_full_path
+from auxiliary_functions import get_full_path, plot_latent
 
 
 def log_to_plot(path):
@@ -132,6 +132,7 @@ def get_latent_statistics(path, epoch):
     # Extracting statistics
     # ======================================================================================
     test_loader_iter = iter(test_loaders['3e+05_to_inf'])
+    # test_loader_iter = iter(test_loaders['2e+05_to_3e+05'])
     mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
     std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
     mod_vae.eval()
@@ -154,6 +155,21 @@ def get_latent_statistics(path, epoch):
         # ------------------------------------------------------------------------------
         mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
         std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
+        # ------------------------------------------------------------------------------
+        # Plotting manually
+        # ------------------------------------------------------------------------------
+        mu_temp = mu.cpu().detach().numpy()
+        var_temp = np.exp(logvar.cpu().detach().numpy())
+        target = sensitivities.cpu().detach().numpy()
+        output = outputs.cpu().detach().numpy()
+        plot_latent(mu_temp, var_temp, target, output)
+        # for jj in range(20):
+        #     mu_temp     = mu[jj, :].cpu().detach().numpy()
+        #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
+        #     target      = sensitivities[jj, :].cpu().detach().numpy()
+        #     output      = outputs[jj, :].cpu().detach().numpy()
+        #     plot_latent(mu_temp, var_temp, target, output)
+
     # ======================================================================================
     # Plotting statistics
     # ======================================================================================
@@ -161,20 +177,17 @@ def get_latent_statistics(path, epoch):
     std_dim = np.mean(std_means, axis=1)
     plt.figure()
     ax1 = plt.subplot(2, 1, 1)
-    plt.plot(mu_dim)
+    plt.plot(mu_dim, 'o')
     plt.title('Expectation mean per index, latent space')
     plt.xlabel('index')
     plt.ylabel('mean')
     ax2 = plt.subplot(2, 1, 2)
-    plt.plot(std_dim)
+    plt.plot(std_dim, 'o')
     plt.title('Variance mean per index, latent space')
     plt.xlabel('index')
     plt.ylabel('mean')
     plt.show()
     pass
-
-
-
 
 
 def plot_grid_histogram(grid, bins=10):
@@ -225,12 +238,16 @@ if __name__ == '__main__':
     # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
     # 18_11_2021_8_21 - normal regerssion
     # 23_11_2021_17_48 - VGG
-    # 24_11_2021_21_34 - VGG with more channels
-    c_path = '..\\results\\1_12_2021_10_30'
+    # 24_11_2021_21_34 - VGG with more channels - latent space 100
+    # 1_12_2021_10_30  - VGG with more channels - latent space 50 epoch 20
+    # 5_12_2021_8_9    - VGG with more channels - latent space 25 epoch 20
+    # 7_12_2021_8_7   - VGG with more channels - latent space 15
+    c_path = '..\\results\\7_12_2021_8_7'
     c_epoch = 20
 
     get_latent_statistics(c_path, c_epoch)
 
+    log_to_plot(c_path)
+
     # load_and_batch(c_path, c_epoch)
 
-    log_to_plot(c_path)

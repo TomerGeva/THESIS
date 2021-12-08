@@ -62,7 +62,7 @@ BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost functi
 BETA_GRID        = 1.6e-5
 MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 300
-LR               = 3e-4  # learning rate
+LR               = 2e-4  # learning rate
 SCHEDULER_STEP   = 20
 SCHEDULER_GAMMA  = 0.75
 MOM              = 0.9   # momentum update
@@ -70,7 +70,7 @@ BATCH_SIZE       = 64
 
 # MODE             = mode_e.AUTOENCODER
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
+LATENT_SPACE_DIM = 15    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5

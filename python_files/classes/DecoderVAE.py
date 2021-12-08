@@ -44,7 +44,11 @@ class DecoderVAE(nn.Module):
         # Adding additional layer for the sensitivity output
         # ---------------------------------------------------------
         if self.model_out == model_output_e.BOTH:
-            self.sens_out_layer = FullyConnectedBlock(FCBlockData(1, in_neurons=sens_in_neurons, batch_norm=False, dropout_rate=0, activation=activation_type_e.null))
+            # self.sens_out_layer = FullyConnectedBlock(FCBlockData(1, in_neurons=sens_in_neurons, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)),
+            self.sens_out_layer = nn.Sequential(
+                FullyConnectedBlock(FCBlockData(25, in_neurons=sens_in_neurons, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)),
+                FullyConnectedBlock(FCBlockData(1, in_neurons=25, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)),
+            )
         else:
             self.sens_out_layer = None
 

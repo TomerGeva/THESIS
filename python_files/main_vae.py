@@ -2,6 +2,7 @@
 # import os
 import torch
 import os
+import matplotlib.pyplot as plt
 from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
 from LoggerLatent               import LoggerLatent
@@ -143,11 +144,19 @@ def main_optim_latent(path=None, epoch=None):
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.optimize_input(input_vec, decoder, 100000, logger, save_per_epoch=1)
+    opt_vec = trainer.optimize_input(input_vec, decoder, 50000, logger, save_per_epoch=1)
+    # ================================================================================
+    # Plotting optimized latent space vector
+    # ================================================================================
+    plt.plot(opt_vec.cpu().detach().numpy().squeeze())
+    plt.title('Optimized Latent Vector')
+    plt.xlabel('index')
+    plt.grid()
+    plt.show()
 
 
 if __name__ == '__main__':
-    phase = 2
+    phase = 1
     # ================================================================================
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
@@ -159,7 +168,7 @@ if __name__ == '__main__':
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================
     if phase == 2:
-        c_path = '..\\results\\1_12_2021_10_30'
+        c_path = '..\\results\\5_12_2021_22_6'
         epoch = 20
         # main_optim_input(path=c_path, epoch=epoch)
         main_optim_latent(path=c_path, epoch=epoch)

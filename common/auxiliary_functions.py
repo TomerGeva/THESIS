@@ -1,3 +1,4 @@
+from ConfigVAE import SENS_STD, SENS_MEAN
 import torch
 from torch import clamp
 import torch.nn as nn
@@ -100,6 +101,29 @@ def plot_grid(grid):
     pass
 
 
+def plot_latent(mu, var, target, output):
+    """
+    :param mu: expectation vector
+    :param var: variance vector
+    :param output: output sensitivity
+    :param target: target sensitivity
+    :return: plots
+    """
+    plt.figure()
+    ax1 = plt.subplot(2, 1, 1)
+    plt.plot(mu.T, 'o')
+    plt.title('Expectation per index, latent space')  # , target sensitivity {0:.2f} ' .format(target[0] * SENS_STD + SENS_MEAN))
+    plt.xlabel('index')
+    plt.ylabel('amplitude')
+    plt.grid()
+    ax2 = plt.subplot(2, 1, 2)
+    plt.plot(var.T, 'o')
+    plt.title('Variance per index, latent space')  # , output sensitivity {0:.2f} ' .format(output[0] * SENS_STD + SENS_MEAN))
+    plt.xlabel('index')
+    plt.ylabel('amplitude')
+    plt.grid()
+    plt.show()
+
 # ================================================================================
 # creating full file path
 # ================================================================================
@@ -108,5 +132,5 @@ def get_full_path(path, epoch=None):
     if epoch is None:
         epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
         epoch = max(epoch_nums)
-    chosen_file = [d for d in save_files if str(epoch) in d.split('\\')[-1]][0]
+    chosen_file = [d for d in save_files if np.all((str(epoch) in d.split('\\')[-1], d[-3:] == 'tar'))][0]
     return chosen_file

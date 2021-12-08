@@ -63,7 +63,6 @@ class TrainerLatent:
         # input_vec = Variable(input_vec).to(decoder.device)
         # input_vec.requires_grad_(True)
         # input_vec.to(decoder.device)
-        sigmoid = nn.Sigmoid()
         decoder.eval()
         for step in range(steps):
             # ------------------------------------------------------------------------------
