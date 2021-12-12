@@ -133,10 +133,12 @@ def get_latent_statistics(path, epoch):
     # ======================================================================================
     test_loader_iter = iter(test_loaders['3e+05_to_inf'])
     # test_loader_iter = iter(test_loaders['2e+05_to_3e+05'])
+    # test_loader_iter = iter(test_loaders['1e+05_to_2e+05'])
+    # test_loader_iter = iter(test_loaders['0_to_1e+05'])
     mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
     std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
     mod_vae.eval()
-    for ii in range(len(train_loader)):
+    for ii in range(len(test_loader_iter)):
         # ------------------------------------------------------------------------------
         # Working with iterables, much faster
         # ------------------------------------------------------------------------------
@@ -149,7 +151,7 @@ def get_latent_statistics(path, epoch):
         # ------------------------------------------------------------------------------
         grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
         sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
-        _, outputs, mu, logvar = mod_vae(grids)
+        grid_outs, outputs, mu, logvar = mod_vae(grids)
         # ------------------------------------------------------------------------------
         # Logging mean mu and mean std values
         # ------------------------------------------------------------------------------
@@ -181,11 +183,13 @@ def get_latent_statistics(path, epoch):
     plt.title('Expectation mean per index, latent space')
     plt.xlabel('index')
     plt.ylabel('mean')
+    plt.grid()
     ax2 = plt.subplot(2, 1, 2)
     plt.plot(std_dim, 'o')
     plt.title('Variance mean per index, latent space')
     plt.xlabel('index')
     plt.ylabel('mean')
+    plt.grid()
     plt.show()
     pass
 
@@ -238,12 +242,16 @@ if __name__ == '__main__':
     # 2_11_2021_8_9 -  without mixup, 30p5k unsigned database - weighted MSE [1, 2, 2, 20] lr 1e-4 beta 1 less layers Latent size 5 - 37300
     # 18_11_2021_8_21 - normal regerssion
     # 23_11_2021_17_48 - VGG
-    # 24_11_2021_21_34 - VGG with more channels - latent space 100
+    # 24_11_2021_21_34 - VGG with more channels - latent space 100  - ALL with beta_grid = 1.6e-5
     # 1_12_2021_10_30  - VGG with more channels - latent space 50 epoch 20
     # 5_12_2021_8_9    - VGG with more channels - latent space 25 epoch 20
-    # 7_12_2021_8_7   - VGG with more channels - latent space 15
-    c_path = '..\\results\\7_12_2021_8_7'
-    c_epoch = 20
+    # 7_12_2021_8_7    - VGG with more channels - latent space 15
+    # 8_12_2021_9_17   - VGG with more channels - latent space 50
+    # 9_12_2021_19_3   - VGG with more channels - latent space 50
+    c_path = '..\\results\\9_12_2021_19_3'
+    c_epoch = 140
+
+    # log_to_plot(c_path)
 
     get_latent_statistics(c_path, c_epoch)
 
