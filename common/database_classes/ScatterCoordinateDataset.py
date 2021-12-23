@@ -3,6 +3,8 @@ import os
 import torch
 import pandas as pd
 import random as rnd
+import cv2
+from auxiliary_functions import create_circle_kernel
 from database_functions import micrometer2pixel, points2mat
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import Compose, ToTensor, Normalize
@@ -17,7 +19,7 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, mix_prob=0, abs_sens=True):
+    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, mix_prob=0, abs_sens=True, dilation=0):
         """
         Args:
         :param csv_files: logdir to the file with all the database
@@ -26,6 +28,7 @@ class ScattererCoordinateDataset(Dataset):
         :param mix_factor: mixup parameter, should be between 0 and 1
         :param mix_prob: probability to do mixup when calling __get_item__(), should be between 0 and 1
         :param abs_sens: if true, doing abs on the sensitivity
+        :param dilation: amount of dilation done for the cylinder locations
         """
         dirname  = os.path.dirname(__file__)
         self.csv_data = []
@@ -44,6 +47,8 @@ class ScattererCoordinateDataset(Dataset):
         self.mixup_factor = mix_factor
         self.mixup_prob   = mix_prob
         self.abs_sens     = abs_sens
+        self.dilation     = dilation
+        self.kernel       = create_circle_kernel(radius=self.dilation) if dilation > 0 else 0
 
     def __len__(self):
         return sum(self.csv_lens)
@@ -85,6 +90,11 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         grid_array = points2mat(pixel_points)
 
+        # ----------------------------------------------------------------------------------------------------------
+        # Dilating the cylinder locations
+        # ----------------------------------------------------------------------------------------------------------
+        if self.dilation > 0:
+            grid_array = cv2.dilate(grid_array.astype(np.uint8), self.kernel, iterations=1)
         # ----------------------------------------------------------------------------------------------------------
         # Creating the sample dict
         # ----------------------------------------------------------------------------------------------------------
@@ -173,13 +183,14 @@ class ToTensorMap(object):
 # ======================================================================================================================
 # defining function which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True):
+def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, dilation=0):
     """
     This function imports the train and test database
     :param batch_size: size of each batch in the databases
     :param mixup_factor: for the training dataset,  the mixup factor
     :param mixup_prob: for the training dataset, probability of performing mixup with the mixup factor
     :param abs_sens: if true, doing absolute value over teh sensitivity
+    :param dilation: amount of dilation done for the cylinder locations
     :return: two datasets, training and test
     """
     # --------------------------------------------------------------------------------------------------------------
@@ -190,7 +201,8 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True):
                                             case='train',
                                             mix_factor=mixup_factor,
                                             mix_prob=mixup_prob,
-                                            abs_sens=abs_sens)
+                                            abs_sens=abs_sens,
+                                            dilation=dilation)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS)
 
     # --------------------------------------------------------------------------------------------------------------
@@ -203,7 +215,8 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True):
         temp_data = ScattererCoordinateDataset(csv_files=data_list,
                                                transform=ToTensorMap(),
                                                case='test',
-                                               abs_sens=abs_sens)
+                                               abs_sens=abs_sens,
+                                               dilation=dilation)
         # ******************************************************************************************************
         # extracting the data-loader key from the name
         # ******************************************************************************************************

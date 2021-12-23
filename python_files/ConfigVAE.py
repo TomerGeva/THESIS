@@ -18,6 +18,7 @@ YQUANTIZE = 2500
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
 # ========================================================================================
+DILATION    = 3
 GRID_MEAN   = 0.000232
 GRID_STD    = 0.015229786
 SENS_MEAN   = 64458    # output normalization factor - mean sensitivity
@@ -60,7 +61,7 @@ train     = True
 MODEL_OUT        = model_output_e.BOTH
 BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost function
 BETA_GRID        = 1
-MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+MSE_GROUP_WEIGHT = [1, 4, 4, 20]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 1000
 LR               = 3e-4  # learning rate
 SCHEDULER_STEP   = 50
@@ -70,7 +71,7 @@ BATCH_SIZE       = 64
 
 # MODE             = mode_e.AUTOENCODER
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
+LATENT_SPACE_DIM = 25    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
@@ -94,19 +95,19 @@ DENSE_ENCODER_TOPOLOGY = [
     ['linear',     FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 VGG_ENCODER_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 16, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['conv', ConvBlockData(16, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],
-    ['conv', ConvBlockData(32, 64, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],
-    ['conv', ConvBlockData(64, 128, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],
-    ['conv', ConvBlockData(128, 256, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],
-    ['conv', ConvBlockData(256, 512, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=7)],
+    ['conv', ConvBlockData(1, 16, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 2500  --> 100         LOS 25
+    ['conv', ConvBlockData(16, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 100   --> 100         LOS 25
+    ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                 # 100   --> 50          LOS 50
+    ['conv', ConvBlockData(32, 64, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50    --> 50          LOS 50
+    ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                 # 50    --> 25          LOS 100
+    ['conv', ConvBlockData(64, 128, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 25    --> 25          LOS 100
+    ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 0, 1), kernel=2)],                                                      # 25    --> 26 --> 13   LOS 200
+    ['conv', ConvBlockData(128, 256, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13    --> 13          LOS 200
+    ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 0, 1), kernel=2)],                                                      # 13    --> 14 --> 7    LOS 400
+    ['conv', ConvBlockData(256, 512, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 7     --> 7           LOS 400
+    ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                 # 7     --> 1           LOS 2500 + 300
     ['linear', FCBlockData(300,                  batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],  # DO NOT CHANGE THIS LINE EVER
+    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 """
 DENSE_ENCODER_TOPOLOGY = [
@@ -142,11 +143,12 @@ DECODER_TOPOLOGY = [
 DECODER_TOPOLOGY = [
     ['linear',      FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['convTrans', ConvTransposeBlockData(400, 64, 8, 2, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 1  --> 8
-    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, 0, output_padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 8  --> 29
-    ['convTrans', ConvTransposeBlockData(32,  32, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 29 --> 91
-    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, 0, output_padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 91 --> 276
-    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, 0, output_padding=1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 276 --> 832
-    ['convTrans', ConvTransposeBlockData(8,    1, 7, 3, 0, output_padding=0, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 832 --> 2500 ; DO NOT CHANGE THIS LINE EVER
+    ['convTrans', ConvTransposeBlockData(400, 64, 4, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 1   --> 4
+    ['convTrans', ConvTransposeBlockData(64,  32, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 4   --> 11
+    ['convTrans', ConvTransposeBlockData(32,  32, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 11  --> 32
+    ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, padding=3, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 32  --> 93
+    ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 93  --> 278
+    ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 278 --> 833
+    ['convTrans', ConvTransposeBlockData(4,    1, 6, 3, padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 833 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
 # """

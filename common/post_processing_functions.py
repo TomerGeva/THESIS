@@ -1,6 +1,7 @@
 from ConfigVAE import *
 import os
 import math
+import torch
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
@@ -118,6 +119,7 @@ def get_latent_statistics(path, epoch):
     :param epoch: wanted epoch to load
     :return: the function prints out plot of the statistics regarding the latent space
     """
+    sigmoid = torch.nn.Sigmoid()
     # ======================================================================================
     # Extracting the full file path
     # ======================================================================================
@@ -125,7 +127,7 @@ def get_latent_statistics(path, epoch):
     # ======================================================================================
     # Loading the needed models and data
     # ======================================================================================
-    train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE)
+    train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
     mod_vae, trainer = load_state_train(chosen_file)
 
     # ======================================================================================
@@ -160,6 +162,10 @@ def get_latent_statistics(path, epoch):
         # ------------------------------------------------------------------------------
         # Plotting manually
         # ------------------------------------------------------------------------------
+        plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+        plt.figure()
+        plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+
         mu_temp = mu.cpu().detach().numpy()
         var_temp = np.exp(logvar.cpu().detach().numpy())
         target = sensitivities.cpu().detach().numpy()
@@ -248,8 +254,9 @@ if __name__ == '__main__':
     # 7_12_2021_8_7    - VGG with more channels - latent space 15
     # 8_12_2021_9_17   - VGG with more channels - latent space 50
     # 9_12_2021_19_3   - VGG with more channels - latent space 50
-    c_path = '..\\results\\9_12_2021_19_3'
-    c_epoch = 140
+    # 12_12_2021_23_5 + 15_12_2021_23_46 - VGG -latent space 50, scatterer dilation of 3 - GOOD RESULTS with mistake padding in the last papool layer. This resulted in information leaking from the last 200 pixels and that is why the network was not able to reconstruct
+    c_path = '..\\results\\19_12_2021_10_39'
+    c_epoch = 20
 
     # log_to_plot(c_path)
 

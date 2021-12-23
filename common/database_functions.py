@@ -13,10 +13,11 @@ from DecoderVAE import DecoderVAE
 # ======================================================================================================================
 # Saving and loading trained networks
 # ======================================================================================================================
-def load_state_train(data_path, device=None):
+def load_state_train(data_path, device=None, thresholds=None):
     """
     :param data_path: path to the saved data regarding the network
     :param device: allocation to either cpu of cuda:0
+    :param thresholds: test group thresholds
     :return: the function loads the data into and returns the saves network and trainer
     """
     if device is None:
@@ -50,8 +51,18 @@ def load_state_train(data_path, device=None):
     mod_vae.to(device)  # allocating the computation to the CPU or GPU
     mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 
-    trainer = TrainerVAE(mod_vae, lr=checkpoint['lr'], mom=MOM, beta_dkl=checkpoint['beta_dkl'], beta_grid=checkpoint['beta_grid'])
-    trainer.start_epoch = checkpoint['epoch']
+    trainer = TrainerVAE(mod_vae,
+                         lr=checkpoint['lr'],
+                         mom=MOM,
+                         beta_dkl=checkpoint['beta_dkl'],
+                         beta_grid=checkpoint['beta_grid'],
+                         sched_step=SCHEDULER_STEP,
+                         sched_gamma=SCHEDULER_GAMMA,
+                         grad_clip=GRAD_CLIP,
+                         group_thresholds=thresholds,
+                         group_weights=MSE_GROUP_WEIGHT,
+                         abs_sens=ABS_SENS)
+    trainer.epoch = checkpoint['epoch']
     trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     return mod_vae, trainer

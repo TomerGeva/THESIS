@@ -33,6 +33,18 @@ def initialize_weights(net, mean, std):
 
 
 # ==================================================================================================================
+# Function used to create a circular kernel
+# ==================================================================================================================
+def create_circle_kernel(radius=1):
+    kernel = np.zeros((2*radius+1, 2*radius+1))
+    xx, yy = np.meshgrid(np.arange(2*radius+1), np.arange(2*radius+1))
+    r = np.sqrt((xx - radius)**2 + (yy - radius)**2)
+    kernel[r <= radius] = 1
+    # kernel = torch.unsqueeze(torch.unsqueeze(kernel, dim=0), dim=0)
+    return kernel.astype(np.uint8)
+
+
+# ==================================================================================================================
 # Function used to computed the dimensions between each layer
 # ==================================================================================================================
 def compute_output_dim(x_dim, y_dim, ch_num, action):
