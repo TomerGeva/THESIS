@@ -169,13 +169,10 @@ class TrainerVAE:
                 grids         = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
                 sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
                 grid_targets  = Variable(sample_batched['grid_target'].float()).to(mod_vae.device)
-                del sample_batched
-
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
                 grid_out, sens_out, mu, logvar = mod_vae(grids)
-
                 # ------------------------------------------------------------------------------
                 # Backward computations
                 # ------------------------------------------------------------------------------
@@ -185,14 +182,10 @@ class TrainerVAE:
                 train_kl_div    += kl_div.item()
                 train_grid_mse  += grid_mse_loss.item()
                 counter         += sensitivities.size(0)
-                # del sens_mse_loss, kl_div, grid_mse_loss
-                # del grids, grid_targets, sensitivities
-
                 # ------------------------------------------------------------------------------
                 # Back propagation
                 # ------------------------------------------------------------------------------
                 self.optimizer.zero_grad()
-                # torch.cuda.empty_cache()
                 # gpu_usage()  # DEBUG
                 if mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.SENS:
                     sens_mse_loss.backward()
@@ -213,7 +206,6 @@ class TrainerVAE:
             train_kl_div    = train_kl_div / counter
             train_grid_mse  = train_grid_mse / counter
             logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_cost)
-
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
             # ------------------------------------------------------------------------------
@@ -261,7 +253,6 @@ class TrainerVAE:
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
             self.scheduler.step()
-
             # ------------------------------------------------------------------------------
             # Saving the training state
             # save every x epochs and on the last epoch

@@ -134,7 +134,6 @@ def plot_latent(mu, var, target, output):
     plt.xlabel('index')
     plt.ylabel('amplitude')
     plt.grid()
-    plt.show()
 
 
 # ================================================================================

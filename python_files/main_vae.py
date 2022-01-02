@@ -171,9 +171,9 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        # c_path = '..\\results\\12_12_2021_23_5'
         c_path = None
-        epoch = 140
+        # c_path  = '..\\results\\20_12_2021_11_38'
+        epoch = 160
         # enc_type = encoder_type_e.DENSE
         enc_type = encoder_type_e.VGG
         main_vae(enc_type, load_model=c_path, start_epoch=epoch)

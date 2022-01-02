@@ -163,8 +163,13 @@ def get_latent_statistics(path, epoch):
         # Plotting manually
         # ------------------------------------------------------------------------------
         plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+        plt.title("Target Output - Model Input")
         plt.figure()
         plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+        plt.title("Model output - Raw")
+        plt.figure()
+        plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
+        plt.title("Model output - After Step at 0.5")
 
         mu_temp = mu.cpu().detach().numpy()
         var_temp = np.exp(logvar.cpu().detach().numpy())
@@ -254,9 +259,11 @@ if __name__ == '__main__':
     # 7_12_2021_8_7    - VGG with more channels - latent space 15
     # 8_12_2021_9_17   - VGG with more channels - latent space 50
     # 9_12_2021_19_3   - VGG with more channels - latent space 50
-    # 12_12_2021_23_5 + 15_12_2021_23_46 - VGG -latent space 50, scatterer dilation of 3 - GOOD RESULTS with mistake padding in the last papool layer. This resulted in information leaking from the last 200 pixels and that is why the network was not able to reconstruct
-    c_path = '..\\results\\19_12_2021_10_39'
-    c_epoch = 20
+    # 12_12_2021_23_5 + 15_12_2021_23_46 - VGG -latent space 50, scatterer dilation of 3 - GOOD RESULTS with mistake padding in the last padpool layer. This resulted in information leaking from the last 200 pixels and that is why the network was not able to reconstruct
+    # 20_12_2021_11_38 + 23_12_2021_8_20 - VGG with more channels - latent space 25 After fixing the reconstruction problem
+    # 26_12_2021_8_41
+    c_path = '..\\results\\26_12_2021_8_41'
+    c_epoch = 360
 
     # log_to_plot(c_path)
 

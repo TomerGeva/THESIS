@@ -64,17 +64,17 @@ BETA_GRID        = 1
 MSE_GROUP_WEIGHT = [1, 4, 4, 20]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 1000
 LR               = 3e-4  # learning rate
-SCHEDULER_STEP   = 50
-SCHEDULER_GAMMA  = 0.85
+SCHEDULER_STEP   = 100
+SCHEDULER_GAMMA  = 0.75
 MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
 
 # MODE             = mode_e.AUTOENCODER
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 25    # number of dimensions in the latent space
+LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
-GRAD_CLIP        = 5
+GRAD_CLIP        = 10
 
 # --------------------------------------------------------
 # Dense Encoder topology
