@@ -64,7 +64,7 @@ BETA_GRID        = 1
 MSE_GROUP_WEIGHT = [1, 4, 4, 20]  # weighted MSE according to sensitivity group
 EPOCH_NUM        = 1000
 LR               = 3e-4  # learning rate
-SCHEDULER_STEP   = 100
+SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.75
 MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
@@ -74,7 +74,7 @@ MODE             = mode_e.VAE
 LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
-GRAD_CLIP        = 10
+GRAD_CLIP        = 5
 
 # --------------------------------------------------------
 # Dense Encoder topology
@@ -95,8 +95,8 @@ DENSE_ENCODER_TOPOLOGY = [
     ['linear',     FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 VGG_ENCODER_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 16, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 2500  --> 100         LOS 25
-    ['conv', ConvBlockData(16, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 100   --> 100         LOS 25
+    ['conv', ConvBlockData(1, 20, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 2500  --> 100         LOS 25
+    ['conv', ConvBlockData(20, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 100   --> 100         LOS 25
     ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                 # 100   --> 50          LOS 50
     ['conv', ConvBlockData(32, 64, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50    --> 50          LOS 50
     ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                 # 50    --> 25          LOS 100
