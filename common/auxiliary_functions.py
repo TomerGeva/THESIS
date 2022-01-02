@@ -103,7 +103,7 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
 def plot_grid(grid):
     """
     :param grid: 1 X 1 X 2500 X 2500 grid tensor
-    :return: plot the grid
+    :return: plot the grid after a step function in the middle
     """
     grid_np = grid.cpu().squeeze().detach().numpy()
     grid_np = (grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255
