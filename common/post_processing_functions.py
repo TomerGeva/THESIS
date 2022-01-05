@@ -262,8 +262,9 @@ if __name__ == '__main__':
     # 12_12_2021_23_5 + 15_12_2021_23_46 - VGG -latent space 50, scatterer dilation of 3 - GOOD RESULTS with mistake padding in the last padpool layer. This resulted in information leaking from the last 200 pixels and that is why the network was not able to reconstruct
     # 20_12_2021_11_38 + 23_12_2021_8_20 - VGG with more channels - latent space 25 After fixing the reconstruction problem
     # 26_12_2021_8_41
-    c_path = '..\\results\\26_12_2021_8_41'
-    c_epoch = 360
+    # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
+    c_path = '..\\results\\2_1_2022_7_50'
+    c_epoch = 160
 
     # log_to_plot(c_path)
 
