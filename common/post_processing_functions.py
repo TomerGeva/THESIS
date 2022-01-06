@@ -263,8 +263,9 @@ if __name__ == '__main__':
     # 20_12_2021_11_38 + 23_12_2021_8_20 - VGG with more channels - latent space 25 After fixing the reconstruction problem
     # 26_12_2021_8_41
     # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
-    c_path = '..\\results\\2_1_2022_7_50'
-    c_epoch = 160
+    # c_path = '..\\results\\12_12_2021_23_5'
+    c_path = '..\\results\\5_1_2022_18_34'
+    c_epoch = 20
 
     # log_to_plot(c_path)
 
