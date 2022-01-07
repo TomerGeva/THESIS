@@ -6,207 +6,209 @@ import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
 from database_functions import load_state_train
-from auxiliary_functions import get_full_path, plot_latent
+from auxiliary_functions import get_full_path, PlottingFunctions
 
 
-def log_to_plot(path):
-    """
-    :param path: path to a result folder
-    :return: the function reads the log and creates a plot of RMS loss, with all the test databases documented
-    """
-    # ====================================================================================================
-    # Local variables
-    # ====================================================================================================
-    filename    = os.path.join(path, 'logger_vae.txt')
-    fileID      = open(filename, 'r')
-    lines       = fileID.readlines()
-    fileID.close()
+class PostProcessing:
+    def __init__(self):
+        pass
 
-    reached_start  = False
-    epoch_list     = []
-    keys_list      = []
-    test_results   = {}
+    @staticmethod
+    def log_to_plot(path):
+        """
+        :param path: path to a result folder
+        :return: the function reads the log and creates a plot of RMS loss, with all the test databases documented
+        """
+        # ====================================================================================================
+        # Local variables
+        # ====================================================================================================
+        filename    = os.path.join(path, 'logger_vae.txt')
+        fileID      = open(filename, 'r')
+        lines       = fileID.readlines()
+        fileID.close()
 
-    train_label    = None
-    train_mse_loss = []
-    train_dkl_loss = []
-    train_tot_loss = []
-    # ====================================================================================================
-    # Going over lines, adding to log
-    # ====================================================================================================
-    for line in lines:
-        # --------------------------------------------------------------------------------------------
-        # Getting to beginning of training
-        # --------------------------------------------------------------------------------------------
-        if not reached_start and 'Beginning Training' not in line:
-            continue
-        elif not reached_start:
-            reached_start = True
-            continue
-        # --------------------------------------------------------------------------------------------
-        # Reached beginning, going over cases
-        # --------------------------------------------------------------------------------------------
-        words = list(filter(None, line.split(sep=' ')))
-        if 'Epoch' in line:
-            epoch_list.append(int(words[-1]))
-        elif 'train' in line.lower():
-            if train_label is None:
-                train_label = words[3]
-            train_mse_loss.append(float(words[7]))
-            train_dkl_loss.append(float(words[9]))
-            train_tot_loss.append(float(words[16]))
-        elif 'MSE' in line:
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # one of the test databases
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            temp_key = words[3]
-            if temp_key in keys_list:
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                # if key already exists, appends the result
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                test_results[temp_key].append(float(words[10]))
+        reached_start  = False
+        epoch_list     = []
+        keys_list      = []
+        test_results   = {}
+
+        train_label    = None
+        train_mse_loss = []
+        train_dkl_loss = []
+        train_tot_loss = []
+        # ====================================================================================================
+        # Going over lines, adding to log
+        # ====================================================================================================
+        for line in lines:
+            # --------------------------------------------------------------------------------------------
+            # Getting to beginning of training
+            # --------------------------------------------------------------------------------------------
+            if not reached_start and 'Beginning Training' not in line:
+                continue
+            elif not reached_start:
+                reached_start = True
+                continue
+            # --------------------------------------------------------------------------------------------
+            # Reached beginning, going over cases
+            # --------------------------------------------------------------------------------------------
+            words = list(filter(None, line.split(sep=' ')))
+            if 'Epoch' in line:
+                epoch_list.append(int(words[-1]))
+            elif 'train' in line.lower():
+                if train_label is None:
+                    train_label = words[3]
+                train_mse_loss.append(float(words[7]))
+                train_dkl_loss.append(float(words[9]))
+                train_tot_loss.append(float(words[16]))
+            elif 'MSE' in line:
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # one of the test databases
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                temp_key = words[3]
+                if temp_key in keys_list:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # if key already exists, appends the result
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    test_results[temp_key].append(float(words[10]))
+                else:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # if key does not exist, creates a new list
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    keys_list.append(temp_key)
+                    test_results[temp_key] = [float(words[10])]
+
+        # ====================================================================================================
+        # Plotting the results
+        # ====================================================================================================
+        plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label=train_label)
+        for test_db in keys_list:
+            if '15_22' in path:
+                plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
             else:
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                # if key does not exist, creates a new list
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                keys_list.append(temp_key)
-                test_results[temp_key] = [float(words[10])]
+                plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
+        plt.xlabel('Epoch')
+        plt.ylabel('RMS Loss')
+        plt.title('RMS loss vs Epoch number')
+        plt.legend()
+        plt.grid()
+        plt.show()
 
-    # ====================================================================================================
-    # Plotting the results
-    # ====================================================================================================
-    plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label=train_label)
-    for test_db in keys_list:
-        if '15_22' in path:
-            plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
-        else:
-            plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
-    plt.xlabel('Epoch')
-    plt.ylabel('RMS Loss')
-    plt.title('RMS loss vs Epoch number')
-    plt.legend()
-    plt.grid()
-    plt.show()
+    @staticmethod
+    def load_and_batch(path, epoch):
+        """
+        :return: This function loads a saves model, and tests the MSE of the target error
+        """
+        # ======================================================================================
+        # Extracting the full file path
+        # ======================================================================================
+        chosen_file = get_full_path(path, epoch)
+        # ======================================================================================
+        # Loading the needed models and data
+        # ======================================================================================
+        train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
+        mod_vae, trainer                = load_state_train(chosen_file)
 
+        smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
+        grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
+        sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
 
-def load_and_batch(path, epoch):
-    """
-    :return: This function loads a saves model, and tests the MSE of the target error
-    """
-    # ======================================================================================
-    # Extracting the full file path
-    # ======================================================================================
-    chosen_file = get_full_path(path, epoch)
-    # ======================================================================================
-    # Loading the needed models and data
-    # ======================================================================================
-    train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
-    mod_vae, trainer                = load_state_train(chosen_file)
+        mod_vae.eval()
+        _, outputs, mu, logvar = mod_vae(grids)
+        print('Outputs: ' + str(outputs))
+        print('Targets: ' + str(sensitivities))
 
-    smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
-    grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
-    sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
+    @staticmethod
+    def get_latent_statistics(path, epoch):
+        """
+        :param path: path to a model training results folder
+        :param epoch: wanted epoch to load
+        :return: the function prints out plot of the statistics regarding the latent space
+        """
+        pf = PlottingFunctions()
+        sigmoid = torch.nn.Sigmoid()
+        # ======================================================================================
+        # Extracting the full file path
+        # ======================================================================================
+        chosen_file = get_full_path(path, epoch)
+        # ======================================================================================
+        # Loading the needed models and data
+        # ======================================================================================
+        train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
+        mod_vae, trainer = load_state_train(chosen_file)
 
-    mod_vae.eval()
-    _, outputs, mu, logvar = mod_vae(grids)
-    print('Outputs: ' + str(outputs))
-    print('Targets: ' + str(sensitivities))
+        # ======================================================================================
+        # Extracting statistics
+        # ======================================================================================
+        test_loader_iter = iter(test_loaders['3e+05_to_inf'])
+        # test_loader_iter = iter(test_loaders['2e+05_to_3e+05'])
+        # test_loader_iter = iter(test_loaders['1e+05_to_2e+05'])
+        # test_loader_iter = iter(test_loaders['0_to_1e+05'])
+        mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+        std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+        mod_vae.eval()
+        for ii in range(len(test_loader_iter)):
+            # ------------------------------------------------------------------------------
+            # Working with iterables, much faster
+            # ------------------------------------------------------------------------------
+            try:
+                sample_batched = next(test_loader_iter)
+            except StopIteration:
+                break
+            # ------------------------------------------------------------------------------
+            # Extracting the grids and sensitivities, passing through the model
+            # ------------------------------------------------------------------------------
+            grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
+            sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
+            grid_outs, outputs, mu, logvar = mod_vae(grids)
+            # ------------------------------------------------------------------------------
+            # Logging mean mu and mean std values
+            # ------------------------------------------------------------------------------
+            mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
+            std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
+            # ------------------------------------------------------------------------------
+            # Plotting manually
+            # ------------------------------------------------------------------------------
+            plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+            plt.title("Target Output - Model Input")
+            plt.figure()
+            plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+            plt.title("Model output - Raw")
+            plt.figure()
+            plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
+            plt.title("Model output - After Step at 0.5")
 
+            mu_temp = mu.cpu().detach().numpy()
+            var_temp = np.exp(logvar.cpu().detach().numpy())
+            target = sensitivities.cpu().detach().numpy()
+            output = outputs.cpu().detach().numpy()
+            pf.plot_latent(mu_temp, var_temp, target, output)
+            # for jj in range(20):
+            #     mu_temp     = mu[jj, :].cpu().detach().numpy()
+            #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
+            #     target      = sensitivities[jj, :].cpu().detach().numpy()
+            #     output      = outputs[jj, :].cpu().detach().numpy()
+            #     plot_latent(mu_temp, var_temp, target, output)
 
-def get_latent_statistics(path, epoch):
-    """
-    :param path: path to a model training results folder
-    :param epoch: wanted epoch to load
-    :return: the function prints out plot of the statistics regarding the latent space
-    """
-    sigmoid = torch.nn.Sigmoid()
-    # ======================================================================================
-    # Extracting the full file path
-    # ======================================================================================
-    chosen_file = get_full_path(path, epoch)
-    # ======================================================================================
-    # Loading the needed models and data
-    # ======================================================================================
-    train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
-    mod_vae, trainer = load_state_train(chosen_file)
-
-    # ======================================================================================
-    # Extracting statistics
-    # ======================================================================================
-    test_loader_iter = iter(test_loaders['3e+05_to_inf'])
-    # test_loader_iter = iter(test_loaders['2e+05_to_3e+05'])
-    # test_loader_iter = iter(test_loaders['1e+05_to_2e+05'])
-    # test_loader_iter = iter(test_loaders['0_to_1e+05'])
-    mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
-    std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
-    mod_vae.eval()
-    for ii in range(len(test_loader_iter)):
-        # ------------------------------------------------------------------------------
-        # Working with iterables, much faster
-        # ------------------------------------------------------------------------------
-        try:
-            sample_batched = next(test_loader_iter)
-        except StopIteration:
-            break
-        # ------------------------------------------------------------------------------
-        # Extracting the grids and sensitivities, passing through the model
-        # ------------------------------------------------------------------------------
-        grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
-        sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
-        grid_outs, outputs, mu, logvar = mod_vae(grids)
-        # ------------------------------------------------------------------------------
-        # Logging mean mu and mean std values
-        # ------------------------------------------------------------------------------
-        mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
-        std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
-        # ------------------------------------------------------------------------------
-        # Plotting manually
-        # ------------------------------------------------------------------------------
-        plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
-        plt.title("Target Output - Model Input")
+        # ======================================================================================
+        # Plotting statistics
+        # ======================================================================================
+        mu_dim = np.mean(mu_means, axis=1)
+        std_dim = np.mean(std_means, axis=1)
         plt.figure()
-        plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
-        plt.title("Model output - Raw")
-        plt.figure()
-        plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
-        plt.title("Model output - After Step at 0.5")
-
-        mu_temp = mu.cpu().detach().numpy()
-        var_temp = np.exp(logvar.cpu().detach().numpy())
-        target = sensitivities.cpu().detach().numpy()
-        output = outputs.cpu().detach().numpy()
-        plot_latent(mu_temp, var_temp, target, output)
-        # for jj in range(20):
-        #     mu_temp     = mu[jj, :].cpu().detach().numpy()
-        #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
-        #     target      = sensitivities[jj, :].cpu().detach().numpy()
-        #     output      = outputs[jj, :].cpu().detach().numpy()
-        #     plot_latent(mu_temp, var_temp, target, output)
-
-    # ======================================================================================
-    # Plotting statistics
-    # ======================================================================================
-    mu_dim = np.mean(mu_means, axis=1)
-    std_dim = np.mean(std_means, axis=1)
-    plt.figure()
-    ax1 = plt.subplot(2, 1, 1)
-    plt.plot(mu_dim, 'o')
-    plt.title('Expectation mean per index, latent space')
-    plt.xlabel('index')
-    plt.ylabel('mean')
-    plt.grid()
-    ax2 = plt.subplot(2, 1, 2)
-    plt.plot(std_dim, 'o')
-    plt.title('Variance mean per index, latent space')
-    plt.xlabel('index')
-    plt.ylabel('mean')
-    plt.grid()
-    plt.show()
-    pass
-
-
-def plot_grid_histogram(grid, bins=10):
-    plt.hist(np.array(grid).ravel(), bins=bins, density=True)
+        ax1 = plt.subplot(2, 1, 1)
+        plt.plot(mu_dim, 'o')
+        plt.title('Expectation mean per index, latent space')
+        plt.xlabel('index')
+        plt.ylabel('mean')
+        plt.grid()
+        ax2 = plt.subplot(2, 1, 2)
+        plt.plot(std_dim, 'o')
+        plt.title('Variance mean per index, latent space')
+        plt.xlabel('index')
+        plt.ylabel('mean')
+        plt.grid()
+        plt.show()
+        pass
 
 
 if __name__ == '__main__':
@@ -266,12 +268,10 @@ if __name__ == '__main__':
     # c_path = '..\\results\\12_12_2021_23_5'
     c_path = '..\\results\\5_1_2022_18_34'
     c_epoch = 20
+    pp = PostProcessing()
 
-    # log_to_plot(c_path)
-
-    get_latent_statistics(c_path, c_epoch)
-
-    log_to_plot(c_path)
-
-    # load_and_batch(c_path, c_epoch)
+    # pp.log_to_plot(c_path)
+    pp.get_latent_statistics(c_path, c_epoch)
+    pp.log_to_plot(c_path)
+    # pp.load_and_batch(c_path, c_epoch)
 

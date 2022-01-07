@@ -16,23 +16,6 @@ def truncated_relu(x):
 
 
 # ==================================================================================================================
-# Function used to initialize the weights of the network before the training
-# ==================================================================================================================
-def initialize_weights(net, mean, std):
-    """
-    :param net: the model which is being normalized
-    :param mean: the target mean of the weights
-    :param std: the target standard deviation of the weights
-    :return: nothing, just adjusts the weights
-    """
-    for module in net.modules():
-        if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
-            nn.init.normal_(module.weight.data, mean, std)
-            if isinstance(module, nn.Linear):
-                pass
-
-
-# ==================================================================================================================
 # Function used to create a circular kernel
 # ==================================================================================================================
 def create_circle_kernel(radius=1):
@@ -100,49 +83,51 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
 # ==================================================================================================================
 # Function used to plot the 2d grid of arrays
 # ==================================================================================================================
-def plot_grid(grid):
-    """
-    :param grid: 1 X 1 X 2500 X 2500 grid tensor
-    :return: plot the grid after a step function in the middle
-    """
-    grid_np = grid.cpu().squeeze().detach().numpy()
-    grid_np = (grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255
-    grid_np = np.where(grid_np > 127, 255, 0)
-    imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
-    plt.show()
-    pass
+class PlottingFunctions:
+    def __init__(self):
+        pass
 
+    @staticmethod
+    def plot_grid(grid):
+        """
+        :param grid: 1 X 1 X 2500 X 2500 grid tensor
+        :return: plot the grid after a step function in the middle
+        """
+        grid_np = grid.cpu().squeeze().detach().numpy()
+        plt.figure()
+        ax1 = plt.subplot(1, 2, 1)
+        grid_np = (grid_np - np.min(grid_np)) / (np.max(grid_np) - np.min(grid_np)) * 255
+        imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
+        plt.title('Grid Raw')
+        ax2 = plt.subplot(1, 2, 2)
+        grid_np = np.where(grid_np > 127, 255, 0)
+        imgplot = plt.imshow(grid_np, cmap='gray', vmin=0, vmax=255)
+        plt.title('Grid After Step Function')
+        plt.show()
 
-def plot_latent(mu, var, target, output):
-    """
-    :param mu: expectation vector
-    :param var: variance vector
-    :param output: output sensitivity
-    :param target: target sensitivity
-    :return: plots
-    """
-    plt.figure()
-    ax1 = plt.subplot(2, 1, 1)
-    plt.plot(mu.T, 'o')
-    plt.title('Expectation per index, latent space')  # , target sensitivity {0:.2f} ' .format(target[0] * SENS_STD + SENS_MEAN))
-    plt.xlabel('index')
-    plt.ylabel('amplitude')
-    plt.grid()
-    ax2 = plt.subplot(2, 1, 2)
-    plt.plot(var.T, 'o')
-    plt.title('Variance per index, latent space')  # , output sensitivity {0:.2f} ' .format(output[0] * SENS_STD + SENS_MEAN))
-    plt.xlabel('index')
-    plt.ylabel('amplitude')
-    plt.grid()
+    @staticmethod
+    def plot_latent(mu, var, target, output):
+        """
+        :param mu: expectation vector
+        :param var: variance vector
+        :param output: output sensitivity
+        :param target: target sensitivity
+        :return: plots
+        """
+        plt.figure()
+        ax1 = plt.subplot(2, 1, 1)
+        plt.plot(mu.T, 'o')
+        plt.title('Expectation per index, latent space')  # , target sensitivity {0:.2f} ' .format(target[0] * SENS_STD + SENS_MEAN))
+        plt.xlabel('index')
+        plt.ylabel('amplitude')
+        plt.grid()
+        ax2 = plt.subplot(2, 1, 2)
+        plt.plot(var.T, 'o')
+        plt.title('Variance per index, latent space')  # , output sensitivity {0:.2f} ' .format(output[0] * SENS_STD + SENS_MEAN))
+        plt.xlabel('index')
+        plt.ylabel('amplitude')
+        plt.grid()
 
-
-# ================================================================================
-# creating full file path
-# ================================================================================
-def get_full_path(path, epoch=None):
-    save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
-    if epoch is None:
-        epoch_nums = [int(file.split(sep='_')[-1][0:-4]) for file in save_files[1:]]
-        epoch = max(epoch_nums)
-    chosen_file = [d for d in save_files if np.all((str(epoch) in d.split('\\')[-1], d[-3:] == 'tar'))][0]
-    return chosen_file
+    @staticmethod
+    def plot_grid_histogram(grid, bins=10):
+        plt.hist(np.array(grid).ravel(), bins=bins, density=True)

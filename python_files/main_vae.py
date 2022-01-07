@@ -9,14 +9,16 @@ from LoggerLatent               import LoggerLatent
 from TrainerVAE                 import TrainerVAE
 from TrainerLatent              import TrainerLatent
 from ModVAE                     import ModVAE
-from auxiliary_functions        import initialize_weights, plot_grid, get_full_path
+from auxiliary_functions        import PlottingFunctions
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
-from database_functions         import load_decoder
-from database_functions         import load_state_train
+from database_functions         import ModelManipulationFunctions, PathFindingFunctions
 
 
 def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
+    pf  = PlottingFunctions()
+    pff = PathFindingFunctions()
+    mmf = ModelManipulationFunctions()
     # ================================================================================
     # Setting the logger
     # ================================================================================
@@ -54,8 +56,8 @@ def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
                              latent_space_dim=LATENT_SPACE_DIM,
                              encoder_type=encoder_type,
                              mode=MODE,
-                             model_out=MODEL_OUT                         )
-        initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
+                             model_out=MODEL_OUT)
+        mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
 
         trainer = TrainerVAE(mod_vae,
@@ -73,11 +75,11 @@ def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
         # ==============================================================================
         # Extracting the full file path
         # ==============================================================================
-        chosen_file = get_full_path(load_model, start_epoch)
+        chosen_file = pff.get_full_path(load_model, start_epoch)
         # ==============================================================================
         # Loading the needed models and data
         # ==============================================================================
-        mod_vae, trainer = load_state_train(chosen_file, thresholds=thresholds)
+        mod_vae, trainer = mmf.load_state_train(chosen_file, thresholds=thresholds)
 
     # ================================================================================
     # Training
@@ -86,14 +88,17 @@ def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
 
 
 def main_optim_input(path=None, epoch=None):
+    pf  = PlottingFunctions()
+    pff = PathFindingFunctions()
+    mmf = ModelManipulationFunctions()
     # ================================================================================
     # creating full file path
     # ================================================================================
-    chosen_file = get_full_path(path, epoch=epoch)
+    chosen_file = pff.get_full_path(path, epoch=epoch)
     # ================================================================================
     # Loading the decoder creating the input vector
     # ================================================================================
-    mod_vae, _ = load_state_train(chosen_file)
+    mod_vae, _ = mmf.load_state_train(chosen_file)
     mod_vae.mode = mode_e.AUTOENCODER
     mod_vae.model_out = model_output_e.SENS
     mod_vae.decoder.model_out = model_output_e.SENS
@@ -121,18 +126,21 @@ def main_optim_input(path=None, epoch=None):
     # Training
     # ================================================================================
     optim_mat = trainer.optimize_input(input_mat, mod_vae, 2000, logger, save_per_epoch=1)
-    plot_grid(optim_mat)
+    pf.plot_grid(optim_mat)
 
 
 def main_optim_latent(path=None, epoch=None):
+    pf = PlottingFunctions()
+    pff = PathFindingFunctions()
+    mmf = ModelManipulationFunctions()
     # ================================================================================
     # creating full file path
     # ================================================================================
-    chosen_file = get_full_path(path, epoch=epoch)
+    chosen_file = pff.get_full_path(path, epoch=epoch)
     # ================================================================================
     # Loading the decoder creating the input vector
     # ================================================================================
-    decoder, latent_dim = load_decoder(data_path=chosen_file)
+    decoder, latent_dim = mmf.load_decoder(data_path=chosen_file)
     input_vec  = torch.nn.Parameter(torch.randn([1, latent_dim], device=decoder.device), requires_grad=True)
     # ================================================================================
     # Setting the logger
