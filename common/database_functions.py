@@ -138,6 +138,7 @@ class ModelManipulationFunctions:
         :param target_net: We copy the weights to this network
         :return: Nothing
         """
+        pass
 
 
 class DatabaseFunctions:
