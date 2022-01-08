@@ -5,8 +5,8 @@ import torch
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
-from database_functions import load_state_train
-from auxiliary_functions import get_full_path, PlottingFunctions
+from database_functions import PathFindingFunctions, ModelManipulationFunctions
+from auxiliary_functions import PlottingFunctions
 
 
 class PostProcessing:
@@ -98,15 +98,17 @@ class PostProcessing:
         """
         :return: This function loads a saves model, and tests the MSE of the target error
         """
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
         # ======================================================================================
         # Extracting the full file path
         # ======================================================================================
-        chosen_file = get_full_path(path, epoch)
+        chosen_file = pff.get_full_path(path, epoch)
         # ======================================================================================
         # Loading the needed models and data
         # ======================================================================================
         train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
-        mod_vae, trainer                = load_state_train(chosen_file)
+        mod_vae, trainer                = mff.load_state_train(chosen_file)
 
         smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
         grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
@@ -124,17 +126,19 @@ class PostProcessing:
         :param epoch: wanted epoch to load
         :return: the function prints out plot of the statistics regarding the latent space
         """
-        pf = PlottingFunctions()
+        pf  = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
         sigmoid = torch.nn.Sigmoid()
         # ======================================================================================
         # Extracting the full file path
         # ======================================================================================
-        chosen_file = get_full_path(path, epoch)
+        chosen_file = pff. get_full_path(path, epoch)
         # ======================================================================================
         # Loading the needed models and data
         # ======================================================================================
         train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
-        mod_vae, trainer = load_state_train(chosen_file)
+        mod_vae, trainer = mff.load_state_train(chosen_file)
 
         # ======================================================================================
         # Extracting statistics
@@ -266,7 +270,7 @@ if __name__ == '__main__':
     # 26_12_2021_8_41
     # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
     # c_path = '..\\results\\12_12_2021_23_5'
-    c_path = '..\\results\\5_1_2022_18_34'
+    c_path = '..\\results\\8_1_2022_7_28'
     c_epoch = 20
     pp = PostProcessing()
 

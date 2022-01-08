@@ -15,7 +15,11 @@ from global_const               import encoder_type_e
 from database_functions         import ModelManipulationFunctions, PathFindingFunctions
 
 
-def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
+def main_vae(encoder_type=encoder_type_e.DENSE,
+             load_model=None,
+             start_epoch=0,
+             copy_weights=None,
+             copy_weights_epoch=0):
     pf  = PlottingFunctions()
     pff = PathFindingFunctions()
     mmf = ModelManipulationFunctions()
@@ -59,7 +63,23 @@ def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
                              model_out=MODEL_OUT)
         mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
-
+        # ================================================================================
+        # Copy weights if needed
+        # ================================================================================
+        if copy_weights is not None:
+            # ------------------------------------------------------------------------
+            # Loading the wanted model
+            # ------------------------------------------------------------------------
+            chosen_file = pff.get_full_path(copy_weights, copy_weights_epoch)
+            mod_vae_source, _ = mmf.load_state_train(chosen_file)
+            # ------------------------------------------------------------------------
+            # Copying weights
+            # ------------------------------------------------------------------------
+            mmf.copy_net_weights(mod_vae_source, mod_vae)
+            print('Copied weights, lets see what happens . . .')
+        # ================================================================================
+        # Creating trainer
+        # ================================================================================
         trainer = TrainerVAE(mod_vae,
                              lr=LR,
                              mom=MOM,
@@ -80,7 +100,6 @@ def main_vae(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
         # Loading the needed models and data
         # ==============================================================================
         mod_vae, trainer = mmf.load_state_train(chosen_file, thresholds=thresholds)
-
     # ================================================================================
     # Training
     # ================================================================================
@@ -179,12 +198,17 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        c_path = None
-        # c_path  = '..\\results\\20_12_2021_11_38'
-        epoch = 160
-        # enc_type = encoder_type_e.DENSE
+        load_path   = None
+        # load_path  = '..\\results\\20_12_2021_11_38'
+        load_epoch  = 160
+        # copy_path   = None
+        copy_path   = '..\\results\\15_12_2021_23_46'
+        copy_epoch  = 320
+
         enc_type = encoder_type_e.VGG
-        main_vae(enc_type, load_model=c_path, start_epoch=epoch)
+        main_vae(enc_type,
+                 load_model=load_path, start_epoch=load_epoch,
+                 copy_weights=copy_path, copy_weights_epoch=copy_epoch)
     # ================================================================================
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================

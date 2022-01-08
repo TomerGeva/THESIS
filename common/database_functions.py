@@ -138,7 +138,25 @@ class ModelManipulationFunctions:
         :param target_net: We copy the weights to this network
         :return: Nothing
         """
-        pass
+        for module_source, module_target in zip(source_net.encoder.modules(), target_net.encoder.modules()):
+            if isinstance(module_source, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.BatchNorm1d, nn.ConvTranspose2d)) and isinstance(module_target, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.BatchNorm1d, nn.ConvTranspose2d)):
+                if type(module_source) == type(module_target):
+                    if module_source.weight.shape == module_target.weight.shape:
+                        module_target.weight.data = module_source.weight.data
+                        module_target.bias        = module_source.bias
+                        if isinstance(module_source, (nn.BatchNorm2d, nn.BatchNorm1d)):
+                            module_target.running_mean = module_source.running_mean
+                            module_target.running_var = module_source.running_var
+
+        for module_source, module_target in zip(source_net.decoder.modules(), target_net.decoder.modules()):
+            if isinstance(module_source, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.BatchNorm1d, nn.ConvTranspose2d)) and isinstance(module_target, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.BatchNorm1d, nn.ConvTranspose2d)):
+                if type(module_source) == type(module_target):
+                    if module_source.weight.shape == module_target.weight.shape:
+                        module_target.weight.data = module_source.weight.data
+                        module_target.bias        = module_source.bias
+                        if isinstance(module_source, (nn.BatchNorm2d, nn.BatchNorm1d)):
+                            module_target.running_mean = module_source.running_mean
+                            module_target.running_var = module_source.running_var
 
 
 class DatabaseFunctions:

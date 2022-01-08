@@ -5,7 +5,7 @@ import pandas as pd
 import random as rnd
 import cv2
 from auxiliary_functions import create_circle_kernel
-from database_functions import micrometer2pixel, points2mat
+from database_functions import DatabaseFunctions
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import Compose, ToTensor, Normalize
 
@@ -49,6 +49,7 @@ class ScattererCoordinateDataset(Dataset):
         self.abs_sens     = abs_sens
         self.dilation     = dilation
         self.kernel       = create_circle_kernel(radius=self.dilation) if dilation > 0 else 0
+        self.dbf          = DatabaseFunctions()
 
     def __len__(self):
         return sum(self.csv_lens)
@@ -83,12 +84,12 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # Converting points from micro meter to pixels
         # ----------------------------------------------------------------------------------------------------------
-        pixel_points = micrometer2pixel(points)
+        pixel_points = self.dbf.micrometer2pixel(points)
 
         # ----------------------------------------------------------------------------------------------------------
         # Converting the points to a 2-D array
         # ----------------------------------------------------------------------------------------------------------
-        grid_array = points2mat(pixel_points)
+        grid_array = self.dbf.points2mat(pixel_points)
 
         # ----------------------------------------------------------------------------------------------------------
         # Dilating the cylinder locations
