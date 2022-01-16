@@ -172,6 +172,7 @@ class PostProcessing:
             # ------------------------------------------------------------------------------
             # Plotting manually
             # ------------------------------------------------------------------------------
+            plt.figure()
             plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
             plt.title("Target Output - Model Input")
             plt.figure()
@@ -269,9 +270,10 @@ if __name__ == '__main__':
     # 20_12_2021_11_38 + 23_12_2021_8_20 - VGG with more channels - latent space 25 After fixing the reconstruction problem
     # 26_12_2021_8_41
     # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
+    # 12_1_2022_6_51 - VGG latent space 50, scaterrer dilation of 4 after padding fix, GREAT RESULTS!
     # c_path = '..\\results\\12_12_2021_23_5'
-    c_path = '..\\results\\8_1_2022_7_28'
-    c_epoch = 20
+    c_path = '..\\results\\12_1_2022_6_51'
+    c_epoch = 240
     pp = PostProcessing()
 
     # pp.log_to_plot(c_path)

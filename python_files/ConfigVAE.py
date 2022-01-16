@@ -18,7 +18,7 @@ YQUANTIZE = 2500
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
 # ========================================================================================
-DILATION    = 3
+DILATION    = 4
 GRID_MEAN   = 0.000232
 GRID_STD    = 0.015229786
 SENS_MEAN   = 64458    # output normalization factor - mean sensitivity
@@ -60,12 +60,12 @@ train     = True
 # MODEL_OUT        = model_output_e.SENS
 MODEL_OUT        = model_output_e.BOTH
 BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost function
-BETA_GRID        = 1
+BETA_GRID        = 0.1
 MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
-EPOCH_NUM        = 21
+EPOCH_NUM        = 1001
 LR               = 3e-4  # learning rate
 SCHEDULER_STEP   = 50
-SCHEDULER_GAMMA  = 0.85
+SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
 BATCH_SIZE       = 64
 
@@ -138,6 +138,17 @@ DECODER_TOPOLOGY = [
     ['linear', FCBlockData(25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
+"""
+DECODER_TOPOLOGY = [
+    ['linear',      FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['convTrans', ConvTransposeBlockData(400,  64, 11, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)], # 1   --> 11
+    ['convTrans', ConvTransposeBlockData(64,   32,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 11  --> 32
+    ['convTrans', ConvTransposeBlockData(32,   16,  6, 3, padding=3, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 32  --> 93
+    ['convTrans', ConvTransposeBlockData(16,    8,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 93  --> 278
+    ['convTrans', ConvTransposeBlockData(8,     4,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 278 --> 833
+    ['convTrans', ConvTransposeBlockData(4,     1,  6, 3, padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 833 --> 2500 ; DO NOT CHANGE THIS LINE EVER
+]
 
 """
 DECODER_TOPOLOGY = [
@@ -149,6 +160,6 @@ DECODER_TOPOLOGY = [
     ['convTrans', ConvTransposeBlockData(32,  16, 6, 3, padding=3, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 32  --> 93
     ['convTrans', ConvTransposeBlockData(16,   8, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 93  --> 278
     ['convTrans', ConvTransposeBlockData(8,    4, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 278 --> 833
-    ['convTrans', ConvTransposeBlockData(4,    1, 6, 3, padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 833 --> 2500 ; DO NOT CHANGE THIS LINE EVER
+    ['convTrans', ConvTransposeBlockData(4,    1, 7, 3, padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 833 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
-# """
+"""

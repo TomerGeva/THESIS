@@ -198,11 +198,11 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        load_path   = None
-        # load_path  = '..\\results\\20_12_2021_11_38'
-        load_epoch  = 160
-        # copy_path   = None
-        copy_path   = '..\\results\\15_12_2021_23_46'
+        # load_path   = None
+        load_path  = '..\\results\\12_1_2022_6_51'
+        load_epoch  = 240
+        copy_path   = None
+        # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320
 
         enc_type = encoder_type_e.VGG
