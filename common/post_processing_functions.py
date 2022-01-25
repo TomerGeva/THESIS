@@ -96,12 +96,12 @@ class PostProcessing:
         plt.show()
 
     @staticmethod
-    def load_and_plot_roc(path, epoch):
+    def load_and_plot_roc_det(path, epoch):
         """
         :return: This function loads a saved model and plots the ROC curve
         """
         pff = PathFindingFunctions()
-        mff = ModelManipulationFunctions()
+        mmf = ModelManipulationFunctions()
         moc = ModelOutputComputation()
         # ======================================================================================
         # Extracting the full file path
@@ -110,21 +110,27 @@ class PostProcessing:
         # ======================================================================================
         # Loading the needed models and data
         # ======================================================================================
-        _, test_loaders, _   = import_data_sets(BATCH_SIZE)
+        _, test_loaders, _ = import_data_sets(BATCH_SIZE,
+                                              mixup_factor=MIXUP_FACTOR,
+                                              mixup_prob=MIXUP_PROB,
+                                              abs_sens=ABS_SENS,
+                                              dilation=DILATION)
         test_loader = test_loaders['3e+05_to_inf']
         # test_loader = test_loaders['2e+05_to_3e+05']
         # test_loader = test_loaders['1e+05_to_2e+05']
         # test_loader = test_loaders['0_to_1e+05']
-        mod_vae, trainer                = mff.load_state_train(chosen_file)
+        mod_vae, _  = mmf.load_state_train(chosen_file)
         # ======================================================================================
         # Getting the ROC curve
         # ======================================================================================
         tp, fp = moc.get_roc_curve(mod_vae, test_loader)
-        plt.figure()
+        modified_roc = plt.figure()
+        plt.grid()
         plt.plot(fp, tp, linewidth=2)
-        plt.title('Modified ROC Curve for Grid Reconstruction')
+        plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=20)
         plt.xlabel('False Positive', fontsize=16)
         plt.ylabel('TruePositive', fontsize=16)
+        modified_roc.savefig(os.path.join(path, 'figures', f'modified_roc_{epoch}.png'))
         plt.show()
 
     @staticmethod
@@ -242,16 +248,20 @@ class ModelOutputComputation:
         return np.where(np.squeeze(sigmoid(samples[:, 0, :, :]).cpu().detach().numpy()) >= threshold, 1, 0)
 
     @staticmethod
-    def get_tp_fp(sample, target):
+    def get_tpr_fpr_fnr(sample, target):
         """
         :param sample: a sample 3-D matrix of scatterer grids after slicing at a certain threshold
         :param target: target grid
-        :return: function computed the true positive (TP) and false positive rates and returns them
+        :return: function computed the true positive ratio (TPR), false positive ratio (FPR) and false negative ratio
+                 (FNR) and returns them
+                                TP                              FP                              FN
+                    TPR = -------------             FPR = -------------             FNR = ---------------
+                           TP   +   FN                     FP   +   TN                      FN   +  TP
         """
-        true_positive = np.sum(sample[target == 1]) / np.sum(target)
-        false_positive = np.sum(sample[target == 0]) / np.sum(target)
+        tpr = np.sum(sample[target == 1]) / np.sum(target)
+        fpr = np.sum(sample[target == 0]) / np.sum(1 - target)
 
-        return true_positive, false_positive
+        return tpr, fpr
 
     def get_roc_curve(self, model, loader, threshold_num=20):
         """
@@ -263,9 +273,10 @@ class ModelOutputComputation:
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
-        true_positives  = np.zeros([threshold_num, ])
-        false_positives = np.zeros([threshold_num, ])
+        ratio_tp = np.zeros([threshold_num, ])
+        ratio_fp = np.zeros([threshold_num, ])
         thresholds = [ii / threshold_num for ii in list(range(threshold_num))]
+        counter = 0
         # ==============================================================================================================
         # No grad for speed
         # ==============================================================================================================
@@ -285,8 +296,9 @@ class ModelOutputComputation:
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
                 grids           = Variable(sample['grid_in'].float()).to(model.device)
-                grid_targets    = sample['grid_target'].float().to(model.device)
+                grid_targets    = np.squeeze(sample['grid_target'].detach().numpy())
                 batch_size      = sample['sensitivity'].shape[0]
+                counter         += batch_size
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
@@ -295,17 +307,16 @@ class ModelOutputComputation:
                 # Slicing and getting TP, FP for each threshold
                 # ------------------------------------------------------------------------------
                 for (ii, threshold) in enumerate(thresholds):
-                    samples = self.slice_batch(grid_out, threshold)
-                    tp, fp  = self.get_tp_fp(samples, grid_targets)
-                    true_positives[ii]  += tp * batch_size
-                    false_positives[ii] += tp * batch_size
+                    samples  = self.slice_batch(grid_out, threshold)
+                    tpr, fpr = self.get_tpr_fpr(samples, grid_targets)
+                    ratio_tp[ii] += tpr * batch_size
+                    ratio_fp[ii] += fpr * batch_size
         # ==============================================================================================================
         # Normalizing
         # ==============================================================================================================
-        true_positives  = [ii / len(loader) for ii in true_positives]
-        false_positives = [ii / len(loader) for ii in false_positives]
-        return true_positives, false_positives
-
+        ratio_tp = [ii / counter for ii in ratio_tp]
+        ratio_fp = [ii / counter for ii in ratio_fp]
+        return ratio_tp, ratio_fp
 
 
 if __name__ == '__main__':
@@ -364,12 +375,12 @@ if __name__ == '__main__':
     # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
     # 12_1_2022_6_51 - VGG latent space 50, scaterrer dilation of 4 after padding fix, GREAT RESULTS!
     # c_path = '..\\results\\12_12_2021_23_5'
-    c_path = '..\\results\\12_1_2022_6_51'
-    c_epoch = 240
+    c_path = '..\\results\\16_1_2022_21_39'
+    c_epoch = 700
     pp = PostProcessing()
 
     # pp.log_to_plot(c_path)
-    pp.get_latent_statistics(c_path, c_epoch)
-    pp.log_to_plot(c_path)
-    # pp.load_and_batch(c_path, c_epoch)
+    # pp.get_latent_statistics(c_path, c_epoch)
+    # pp.log_to_plot(c_path)
+    pp.load_and_plot_roc_det(c_path, c_epoch)
 
