@@ -1,3 +1,5 @@
+import numpy as np
+
 from ConfigVAE import *
 import os
 import math
@@ -94,12 +96,13 @@ class PostProcessing:
         plt.show()
 
     @staticmethod
-    def load_and_batch(path, epoch):
+    def load_and_plot_roc(path, epoch):
         """
-        :return: This function loads a saves model, and tests the MSE of the target error
+        :return: This function loads a saved model and plots the ROC curve
         """
         pff = PathFindingFunctions()
         mff = ModelManipulationFunctions()
+        moc = ModelOutputComputation()
         # ======================================================================================
         # Extracting the full file path
         # ======================================================================================
@@ -107,17 +110,22 @@ class PostProcessing:
         # ======================================================================================
         # Loading the needed models and data
         # ======================================================================================
-        train_loader, test_loaders, _   = import_data_sets(BATCH_SIZE)
+        _, test_loaders, _   = import_data_sets(BATCH_SIZE)
+        test_loader = test_loaders['3e+05_to_inf']
+        # test_loader = test_loaders['2e+05_to_3e+05']
+        # test_loader = test_loaders['1e+05_to_2e+05']
+        # test_loader = test_loaders['0_to_1e+05']
         mod_vae, trainer                = mff.load_state_train(chosen_file)
-
-        smapled_batch   = next(iter(test_loaders['3e+05_to_inf']))
-        grids           = Variable(smapled_batch['grid_in'].float()).to(mod_vae.device)
-        sensitivities   = Variable(smapled_batch['sensitivity'].float()).to(mod_vae.device)
-
-        mod_vae.eval()
-        _, outputs, mu, logvar = mod_vae(grids)
-        print('Outputs: ' + str(outputs))
-        print('Targets: ' + str(sensitivities))
+        # ======================================================================================
+        # Getting the ROC curve
+        # ======================================================================================
+        tp, fp = moc.get_roc_curve(mod_vae, test_loader)
+        plt.figure()
+        plt.plot(fp, tp, linewidth=2)
+        plt.title('Modified ROC Curve for Grid Reconstruction')
+        plt.xlabel('False Positive', fontsize=16)
+        plt.ylabel('TruePositive', fontsize=16)
+        plt.show()
 
     @staticmethod
     def get_latent_statistics(path, epoch):
@@ -150,49 +158,51 @@ class PostProcessing:
         mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         mod_vae.eval()
-        for ii in range(len(test_loader_iter)):
-            # ------------------------------------------------------------------------------
-            # Working with iterables, much faster
-            # ------------------------------------------------------------------------------
-            try:
-                sample_batched = next(test_loader_iter)
-            except StopIteration:
-                break
-            # ------------------------------------------------------------------------------
-            # Extracting the grids and sensitivities, passing through the model
-            # ------------------------------------------------------------------------------
-            grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
-            sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
-            grid_outs, outputs, mu, logvar = mod_vae(grids)
-            # ------------------------------------------------------------------------------
-            # Logging mean mu and mean std values
-            # ------------------------------------------------------------------------------
-            mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
-            std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
-            # ------------------------------------------------------------------------------
-            # Plotting manually
-            # ------------------------------------------------------------------------------
-            plt.figure()
-            plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
-            plt.title("Target Output - Model Input")
-            plt.figure()
-            plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
-            plt.title("Model output - Raw")
-            plt.figure()
-            plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
-            plt.title("Model output - After Step at 0.5")
+        with torch.no_grad():
+            for ii in range(len(test_loader_iter)):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample_batched = next(test_loader_iter)
+                except StopIteration:
+                    break
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities, passing through the model
+                # ------------------------------------------------------------------------------
+                grids         = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
+                sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
 
-            mu_temp = mu.cpu().detach().numpy()
-            var_temp = np.exp(logvar.cpu().detach().numpy())
-            target = sensitivities.cpu().detach().numpy()
-            output = outputs.cpu().detach().numpy()
-            pf.plot_latent(mu_temp, var_temp, target, output)
-            # for jj in range(20):
-            #     mu_temp     = mu[jj, :].cpu().detach().numpy()
-            #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
-            #     target      = sensitivities[jj, :].cpu().detach().numpy()
-            #     output      = outputs[jj, :].cpu().detach().numpy()
-            #     plot_latent(mu_temp, var_temp, target, output)
+                grid_outs, outputs, mu, logvar = mod_vae(grids)
+                # ------------------------------------------------------------------------------
+                # Logging mean mu and mean std values
+                # ------------------------------------------------------------------------------
+                mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
+                std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
+                # ------------------------------------------------------------------------------
+                # Plotting manually
+                # ------------------------------------------------------------------------------
+                plt.figure()
+                plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+                plt.title("Target Output - Model Input")
+                plt.figure()
+                plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+                plt.title("Model output - Raw")
+                plt.figure()
+                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
+                plt.title("Model output - After Step at 0.5")
+
+                mu_temp = mu.cpu().detach().numpy()
+                var_temp = np.exp(logvar.cpu().detach().numpy())
+                target = sensitivities.cpu().detach().numpy()
+                output = outputs.cpu().detach().numpy()
+                pf.plot_latent(mu_temp, var_temp, target, output)
+                # for jj in range(20):
+                #     mu_temp     = mu[jj, :].cpu().detach().numpy()
+                #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
+                #     target      = sensitivities[jj, :].cpu().detach().numpy()
+                #     output      = outputs[jj, :].cpu().detach().numpy()
+                #     plot_latent(mu_temp, var_temp, target, output)
 
         # ======================================================================================
         # Plotting statistics
@@ -214,6 +224,88 @@ class PostProcessing:
         plt.grid()
         plt.show()
         pass
+
+
+class ModelOutputComputation:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def slice_batch(samples, threshold):
+        """
+        :param samples: 4-D torch tensor of model output grids
+        :param threshold: decision threshold, should be between 0 and 1
+        :return: converts the 4-D tensor to 3-D numpy matrix (grids have 1 channel) and slices the decision at the
+                 threshold
+        """
+        sigmoid = torch.nn.Sigmoid()
+        return np.where(np.squeeze(sigmoid(samples[:, 0, :, :]).cpu().detach().numpy()) >= threshold, 1, 0)
+
+    @staticmethod
+    def get_tp_fp(sample, target):
+        """
+        :param sample: a sample 3-D matrix of scatterer grids after slicing at a certain threshold
+        :param target: target grid
+        :return: function computed the true positive (TP) and false positive rates and returns them
+        """
+        true_positive = np.sum(sample[target == 1]) / np.sum(target)
+        false_positive = np.sum(sample[target == 0]) / np.sum(target)
+
+        return true_positive, false_positive
+
+    def get_roc_curve(self, model, loader, threshold_num=20):
+        """
+        :param model: trained model
+        :param loader: dataloader to use
+        :param threshold_num: number of threshold to compute the ROC curve with
+        :return: true positive and false positive vectors used to plot the ROC curve
+        """
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        true_positives  = np.zeros([threshold_num, ])
+        false_positives = np.zeros([threshold_num, ])
+        thresholds = [ii / threshold_num for ii in list(range(threshold_num))]
+        # ==============================================================================================================
+        # No grad for speed
+        # ==============================================================================================================
+        model.eval()
+        with torch.no_grad():
+            loader_iter = iter(loader)
+            for _ in range(len(loader)):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample = next(loader_iter)
+                except StopIteration:
+                    loader_iter = iter(loader)
+                    sample = next(loader_iter)
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities
+                # ------------------------------------------------------------------------------
+                grids           = Variable(sample['grid_in'].float()).to(model.device)
+                grid_targets    = sample['grid_target'].float().to(model.device)
+                batch_size      = sample['sensitivity'].shape[0]
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                grid_out, _, _, _ = model(grids)
+                # ------------------------------------------------------------------------------
+                # Slicing and getting TP, FP for each threshold
+                # ------------------------------------------------------------------------------
+                for (ii, threshold) in enumerate(thresholds):
+                    samples = self.slice_batch(grid_out, threshold)
+                    tp, fp  = self.get_tp_fp(samples, grid_targets)
+                    true_positives[ii]  += tp * batch_size
+                    false_positives[ii] += tp * batch_size
+        # ==============================================================================================================
+        # Normalizing
+        # ==============================================================================================================
+        true_positives  = [ii / len(loader) for ii in true_positives]
+        false_positives = [ii / len(loader) for ii in false_positives]
+        return true_positives, false_positives
+
 
 
 if __name__ == '__main__':

@@ -170,13 +170,13 @@ class DatabaseFunctions:
         :param arr: (N,2) array holding the coordinates in microns
         :return: array sized (N, 2) with the coordinates in pixel values
         """
-        grid_coords = []
+        grid_coords = [np.zeros([2, ]).astype(int)] * len(arr)
         for ii in range(len(arr)):
             x = float(arr[ii, 0])
             y = float(arr[ii, 1])
             x_grid = int(round(((x - XRANGE[0]) / XRANGE[1]) * (XQUANTIZE - 1), 0))
             y_grid = int(round(((y - YRANGE[0]) / YRANGE[1]) * (YQUANTIZE - 1), 0))
-            grid_coords.append(np.array([x_grid, y_grid]))
+            grid_coords[ii] = np.array([x_grid, y_grid])
 
         return np.array(grid_coords)
 

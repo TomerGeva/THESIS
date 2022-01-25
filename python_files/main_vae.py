@@ -92,6 +92,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                              group_weights=MSE_GROUP_WEIGHT,
                              abs_sens=ABS_SENS)
     else:
+        print('Loading model . . .')
         # ==============================================================================
         # Extracting the full file path
         # ==============================================================================
