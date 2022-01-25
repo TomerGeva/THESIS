@@ -121,17 +121,27 @@ class PostProcessing:
         # test_loader = test_loaders['0_to_1e+05']
         mod_vae, _  = mmf.load_state_train(chosen_file)
         # ======================================================================================
-        # Getting the ROC curve
+        # Getting the ROC and DET curves
         # ======================================================================================
-        tp, fp = moc.get_roc_curve(mod_vae, test_loader)
+        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader)
+        # ======================================================================================
+        # Plotting
+        # ======================================================================================
         modified_roc = plt.figure()
         plt.grid()
-        plt.plot(fp, tp, linewidth=2)
-        plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=20)
-        plt.xlabel('False Positive', fontsize=16)
-        plt.ylabel('TruePositive', fontsize=16)
+        plt.plot(fpr, tpr, linewidth=2)
+        plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=16)
+        plt.xlabel('False Positive Rate', fontsize=12)
+        plt.ylabel('True Positive Rate', fontsize=12)
         modified_roc.savefig(os.path.join(path, 'figures', f'modified_roc_{epoch}.png'))
-        plt.show()
+
+        modified_det = plt.figure()
+        plt.grid()
+        plt.plot(fpr, fnr, linewidth=2)
+        plt.title('Modified DET Curve for Grid Reconstruction', fontsize=16)
+        plt.xlabel('False Positive Rate', fontsize=12)
+        plt.ylabel('False Positive Rate', fontsize=12)
+        modified_roc.savefig(os.path.join(path, 'figures', f'modified_det_{epoch}.png'))
 
     @staticmethod
     def get_latent_statistics(path, epoch):
@@ -258,12 +268,16 @@ class ModelOutputComputation:
                     TPR = -------------             FPR = -------------             FNR = ---------------
                            TP   +   FN                     FP   +   TN                      FN   +  TP
         """
-        tpr = np.sum(sample[target == 1]) / np.sum(target)
+        pos = np.sum(target)
+        tp  = sample[target == 1]
+
+        tpr = np.sum(tp) / pos
         fpr = np.sum(sample[target == 0]) / np.sum(1 - target)
+        fnr = np.sum(1 - tp) / pos
 
-        return tpr, fpr
+        return tpr, fpr, fnr
 
-    def get_roc_curve(self, model, loader, threshold_num=20):
+    def get_roc_det_curve(self, model, loader, threshold_num=20):
         """
         :param model: trained model
         :param loader: dataloader to use
@@ -275,6 +289,7 @@ class ModelOutputComputation:
         # ==============================================================================================================
         ratio_tp = np.zeros([threshold_num, ])
         ratio_fp = np.zeros([threshold_num, ])
+        ratio_fn = np.zeros([threshold_num, ])
         thresholds = [ii / threshold_num for ii in list(range(threshold_num))]
         counter = 0
         # ==============================================================================================================
@@ -307,16 +322,18 @@ class ModelOutputComputation:
                 # Slicing and getting TP, FP for each threshold
                 # ------------------------------------------------------------------------------
                 for (ii, threshold) in enumerate(thresholds):
-                    samples  = self.slice_batch(grid_out, threshold)
-                    tpr, fpr = self.get_tpr_fpr(samples, grid_targets)
+                    samples       = self.slice_batch(grid_out, threshold)
+                    tpr, fpr, fnr = self.get_tpr_fpr(samples, grid_targets)
                     ratio_tp[ii] += tpr * batch_size
                     ratio_fp[ii] += fpr * batch_size
+                    ratio_fn[ii] += fpr * batch_size
         # ==============================================================================================================
         # Normalizing
         # ==============================================================================================================
         ratio_tp = [ii / counter for ii in ratio_tp]
         ratio_fp = [ii / counter for ii in ratio_fp]
-        return ratio_tp, ratio_fp
+        ratio_fn = [ii / counter for ii in ratio_fn]
+        return ratio_tp, ratio_fp, ratio_fn
 
 
 if __name__ == '__main__':
