@@ -1,7 +1,6 @@
 from ConfigVAE import SENS_STD, SENS_MEAN
-import torch
 from torch import clamp
-import torch.nn as nn
+import scipy.stats as sp
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -131,3 +130,35 @@ class PlottingFunctions:
     @staticmethod
     def plot_grid_histogram(grid, bins=10):
         plt.hist(np.array(grid).ravel(), bins=bins, density=True)
+
+    @staticmethod
+    def plot_roc_curve(fpr, tpr, save_plt=False, path=None, epoch=None):
+        modified_roc = plt.figure()
+        plt.grid()
+        plt.plot(fpr, tpr, linewidth=2)
+        plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=16)
+        plt.xlabel('False Positive Rate', fontsize=12)
+        plt.ylabel('True Positive Rate', fontsize=12)
+        if save_plt and (path is not None) and (epoch is not None):
+            modified_roc.savefig(os.path.join(path, 'figures', f'modified_roc_{epoch}.png'))
+
+    @staticmethod
+    def plot_det_curve(fpr, fnr, save_plt=False, path=None, epoch=None):
+        modified_det = plt.figure()
+        plt.grid()
+        plt.plot(fpr, fnr, linewidth=2)
+        plt.title('Modified DET Curve for Grid Reconstruction', fontsize=16)
+        plt.xlabel('False Positive Rate', fontsize=12)
+        plt.ylabel('False Negative Rate', fontsize=12)
+        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+        tick_labels = ticks
+        # tick_labels = ['{:.0%}'.format(s) if (100 * s).is_integer() else '{:.1%}'.format(s) for s in ticks]
+        tick_locations = sp.norm.ppf(ticks)
+        axes = modified_det.gca()
+        axes.set_xticks(tick_locations)
+        axes.set_xticklabels(tick_labels)
+        axes.set_yticks(tick_locations)
+        axes.set_yticklabels(tick_labels)
+        axes.set_ylim(-3, 3)
+        if save_plt and (path is not None) and (epoch is not None):
+            modified_det.savefig(os.path.join(path, 'figures', f'modified_det_{epoch}.png'))

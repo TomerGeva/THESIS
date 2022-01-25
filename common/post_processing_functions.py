@@ -100,6 +100,7 @@ class PostProcessing:
         """
         :return: This function loads a saved model and plots the ROC curve
         """
+        pf  = PlottingFunctions()
         pff = PathFindingFunctions()
         mmf = ModelManipulationFunctions()
         moc = ModelOutputComputation()
@@ -127,21 +128,8 @@ class PostProcessing:
         # ======================================================================================
         # Plotting
         # ======================================================================================
-        modified_roc = plt.figure()
-        plt.grid()
-        plt.plot(fpr, tpr, linewidth=2)
-        plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=16)
-        plt.xlabel('False Positive Rate', fontsize=12)
-        plt.ylabel('True Positive Rate', fontsize=12)
-        modified_roc.savefig(os.path.join(path, 'figures', f'modified_roc_{epoch}.png'))
-
-        modified_det = plt.figure()
-        plt.grid()
-        plt.plot(fpr, fnr, linewidth=2)
-        plt.title('Modified DET Curve for Grid Reconstruction', fontsize=16)
-        plt.xlabel('False Positive Rate', fontsize=12)
-        plt.ylabel('False Positive Rate', fontsize=12)
-        modified_roc.savefig(os.path.join(path, 'figures', f'modified_det_{epoch}.png'))
+        pf.plot_roc_curve(fpr, tpr, save_plt=True, path=path, epoch=epoch)
+        pf.plot_det_curve(fpr, fnr, save_plt=True, path=path, epoch=epoch)
 
     @staticmethod
     def get_latent_statistics(path, epoch):
@@ -268,12 +256,9 @@ class ModelOutputComputation:
                     TPR = -------------             FPR = -------------             FNR = ---------------
                            TP   +   FN                     FP   +   TN                      FN   +  TP
         """
-        pos = np.sum(target)
-        tp  = sample[target == 1]
-
-        tpr = np.sum(tp) / pos
+        tpr = np.sum(sample[target == 1]) / np.sum(target)
         fpr = np.sum(sample[target == 0]) / np.sum(1 - target)
-        fnr = np.sum(1 - tp) / pos
+        fnr = 1 - tpr
 
         return tpr, fpr, fnr
 
@@ -323,7 +308,7 @@ class ModelOutputComputation:
                 # ------------------------------------------------------------------------------
                 for (ii, threshold) in enumerate(thresholds):
                     samples       = self.slice_batch(grid_out, threshold)
-                    tpr, fpr, fnr = self.get_tpr_fpr(samples, grid_targets)
+                    tpr, fpr, fnr = self.get_tpr_fpr_fnr(samples, grid_targets)
                     ratio_tp[ii] += tpr * batch_size
                     ratio_fp[ii] += fpr * batch_size
                     ratio_fn[ii] += fpr * batch_size
