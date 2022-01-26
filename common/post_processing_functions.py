@@ -2,6 +2,7 @@ import numpy as np
 
 from ConfigVAE import *
 import os
+import json
 import math
 import torch
 import matplotlib.pyplot as plt
@@ -116,7 +117,9 @@ class PostProcessing:
                                               mixup_prob=MIXUP_PROB,
                                               abs_sens=ABS_SENS,
                                               dilation=DILATION)
-        test_loader = test_loaders['3e+05_to_inf']
+        key = '2e+05_to_3e+05'
+        test_loader = test_loaders[key]
+        # test_loader = test_loaders[3e+05_to_inf']
         # test_loader = test_loaders['2e+05_to_3e+05']
         # test_loader = test_loaders['1e+05_to_2e+05']
         # test_loader = test_loaders['0_to_1e+05']
@@ -124,12 +127,26 @@ class PostProcessing:
         # ======================================================================================
         # Getting the ROC and DET curves
         # ======================================================================================
-        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader)
+        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=200)
+        # ======================================================================================
+        # Saving the data
+        # ======================================================================================
+        if not os.path.isdir(os.path.join(path, 'post_processing')):
+            os.makedirs(os.path.join(path, 'post_processing'))
+        output_filename = key + f'_tpr_fpr_npr_epoch_{epoch}.json'
+        output_filepath = os.path.join(path, 'post_processing', output_filename)
+        all_output_data = [{
+            'true_positive_rate': tpr,
+            'false_positive_rate': fpr,
+            'false_negative_rate': fnr
+        }]
+        with open(output_filepath, 'w', encoding='utf-8') as f:
+            json.dump(all_output_data, f, indent=4)
         # ======================================================================================
         # Plotting
         # ======================================================================================
-        pf.plot_roc_curve(fpr, tpr, save_plt=True, path=path, epoch=epoch)
-        pf.plot_det_curve(fpr, fnr, save_plt=True, path=path, epoch=epoch)
+        pf.plot_roc_curve(fpr, tpr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
+        pf.plot_det_curve(fpr, fnr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
 
     @staticmethod
     def get_latent_statistics(path, epoch):
@@ -272,10 +289,10 @@ class ModelOutputComputation:
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
-        ratio_tp = np.zeros([threshold_num, ])
-        ratio_fp = np.zeros([threshold_num, ])
-        ratio_fn = np.zeros([threshold_num, ])
-        thresholds = [ii / threshold_num for ii in list(range(threshold_num))]
+        ratio_tp = np.zeros([threshold_num + 1, ])
+        ratio_fp = np.zeros([threshold_num + 1, ])
+        ratio_fn = np.zeros([threshold_num + 1, ])
+        thresholds = [ii / threshold_num for ii in list(range(threshold_num+1))]
         counter = 0
         # ==============================================================================================================
         # No grad for speed
@@ -296,7 +313,7 @@ class ModelOutputComputation:
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
                 grids           = Variable(sample['grid_in'].float()).to(model.device)
-                grid_targets    = np.squeeze(sample['grid_target'].detach().numpy())
+                grid_targets    = np.squeeze(sample['grid_target'].detach().numpy()).astype(int)
                 batch_size      = sample['sensitivity'].shape[0]
                 counter         += batch_size
                 # ------------------------------------------------------------------------------
@@ -311,7 +328,7 @@ class ModelOutputComputation:
                     tpr, fpr, fnr = self.get_tpr_fpr_fnr(samples, grid_targets)
                     ratio_tp[ii] += tpr * batch_size
                     ratio_fp[ii] += fpr * batch_size
-                    ratio_fn[ii] += fpr * batch_size
+                    ratio_fn[ii] += fnr * batch_size
         # ==============================================================================================================
         # Normalizing
         # ==============================================================================================================
@@ -381,8 +398,17 @@ if __name__ == '__main__':
     c_epoch = 700
     pp = PostProcessing()
 
+    # # ====
+    # output_filename = f'tpr_fpr_npr_epoch_{c_epoch}.json'
+    # output_filepath = os.path.join(c_path, 'post_processing', output_filename)
+    # with open(output_filepath, mode='r', encoding='utf-8') as json_f:
+    #     results_dict = json.load(json_f)[-1]
+    # fpr = results_dict['false_positive_rate']
+    # fnr = results_dict['false_negative_rate']
+
+    pp.load_and_plot_roc_det(c_path, c_epoch)
     # pp.log_to_plot(c_path)
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)
-    pp.load_and_plot_roc_det(c_path, c_epoch)
+
 
