@@ -119,7 +119,7 @@ class PostProcessing:
                                               dilation=DILATION)
         key = '2e+05_to_3e+05'
         test_loader = test_loaders[key]
-        # test_loader = test_loaders[3e+05_to_inf']
+        # test_loader = test_loaders['3e+05_to_inf']
         # test_loader = test_loaders['2e+05_to_3e+05']
         # test_loader = test_loaders['1e+05_to_2e+05']
         # test_loader = test_loaders['0_to_1e+05']
@@ -399,12 +399,13 @@ if __name__ == '__main__':
     pp = PostProcessing()
 
     # # ====
-    # output_filename = f'tpr_fpr_npr_epoch_{c_epoch}.json'
+    # output_filename = f'3e+05_to_inf_tpr_fpr_npr_epoch_{c_epoch}.json'
     # output_filepath = os.path.join(c_path, 'post_processing', output_filename)
     # with open(output_filepath, mode='r', encoding='utf-8') as json_f:
     #     results_dict = json.load(json_f)[-1]
     # fpr = results_dict['false_positive_rate']
     # fnr = results_dict['false_negative_rate']
+    # tpr = results_dict['true_positive_rate']
 
     pp.load_and_plot_roc_det(c_path, c_epoch)
     # pp.log_to_plot(c_path)

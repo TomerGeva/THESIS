@@ -133,12 +133,25 @@ class PlottingFunctions:
 
     @staticmethod
     def plot_roc_curve(fpr, tpr, save_plt=False, path=None, epoch=None, name_prefix=None):
+        # ==============================================================================================================
+        # General Plotting
+        # ==============================================================================================================
         modified_roc = plt.figure()
         plt.grid()
         plt.plot(fpr, tpr, linewidth=2)
         plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=16)
         plt.xlabel('False Positive Rate', fontsize=12)
         plt.ylabel('True Positive Rate', fontsize=12)
+        # ==============================================================================================================
+        # Computing Area under Modified ROC - AuMC
+        # ==============================================================================================================
+        fpr_np = np.array(fpr)
+        tpr_np = np.array(tpr)
+        dx = fpr_np[1:] - fpr_np[:-1]
+        y  = (tpr_np[1:] + tpr_np[:-1]) / 2
+        aumc = abs(np.sum(y * dx))
+        leg = name_prefix + ' AuMC value: {:.3}'.format(aumc) if name_prefix is not None else ' AuMC value:{:.3}'.format(aumc)
+        plt.legend([leg])
         if save_plt and (path is not None) and (epoch is not None):
             filename = f'modified_roc_{epoch}.png'
             if name_prefix is not None:
@@ -149,24 +162,35 @@ class PlottingFunctions:
 
     @staticmethod
     def plot_det_curve(fpr, fnr, save_plt=False, path=None, epoch=None, name_prefix=None):
+        # ==============================================================================================================
+        # Changing to normal distribution presentation
+        # ==============================================================================================================
         fpr_std_scale = sp.norm.ppf(fpr)
         fnr_std_scale = sp.norm.ppf(fnr)
+        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+        tick_labels = ticks  # tick_labels = ['{:.0%}'.format(s) if (100 * s).is_integer() else '{:.1%}'.format(s) for s in ticks]
+        tick_locations = sp.norm.ppf(ticks)
+        # ==============================================================================================================
+        # Plotting
+        # ==============================================================================================================
         modified_det = plt.figure()
         plt.grid()
         plt.plot(fpr_std_scale, fnr_std_scale, linewidth=2)
         plt.title('Modified DET Curve for Grid Reconstruction', fontsize=16)
         plt.xlabel('False Positive Rate', fontsize=12)
         plt.ylabel('False Negative Rate', fontsize=12)
-        ticks = [0.0001, 0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
-        tick_labels = ticks
-        # tick_labels = ['{:.0%}'.format(s) if (100 * s).is_integer() else '{:.1%}'.format(s) for s in ticks]
-        tick_locations = sp.norm.ppf(ticks)
+        if name_prefix is not None:
+            plt.legend([name_prefix])
+        # ==============================================================================================================
+        # Fixing the axes to normal deviate
+        # ==============================================================================================================
         axes = modified_det.gca()
         axes.set_xticks(tick_locations)
         axes.set_xticklabels(tick_labels)
         axes.set_yticks(tick_locations)
         axes.set_yticklabels(tick_labels)
         axes.set_ylim(-3, 3)
+        axes.set_xlim(-3, 3)
         if save_plt and (path is not None) and (epoch is not None):
             filename = f'modified_det_{epoch}.png'
             if name_prefix is not None:
