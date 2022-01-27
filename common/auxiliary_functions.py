@@ -1,4 +1,4 @@
-from ConfigVAE import SENS_STD, SENS_MEAN
+from ConfigVAE import SENS_STD, SENS_MEAN, FIG_DIR, PP_DATA
 from torch import clamp
 import scipy.stats as sp
 import matplotlib.pyplot as plt
@@ -90,7 +90,7 @@ class PlottingFunctions:
     def plot_grid(grid):
         """
         :param grid: 1 X 1 X 2500 X 2500 grid tensor
-        :return: plot the grid after a step function in the middle
+        :return: plots the grid before and after a step function
         """
         grid_np = grid.cpu().squeeze().detach().numpy()
         plt.figure()
@@ -153,12 +153,21 @@ class PlottingFunctions:
         leg = name_prefix + ' AuMC value: {:.3}'.format(aumc) if name_prefix is not None else ' AuMC value:{:.3}'.format(aumc)
         plt.legend([leg])
         if save_plt and (path is not None) and (epoch is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
             filename = f'modified_roc_{epoch}.png'
             if name_prefix is not None:
                 filename = name_prefix + '_' + filename
-            if not os.path.isdir(os.path.join(path, 'figures')):
-                os.makedirs(os.path.join(path, 'figures'))
-            modified_roc.savefig(os.path.join(path, 'figures', filename))
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            modified_roc.savefig(os.path.join(path, FIG_DIR, filename))
 
     @staticmethod
     def plot_det_curve(fpr, fnr, save_plt=False, path=None, epoch=None, name_prefix=None):
@@ -192,9 +201,18 @@ class PlottingFunctions:
         axes.set_ylim(-3, 3)
         axes.set_xlim(-3, 3)
         if save_plt and (path is not None) and (epoch is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
             filename = f'modified_det_{epoch}.png'
             if name_prefix is not None:
                 filename = name_prefix + '_' + filename
-            if not os.path.isdir(os.path.join(path, 'figures')):
-                os.makedirs(os.path.join(path, 'figures'))
-            modified_det.savefig(os.path.join(path, 'figures', filename))
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            modified_det.savefig(os.path.join(path, FIG_DIR, filename))

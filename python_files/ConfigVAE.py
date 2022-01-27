@@ -1,23 +1,24 @@
-# ***************************************************************************************************
+# **********************************************************************************************************************
 # This file holds the values of the global variables, which are needed throughout the operation
-# ***************************************************************************************************
+# **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
 from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ConvTransposeBlockData, PadPoolData
 
-# ===================================
+# ==================================================================================================================
 # Database Variables
-# ===================================
+# ==================================================================================================================
 XRANGE = np.array([0, 19])
 YRANGE = np.array([0, 19])
 
 XQUANTIZE = 2500
 YQUANTIZE = 2500
 
-# ========================================================================================
+# ==================================================================================================================
+# DATALOADER HYPER-PARAMETERS
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
-# ========================================================================================
+# ==================================================================================================================
 DILATION    = 4
 GRID_MEAN   = 0.000232
 GRID_STD    = 0.015229786
@@ -28,12 +29,12 @@ IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 MIXUP_PROB     = 0  # mixup probability
 NUM_WORKERS    = 8
+BATCH_SIZE     = 64
 
-# ---logdir for saving the database ---
-SAVE_PATH_DB = './database.pth'
-# ---logdir for saving the network ----
-SAVE_PATH_NET = './trained_nn.pth'
-# -------------- paths --------------
+
+# ==================================================================================================================
+# Paths
+# ==================================================================================================================
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # \corner_1450_db_trunc.csv'  # \corner_1450_db_15p9k.csv'  # corner_1450_10k.csv' # corner_1450_db_17p9k
 PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_1450_db_30p5k_signed_lt_1e+05_train.csv',
@@ -45,40 +46,47 @@ PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_1450_db_30p5k_signed_lt_1e+05_
                        '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_2e+05_test.csv',
                        '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_3e+05_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
-# ==================================
-# Flow Control Variables
-# ==================================
-gather_DB = False
-train     = True
+# --------------------------------------------------------------------------------------------------------------
+# Post processing paths
+# --------------------------------------------------------------------------------------------------------------
+FIG_DIR = 'figures'
+PP_DATA = 'post_processing'
 
-# ============================================================
+# ==================================================================================================================
 # Global variables of the net - target RMS = 41000
-# ============================================================
-# --------------------------------------------------------
+# ==================================================================================================================
+# --------------------------------------------------------------------------------------------------------------
 # Hyper parameters
-# --------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Model configurations
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # MODEL_OUT        = model_output_e.SENS
+# MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
+MODE             = mode_e.VAE
+LATENT_SPACE_DIM = 50                   # number of dimensions in the latent space
+INIT_WEIGHT_MEAN = 0
+INIT_WEIGHT_STD  = 0.02
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Cost function
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BETA_DKL         = 1  # 2.44e-5          # the KL coefficient in the cost function
 BETA_GRID        = 0.1
 MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Trainer configurations
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 EPOCH_NUM        = 1001
 LR               = 3e-4  # learning rate
 SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
-BATCH_SIZE       = 64
-
-# MODE             = mode_e.AUTOENCODER
-MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 50    # number of dimensions in the latent space
-INIT_WEIGHT_MEAN = 0
-INIT_WEIGHT_STD  = 0.02
 GRAD_CLIP        = 5
 
-# --------------------------------------------------------
-# Dense Encoder topology
-# --------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
+# Encoder topology
+# --------------------------------------------------------------------------------------------------------------
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',       ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -130,9 +138,9 @@ DENSE_ENCODER_TOPOLOGY = [
 ]
 """
 
-# --------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 # Decoder topology
-# --------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 """
 DECODER_TOPOLOGY = [
     ['linear', FCBlockData(25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
@@ -149,7 +157,6 @@ DECODER_TOPOLOGY = [
     ['convTrans', ConvTransposeBlockData(8,     4,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 278 --> 833
     ['convTrans', ConvTransposeBlockData(4,     1,  6, 3, padding=1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 833 --> 2500 ; DO NOT CHANGE THIS LINE EVER
 ]
-
 """
 DECODER_TOPOLOGY = [
     ['linear',      FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],

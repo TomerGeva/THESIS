@@ -1,5 +1,4 @@
 import numpy as np
-
 from ConfigVAE import *
 import os
 import json
@@ -97,54 +96,72 @@ class PostProcessing:
         plt.show()
 
     @staticmethod
-    def load_and_plot_roc_det(path, epoch):
+    def load_and_plot_roc_det(path, epoch, key='3e+05_to_inf'):
         """
-        :return: This function loads a saved model and plots the ROC curve
+        :return: This function:
+                    1. Loads a saved model in path, epoch
+                    2. Loads the dataloader with the given key
+                    3. passes all the database through the model and gathers:
+                        i. True positive rates
+                        ii. False positive rates
+                        iii. False negative rates
+                    4. Plotting and saving the MROC and MDET curves
         """
         pf  = PlottingFunctions()
         pff = PathFindingFunctions()
         mmf = ModelManipulationFunctions()
         moc = ModelOutputComputation()
-        # ======================================================================================
+        # ==============================================================================================================
         # Extracting the full file path
-        # ======================================================================================
+        # ==============================================================================================================
         chosen_file = pff.get_full_path(path, epoch)
-        # ======================================================================================
+        # ==============================================================================================================
         # Loading the needed models and data
-        # ======================================================================================
+        # ==============================================================================================================
         _, test_loaders, _ = import_data_sets(BATCH_SIZE,
                                               mixup_factor=MIXUP_FACTOR,
                                               mixup_prob=MIXUP_PROB,
                                               abs_sens=ABS_SENS,
                                               dilation=DILATION)
-        key = '2e+05_to_3e+05'
         test_loader = test_loaders[key]
         # test_loader = test_loaders['3e+05_to_inf']
         # test_loader = test_loaders['2e+05_to_3e+05']
         # test_loader = test_loaders['1e+05_to_2e+05']
         # test_loader = test_loaders['0_to_1e+05']
         mod_vae, _  = mmf.load_state_train(chosen_file)
-        # ======================================================================================
+        # ==============================================================================================================
         # Getting the ROC and DET curves
-        # ======================================================================================
+        # ==============================================================================================================
         tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=200)
-        # ======================================================================================
+        # ==============================================================================================================
         # Saving the data
-        # ======================================================================================
-        if not os.path.isdir(os.path.join(path, 'post_processing')):
-            os.makedirs(os.path.join(path, 'post_processing'))
+        # ==============================================================================================================
+        # ----------------------------------------------------------------------------------------------------------
+        # Creating directory is does not exists
+        # ----------------------------------------------------------------------------------------------------------
+        if not os.path.isdir(os.path.join(path, PP_DATA)):
+            os.makedirs(os.path.join(path, PP_DATA))
+        # ----------------------------------------------------------------------------------------------------------
+        # Creating filename and full path
+        # ----------------------------------------------------------------------------------------------------------
         output_filename = key + f'_tpr_fpr_npr_epoch_{epoch}.json'
         output_filepath = os.path.join(path, 'post_processing', output_filename)
+        # ----------------------------------------------------------------------------------------------------------
+        # creating a dictionary with the data
+        # ----------------------------------------------------------------------------------------------------------
         all_output_data = [{
             'true_positive_rate': tpr,
             'false_positive_rate': fpr,
             'false_negative_rate': fnr
         }]
+        # ----------------------------------------------------------------------------------------------------------
+        # Saving
+        # ----------------------------------------------------------------------------------------------------------
         with open(output_filepath, 'w', encoding='utf-8') as f:
             json.dump(all_output_data, f, indent=4)
-        # ======================================================================================
+        # ==============================================================================================================
         # Plotting
-        # ======================================================================================
+        # ==============================================================================================================
         pf.plot_roc_curve(fpr, tpr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
         pf.plot_det_curve(fpr, fnr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
 
@@ -245,6 +262,14 @@ class PostProcessing:
         plt.grid()
         plt.show()
         pass
+
+    @staticmethod
+    def load_data_plot_roc_det(path, prefix_list):
+        """
+        :param path: Path to the saved data
+        :param prefix_list:
+        :return:
+        """
 
 
 class ModelOutputComputation:
