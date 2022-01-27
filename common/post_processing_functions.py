@@ -1,4 +1,5 @@
 import numpy as np
+from numba import jit
 from ConfigVAE import *
 import os
 import json
@@ -9,6 +10,7 @@ from torch.autograd import Variable
 from ScatterCoordinateDataset import import_data_sets
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
+from time import time
 
 
 class PostProcessing:
@@ -132,7 +134,12 @@ class PostProcessing:
         # ==============================================================================================================
         # Getting the ROC and DET curves
         # ==============================================================================================================
-        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=200)
+        len_a = 200
+        thr_a = 0.1
+        len_b = 50
+        thr_b = 1
+        threshold_num = [(ii*thr_a)/len_a for ii in list(range(len_a))] + [thr_a+((ii*(thr_b-thr_a))/len_b) for ii in list(range(len_b+1))]
+        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=threshold_num)
         # ==============================================================================================================
         # Saving the data
         # ==============================================================================================================
@@ -162,8 +169,13 @@ class PostProcessing:
         # ==============================================================================================================
         # Plotting
         # ==============================================================================================================
-        pf.plot_roc_curve(fpr, tpr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
-        pf.plot_det_curve(fpr, fnr, save_plt=True, path=path, epoch=epoch, name_prefix=key)
+        data_dict = {
+            key: {
+                'true_positive_rate': tpr,
+                'false_positive_rate': fpr,
+                'false_negative_rate': fnr}}
+        pf.plot_roc_curve(data_dict, name_prefixes=[key], save_plt=True, path=path, epoch=epoch)
+        pf.plot_det_curve(data_dict, name_prefixes=[key], save_plt=True, path=path, epoch=epoch)
 
     @staticmethod
     def get_latent_statistics(path, epoch):
@@ -303,8 +315,18 @@ class ModelOutputComputation:
         :return: converts the 4-D tensor to 3-D numpy matrix (grids have 1 channel) and slices the decision at the
                  threshold
         """
-        sigmoid = torch.nn.Sigmoid()
-        return np.where(np.squeeze(sigmoid(samples[:, 0, :, :]).cpu().detach().numpy()) >= threshold, 1, 0)
+        return np.where(samples >= threshold, 1, 0)
+
+    @staticmethod
+    @jit(nopython=True)
+    def slice_batch_jit(samples, threshold):
+        """
+        :param samples: 4-D torch tensor of model output grids
+        :param threshold: decision threshold, should be between 0 and 1
+        :return: converts the 4-D tensor to 3-D numpy matrix (grids have 1 channel) and slices the decision at the
+                 threshold
+        """
+        return np.where(samples >= threshold, 1, 0)
 
     @staticmethod
     def get_tpr_fpr_fnr(sample, target):
@@ -327,17 +349,18 @@ class ModelOutputComputation:
         """
         :param model: trained model
         :param loader: dataloader to use
-        :param threshold_num: number of threshold to compute the ROC curve with
+        :param threshold_num: number of threshold to compute the ROC curve with. if int, creates equally-spaced intervals else this is a list, takes it as it is
         :return: true positive and false positive vectors used to plot the ROC curve
         """
+        sigmoid = torch.nn.Sigmoid()
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
-        ratio_tp = np.zeros([threshold_num + 1, ])
-        ratio_fp = np.zeros([threshold_num + 1, ])
-        ratio_fn = np.zeros([threshold_num + 1, ])
-        thresholds = [ii / threshold_num for ii in list(range(threshold_num+1))]
+        ratio_tp = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
+        ratio_fp = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
+        ratio_fn = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
         counter = 0
+        thresholds = [ii / threshold_num for ii in list(range(threshold_num + 1))] if type(threshold_num) is int else threshold_num
         # ==============================================================================================================
         # No grad for speed
         # ==============================================================================================================
@@ -364,6 +387,7 @@ class ModelOutputComputation:
                 # Forward pass
                 # ------------------------------------------------------------------------------
                 grid_out, _, _, _ = model(grids)
+                grid_out          = np.squeeze(sigmoid(grid_out).cpu().detach().numpy())
                 # ------------------------------------------------------------------------------
                 # Slicing and getting TP, FP for each threshold
                 # ------------------------------------------------------------------------------
@@ -441,11 +465,12 @@ if __name__ == '__main__':
     c_path = '..\\results\\16_1_2022_21_39'
     c_epoch = 700
     pp = PostProcessing()
+
     prefix_list = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
-    # prefix_list = ['0_to_1e+05']
+    # prefix_list = ['1e+05_to_2e+05']
     pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
-    # pp.load_model_plot_roc_det(c_path, c_epoch)
+    # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path)
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)
