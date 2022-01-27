@@ -96,7 +96,7 @@ class PostProcessing:
         plt.show()
 
     @staticmethod
-    def load_and_plot_roc_det(path, epoch, key='3e+05_to_inf'):
+    def load_model_plot_roc_det(path, epoch, key='3e+05_to_inf'):
         """
         :return: This function:
                     1. Loads a saved model in path, epoch
@@ -264,12 +264,31 @@ class PostProcessing:
         pass
 
     @staticmethod
-    def load_data_plot_roc_det(path, prefix_list):
+    def load_data_plot_roc_det(path, epoch, prefix_list):
         """
         :param path: Path to the saved data
-        :param prefix_list:
-        :return:
+        :param epoch: the epoch in question
+        :param prefix_list: self explanatory
+        :return: The function:
+                    1. loads the data in the given path according to the given prefixes
+                    2. plots the ROC and DET curves
         """
+        pf = PlottingFunctions()
+        # ==============================================================================================================
+        # Loading the saved data
+        # ==============================================================================================================
+        main_dict = {}
+        for prefix in prefix_list:
+            filename = prefix + f'_tpr_fpr_npr_epoch_{epoch}.json'
+            filepath = os.path.join(path, PP_DATA, filename)
+            with open(filepath, mode='r', encoding='utf-8') as json_f:
+                results_dict = json.load(json_f)[-1]
+            main_dict[prefix] = results_dict
+        # ==============================================================================================================
+        # Plotting
+        # ==============================================================================================================
+        pf.plot_roc_curve(main_dict, name_prefixes=prefix_list, save_plt=True, path=path, epoch=epoch)
+        pf.plot_det_curve(main_dict, name_prefixes=prefix_list, save_plt=True, path=path, epoch=epoch)
 
 
 class ModelOutputComputation:
@@ -422,17 +441,11 @@ if __name__ == '__main__':
     c_path = '..\\results\\16_1_2022_21_39'
     c_epoch = 700
     pp = PostProcessing()
+    prefix_list = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
+    # prefix_list = ['0_to_1e+05']
+    pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
-    # # ====
-    # output_filename = f'3e+05_to_inf_tpr_fpr_npr_epoch_{c_epoch}.json'
-    # output_filepath = os.path.join(c_path, 'post_processing', output_filename)
-    # with open(output_filepath, mode='r', encoding='utf-8') as json_f:
-    #     results_dict = json.load(json_f)[-1]
-    # fpr = results_dict['false_positive_rate']
-    # fnr = results_dict['false_negative_rate']
-    # tpr = results_dict['true_positive_rate']
-
-    pp.load_and_plot_roc_det(c_path, c_epoch)
+    # pp.load_model_plot_roc_det(c_path, c_epoch)
     # pp.log_to_plot(c_path)
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)

@@ -19,12 +19,12 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, case=train, mix_factor=0, mix_prob=0, abs_sens=True, dilation=0):
+    def __init__(self, csv_files, transform=None, case='train', mix_factor=0, mix_prob=0, abs_sens=True, dilation=0):
         """
         Args:
         :param csv_files: logdir to the file with all the database
         :param transform: transformation flag of the data
-        :param      case: train of test database
+        :param      case: train or test database
         :param mix_factor: mixup parameter, should be between 0 and 1
         :param mix_prob: probability to do mixup when calling __get_item__(), should be between 0 and 1
         :param abs_sens: if true, doing abs on the sensitivity
