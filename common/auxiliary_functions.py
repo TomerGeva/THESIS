@@ -132,10 +132,11 @@ class PlottingFunctions:
         plt.hist(np.array(grid).ravel(), bins=bins, density=True)
 
     @staticmethod
-    def plot_roc_curve(data_dict, name_prefixes, save_plt=False, path=None, epoch=None):
+    def plot_roc_curve(data_dict, name_prefixes, thresholds=None, save_plt=False, path=None, epoch=None):
         """
         :param data_dict: dictionary holding the rates for all the prefixes
         :param name_prefixes: prefix list, the prefixes are the keys for the data_dict. THIS musT BE A LIST
+        :param thresholds: if not None, plots a circle around the thresholds. Should be a list
         :param save_plt: weather to save the plot
         :param path: if save_plt, uses this path
         :param epoch: if save_plt, uses this epoch number
@@ -145,17 +146,17 @@ class PlottingFunctions:
         # Local variables
         # ==============================================================================================================
         modified_roc = plt.figure()
-        leg          = [0] * len(name_prefixes)
+        fpr_scatter = [] if thresholds is None else np.zeros([len(thresholds), len(name_prefixes)])
+        tpr_scatter = [] if thresholds is None else np.zeros([len(thresholds), len(name_prefixes)])
         # ==============================================================================================================
         # For each prefix, we plot a curve in the figure
         # ==============================================================================================================
         for ii, name_prefix in enumerate(name_prefixes):
             # ------------------------------------------------------------------------------------------------------
-            # Plotting curve
+            # Extracting data
             # ------------------------------------------------------------------------------------------------------
             fpr = data_dict[name_prefix]['false_positive_rate']
             tpr = data_dict[name_prefix]['true_positive_rate']
-            plt.plot(fpr, tpr, linewidth=2)
             # ------------------------------------------------------------------------------------------------------
             # Computing Area under Modified ROC - AuMC
             # ------------------------------------------------------------------------------------------------------
@@ -165,9 +166,28 @@ class PlottingFunctions:
             y = (tpr_np[1:] + tpr_np[:-1]) / 2
             aumc = abs(np.sum(y * dx))
             # ------------------------------------------------------------------------------------------------------
-            # Setting legend
+            # Plotting the scattered thresholds
             # ------------------------------------------------------------------------------------------------------
-            leg[ii] = name_prefix + ' AuMC value: {:.3}'.format(aumc)
+            if thresholds is not None:
+                indices = [0] * len(thresholds)  # np.zeros_like(thresholds).astype(int)
+                data_thresholds = data_dict[name_prefix]['thresholds']
+                for jj, threshold in enumerate(thresholds):
+                    try:
+                        indices[jj] = data_thresholds.index(threshold)
+                    except ValueError:
+                        indices[jj] = (np.abs(np.array(data_thresholds) - threshold)).argmin()
+                tpr_scatter[:, ii] = tpr_np[indices]
+                fpr_scatter[:, ii] = fpr_np[indices]
+            # ------------------------------------------------------------------------------------------------------
+            # Plotting
+            # ------------------------------------------------------------------------------------------------------
+            leg = name_prefix + ' AuMC value: {:.3}'.format(aumc)
+            plt.plot(fpr, tpr, linewidth=2, label=leg)
+        # ==============================================================================================================
+        # Plotting thresholds scatter
+        # ==============================================================================================================
+        for jj, threshold in enumerate(thresholds):
+            plt.plot(fpr_scatter[jj, :], tpr_scatter[jj, :], 'o', label=f'threshold = {threshold}')
         # ==============================================================================================================
         # General Plotting
         # ==============================================================================================================
@@ -175,7 +195,8 @@ class PlottingFunctions:
         plt.title('Modified ROC Curve for Grid Reconstruction', fontsize=16)
         plt.xlabel('False Positive Rate', fontsize=12)
         plt.ylabel('True Positive Rate', fontsize=12)
-        plt.legend(leg)
+        plt.legend()
+        modified_roc.set_size_inches((10, 10))
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
@@ -196,10 +217,11 @@ class PlottingFunctions:
             modified_roc.savefig(os.path.join(path, FIG_DIR, filename))
 
     @staticmethod
-    def plot_det_curve(data_dict, name_prefixes, save_plt=False, path=None, epoch=None):
+    def plot_det_curve(data_dict, name_prefixes, thresholds=None, save_plt=False, path=None, epoch=None):
         """
         :param data_dict: dictionary holding the rates for all the prefixes
         :param name_prefixes: prefix list, the prefixes are the keys for the data_dict. THIS musT BE A LIST
+        :param thresholds: if not None, plots a circle around the thresholds. Should be a list
         :param save_plt: weather to save the plot
         :param path: if save_plt, uses this path
         :param epoch: if save_plt, uses this epoch number
@@ -209,7 +231,8 @@ class PlottingFunctions:
         # Local variables
         # ==============================================================================================================
         modified_det = plt.figure()
-        leg = [0] * len(name_prefixes)
+        fpr_scatter = [] if thresholds is None else np.zeros([len(thresholds), len(name_prefixes)])
+        fnr_scatter = [] if thresholds is None else np.zeros([len(thresholds), len(name_prefixes)])
         # ==============================================================================================================
         # For each prefix, we plot a curve in the figure
         # ==============================================================================================================
@@ -224,25 +247,41 @@ class PlottingFunctions:
             # ------------------------------------------------------------------------------------------------------
             # Plotting curve
             # ------------------------------------------------------------------------------------------------------
-            plt.plot(fpr_std_scale, fnr_std_scale, linewidth=2)
+            plt.plot(fpr_std_scale, fnr_std_scale, linewidth=2, label=name_prefix)
             # ------------------------------------------------------------------------------------------------------
-            # Setting legend
+            # saving the wanted threshold plots
             # ------------------------------------------------------------------------------------------------------
-            leg[ii] = name_prefix
+            if thresholds is not None:
+                indices = [0] * len(thresholds)  # np.zeros_like(thresholds).astype(int)
+                data_thresholds = data_dict[name_prefix]['thresholds']
+                for jj, threshold in enumerate(thresholds):
+                    try:
+                        indices[jj] = data_thresholds.index(threshold)
+                    except ValueError:
+                        indices[jj] = (np.abs(np.array(data_thresholds) - threshold)).argmin()
+                fnr_scatter[:, ii] = np.array(fnr_std_scale)[indices]
+                fpr_scatter[:, ii] = np.array(fpr_std_scale)[indices]
+        # ==============================================================================================================
+        # Plotting thresholds scatter
+        # ==============================================================================================================
+        for jj, threshold in enumerate(thresholds):
+            plt.plot(fpr_scatter[jj, :], fnr_scatter[jj, :], 'o', label=f'threshold = {threshold}')  #  label='_nolegend_'
         # ==============================================================================================================
         # Changing to normal distribution presentation
         # ==============================================================================================================
-        ticks = [0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
-        tick_labels = ticks  # tick_labels = ['{:.0%}'.format(s) if (100 * s).is_integer() else '{:.1%}'.format(s) for s in ticks]
+        ticks = [1e-4, 0.001, 0.01, 0.05, 0.20, 0.5, 0.80, 0.95, 0.99, 0.999]
+        # tick_labels = ticks
+        tick_labels = ['{:.2f}'.format(s) if (100 * s).is_integer() else '{:.3f}'.format(s) if (1000 * s).is_integer() else '{:.0e}'.format(s) for s in ticks]
         tick_locations = sp.norm.ppf(ticks)
         # ==============================================================================================================
         # General plotting
         # ==============================================================================================================
+        modified_det.set_size_inches((10, 10))
         plt.grid()
         plt.title('Modified DET Curve for Grid Reconstruction', fontsize=16)
         plt.xlabel('False Positive Rate', fontsize=12)
         plt.ylabel('False Negative Rate', fontsize=12)
-        plt.legend(leg)
+        plt.legend()
         # ----------------------------------------------------------------------------------------------------------
         # Fixing the axes to normal deviate
         # ----------------------------------------------------------------------------------------------------------
@@ -252,7 +291,7 @@ class PlottingFunctions:
         axes.set_yticks(tick_locations)
         axes.set_yticklabels(tick_labels)
         axes.set_ylim(-3, 3)
-        axes.set_xlim(-3, 3)
+        axes.set_xlim(-4, 3)
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================

@@ -136,7 +136,7 @@ class PostProcessing:
         # ==============================================================================================================
         len_a = 200
         thr_a = 0.1
-        len_b = 50
+        len_b = 45
         thr_b = 1
         threshold_num = [(ii*thr_a)/len_a for ii in list(range(len_a))] + [thr_a+((ii*(thr_b-thr_a))/len_b) for ii in list(range(len_b+1))]
         tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=threshold_num)
@@ -159,7 +159,8 @@ class PostProcessing:
         all_output_data = [{
             'true_positive_rate': tpr,
             'false_positive_rate': fpr,
-            'false_negative_rate': fnr
+            'false_negative_rate': fnr,
+            'thresholds': threshold_num
         }]
         # ----------------------------------------------------------------------------------------------------------
         # Saving
@@ -173,7 +174,8 @@ class PostProcessing:
             key: {
                 'true_positive_rate': tpr,
                 'false_positive_rate': fpr,
-                'false_negative_rate': fnr}}
+                'false_negative_rate': fnr,
+                'thresholds': threshold_num}}
         pf.plot_roc_curve(data_dict, name_prefixes=[key], save_plt=True, path=path, epoch=epoch)
         pf.plot_det_curve(data_dict, name_prefixes=[key], save_plt=True, path=path, epoch=epoch)
 
@@ -285,6 +287,7 @@ class PostProcessing:
                     1. loads the data in the given path according to the given prefixes
                     2. plots the ROC and DET curves
         """
+        thr = [0.1, 0.5]
         pf = PlottingFunctions()
         # ==============================================================================================================
         # Loading the saved data
@@ -299,8 +302,8 @@ class PostProcessing:
         # ==============================================================================================================
         # Plotting
         # ==============================================================================================================
-        pf.plot_roc_curve(main_dict, name_prefixes=prefix_list, save_plt=True, path=path, epoch=epoch)
-        pf.plot_det_curve(main_dict, name_prefixes=prefix_list, save_plt=True, path=path, epoch=epoch)
+        pf.plot_roc_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
+        pf.plot_det_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
 
 
 class ModelOutputComputation:
