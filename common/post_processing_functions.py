@@ -243,6 +243,9 @@ class PostProcessing:
                 plt.figure()
                 plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
                 plt.title("Model output - After Step at 0.5")
+                plt.figure()
+                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
+                plt.title("Model output - After Step at 0.1")
 
                 mu_temp = mu.cpu().detach().numpy()
                 var_temp = np.exp(logvar.cpu().detach().numpy())
@@ -278,16 +281,17 @@ class PostProcessing:
         pass
 
     @staticmethod
-    def load_data_plot_roc_det(path, epoch, prefix_list):
+    def load_data_plot_roc_det(path, epoch, prefix_list, threshold_list=None):
         """
         :param path: Path to the saved data
         :param epoch: the epoch in question
         :param prefix_list: self explanatory
+        :param threshold_list: list of thresholds to scatter
         :return: The function:
                     1. loads the data in the given path according to the given prefixes
                     2. plots the ROC and DET curves
         """
-        thr = [0.1, 0.5]
+        thr = threshold_list
         pf = PlottingFunctions()
         # ==============================================================================================================
         # Loading the saved data
@@ -475,7 +479,7 @@ if __name__ == '__main__':
 
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path)
-    # pp.get_latent_statistics(c_path, c_epoch)
+    pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)
 
 
