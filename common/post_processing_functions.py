@@ -1,15 +1,16 @@
-import numpy as np
-from numba import jit
 from ConfigVAE import *
 import os
 import json
 import math
 import torch
-import matplotlib.pyplot as plt
 from torch.autograd import Variable
+
+import matplotlib.pyplot as plt
+
 from ScatterCoordinateDataset import import_data_sets
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
+from roc_det_functions import RocDetFunctions
 from time import time
 
 
@@ -112,7 +113,7 @@ class PostProcessing:
         pf  = PlottingFunctions()
         pff = PathFindingFunctions()
         mmf = ModelManipulationFunctions()
-        moc = ModelOutputComputation()
+        rdf = RocDetFunctions()
         # ==============================================================================================================
         # Extracting the full file path
         # ==============================================================================================================
@@ -139,7 +140,7 @@ class PostProcessing:
         len_b = 45
         thr_b = 1
         threshold_num = [(ii*thr_a)/len_a for ii in list(range(len_a))] + [thr_a+((ii*(thr_b-thr_a))/len_b) for ii in list(range(len_b+1))]
-        tpr, fpr, fnr = moc.get_roc_det_curve(mod_vae, test_loader, threshold_num=threshold_num)
+        tpr, fpr, fnr = rdf.get_roc_det_curve(mod_vae, test_loader, threshold_num=threshold_num)
         # ==============================================================================================================
         # Saving the data
         # ==============================================================================================================
@@ -310,109 +311,6 @@ class PostProcessing:
         pf.plot_det_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
 
 
-class ModelOutputComputation:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def slice_batch(samples, threshold):
-        """
-        :param samples: 4-D torch tensor of model output grids
-        :param threshold: decision threshold, should be between 0 and 1
-        :return: converts the 4-D tensor to 3-D numpy matrix (grids have 1 channel) and slices the decision at the
-                 threshold
-        """
-        return np.where(samples >= threshold, 1, 0)
-
-    @staticmethod
-    @jit(nopython=True)
-    def slice_batch_jit(samples, threshold):
-        """
-        :param samples: 4-D torch tensor of model output grids
-        :param threshold: decision threshold, should be between 0 and 1
-        :return: converts the 4-D tensor to 3-D numpy matrix (grids have 1 channel) and slices the decision at the
-                 threshold
-        """
-        return np.where(samples >= threshold, 1, 0)
-
-    @staticmethod
-    def get_tpr_fpr_fnr(sample, target):
-        """
-        :param sample: a sample 3-D matrix of scatterer grids after slicing at a certain threshold
-        :param target: target grid
-        :return: function computed the true positive ratio (TPR), false positive ratio (FPR) and false negative ratio
-                 (FNR) and returns them
-                                TP                              FP                              FN
-                    TPR = -------------             FPR = -------------             FNR = ---------------
-                           TP   +   FN                     FP   +   TN                      FN   +  TP
-        """
-        tpr = np.sum(sample[target == 1]) / np.sum(target)
-        fpr = np.sum(sample[target == 0]) / np.sum(1 - target)
-        fnr = 1 - tpr
-
-        return tpr, fpr, fnr
-
-    def get_roc_det_curve(self, model, loader, threshold_num=20):
-        """
-        :param model: trained model
-        :param loader: dataloader to use
-        :param threshold_num: number of threshold to compute the ROC curve with. if int, creates equally-spaced intervals else this is a list, takes it as it is
-        :return: true positive and false positive vectors used to plot the ROC curve
-        """
-        sigmoid = torch.nn.Sigmoid()
-        # ==============================================================================================================
-        # Local variables
-        # ==============================================================================================================
-        ratio_tp = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
-        ratio_fp = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
-        ratio_fn = np.zeros([threshold_num + 1, ]) if type(threshold_num) is int else np.zeros_like(threshold_num)
-        counter = 0
-        thresholds = [ii / threshold_num for ii in list(range(threshold_num + 1))] if type(threshold_num) is int else threshold_num
-        # ==============================================================================================================
-        # No grad for speed
-        # ==============================================================================================================
-        model.eval()
-        with torch.no_grad():
-            loader_iter = iter(loader)
-            for _ in range(len(loader)):
-                # ------------------------------------------------------------------------------
-                # Working with iterables, much faster
-                # ------------------------------------------------------------------------------
-                try:
-                    sample = next(loader_iter)
-                except StopIteration:
-                    loader_iter = iter(loader)
-                    sample = next(loader_iter)
-                # ------------------------------------------------------------------------------
-                # Extracting the grids and sensitivities
-                # ------------------------------------------------------------------------------
-                grids           = Variable(sample['grid_in'].float()).to(model.device)
-                grid_targets    = np.squeeze(sample['grid_target'].detach().numpy()).astype(int)
-                batch_size      = sample['sensitivity'].shape[0]
-                counter         += batch_size
-                # ------------------------------------------------------------------------------
-                # Forward pass
-                # ------------------------------------------------------------------------------
-                grid_out, _, _, _ = model(grids)
-                grid_out          = np.squeeze(sigmoid(grid_out).cpu().detach().numpy())
-                # ------------------------------------------------------------------------------
-                # Slicing and getting TP, FP for each threshold
-                # ------------------------------------------------------------------------------
-                for (ii, threshold) in enumerate(thresholds):
-                    samples       = self.slice_batch(grid_out, threshold)
-                    tpr, fpr, fnr = self.get_tpr_fpr_fnr(samples, grid_targets)
-                    ratio_tp[ii] += tpr * batch_size
-                    ratio_fp[ii] += fpr * batch_size
-                    ratio_fn[ii] += fnr * batch_size
-        # ==============================================================================================================
-        # Normalizing
-        # ==============================================================================================================
-        ratio_tp = [ii / counter for ii in ratio_tp]
-        ratio_fp = [ii / counter for ii in ratio_fp]
-        ratio_fn = [ii / counter for ii in ratio_fn]
-        return ratio_tp, ratio_fp, ratio_fn
-
-
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
     # 24_8_2021_8_51   - with mixup 0.00 - 25k database
@@ -473,9 +371,10 @@ if __name__ == '__main__':
     c_epoch = 700
     pp = PostProcessing()
 
-    prefix_list = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
-    # prefix_list = ['1e+05_to_2e+05']
-    pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
+    threshold_list = [0.1, 0.2, 0.5]
+    prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
+    # prefix_list    = ['1e+05_to_2e+05']
+    # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list, threshold_list)
 
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path)
