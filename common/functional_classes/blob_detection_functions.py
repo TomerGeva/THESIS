@@ -1,9 +1,11 @@
 import numpy as np
 import scipy.stats as stats
 from scipy.signal import convolve2d
+from scipy.ndimage.filters import maximum_filter
+from scipy.ndimage.morphology import generate_binary_structure
 
 
-class ModelOutputBlobDetection:
+class BlobDetectionFunctions:
     """
         Edge detection is done whenever a laplacian operator over the image produces zero crossing. To make the system
     more noise resistant, we can convolve the image with a gaussian kernel to mean out the noise, over the cost of
@@ -23,10 +25,22 @@ class ModelOutputBlobDetection:
     The algorithm works as follows:
     1. create a 3D scale space S(x,y,sigma) via convolving a gaussian kernel with different sigma values with the picture
     2. subtract adjacent maps, creating the DoG result and divide by (s-1) creating the NLoG approximation.
+    3. performing 3D local maximum detection to locate the center of the blobs and their scales
 
+    Variables:
+        * sigma_0        -> initial scale
+        * scale          -> multiplication factor between two adjacent scales
+        * k              -> number of scales in the scale space
+        * peak_threshold -> threshold for the peak detection
+        * kernel_size    -> size of the gaussian kernel
     """
-    def __init__(self):
-        pass
+    def __init__(self, peak_threshold=1, kernel_size=25):
+        """
+        :param peak_threshold: Threshold for local maxima detection
+        :param kernel_size: size of the gaussian kernel
+        """
+        self.peak_th     = peak_threshold
+        self.kernel_size = kernel_size
 
     @staticmethod
     def create_gaussian_kernel(size, sigma):
@@ -57,14 +71,13 @@ class ModelOutputBlobDetection:
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
-        kernel_size = 25
         scale_space = np.zeros(list(image.shape) + [k])
         # ==============================================================================================================
         # Performing convolution with the wanted kernels
         # ==============================================================================================================
         for ii in range(k):
             sigma = sigma_0 * (scale**ii)
-            kernel = self.create_gaussian_kernel(kernel_size, sigma=sigma)
+            kernel = self.create_gaussian_kernel(self.kernel_size, sigma=sigma)
             scale_space[:, :, ii] = convolve2d(image, kernel, mode='same')
         return scale_space
 
@@ -75,7 +88,57 @@ class ModelOutputBlobDetection:
         :param scale: Optional, if not None, dividing the DoG space by (scale-1)
         :return: DoG space, Difference of Gaussian space. This is an approximation for the NLoG space
         """
-        dog_space = scale_space[:, :, 1:] - scale_space[:, :, :-1]
+        sign = -1 if scale > 1 else 1
+        dog_space = sign * (scale_space[:, :, 1:] - scale_space[:, :, :-1])
         if scale is not None:
-            return dog_space * (scale-1)
+            return dog_space / (scale-1)
         return dog_space
+
+    def extract_local_maxima(self, dog_space):
+        """
+        :param dog_space: Difference of Gaussians 3D space
+        :return: function detects local maxima points and returns them as a list of tuples
+        """
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        neighborhood = generate_binary_structure(3, 3)
+        # ==============================================================================================================
+        # Detecting local maxima
+        # ==============================================================================================================
+        # ----------------------------------------------------------------------------------------------------------
+        # Performing max filter and threshold filter
+        # ----------------------------------------------------------------------------------------------------------
+        local_max = maximum_filter(dog_space, footprint=neighborhood) == dog_space
+        th_filter = dog_space > self.peak_th
+        # ----------------------------------------------------------------------------------------------------------
+        # Isolating maximum from zero surface
+        # ----------------------------------------------------------------------------------------------------------
+        max_3d = local_max & th_filter
+        # ----------------------------------------------------------------------------------------------------------
+        # Extracting maxima coordinates
+        # ----------------------------------------------------------------------------------------------------------
+        xx = np.array(list(range(dog_space.shape[1])))
+        yy = np.array(list(range(dog_space.shape[0])))
+        zz = np.array(list(range(dog_space.shape[2])))
+        xx, yy = np.meshgrid(xx, yy)
+        xx = np.tile(xx[..., np.newaxis], [1, 1, dog_space.shape[2]])
+        yy = np.tile(yy[..., np.newaxis], [1, 1, dog_space.shape[2]])
+        zz = np.tile(zz[np.newaxis, np.newaxis, ...], [dog_space.shape[1], dog_space.shape[0], 1])
+
+        xx_max = xx[max_3d]
+        yy_max = yy[max_3d]
+        zz_max = zz[max_3d]
+
+        return np.hstack((xx_max[..., np.newaxis], yy_max[..., np.newaxis], zz_max[..., np.newaxis]))
+
+    @staticmethod
+    def save_blob_centers(blob_mat, path, filename=None):
+        """
+        :param blob_mat: 2D matrix holding the blob center of mass location and scale such that:
+                            [x_coord, y_coord, scale]
+        :param path: full path to save the data
+        :param filename: optional, file name of the saved csv file
+        :return: saves the blob centers and scales to a csv file
+        """
+        pass

@@ -11,6 +11,7 @@ from ScatterCoordinateDataset import import_data_sets
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
 from roc_det_functions import RocDetFunctions
+from blob_detection_functions import BlobDetectionFunctions
 from time import time
 
 
@@ -310,6 +311,72 @@ class PostProcessing:
         pf.plot_roc_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
         pf.plot_det_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
 
+    @staticmethod
+    def load_model_detect_blobs(path, epoch, key='3e+05_to_inf',
+                                sigma_0=0.25, scale=1.15, k=15, peak_threshold=3, kernel_size=25):
+        """
+        :param path: path to saved model
+        :param epoch: epoch of saved model
+        :param key: name ot test lodar
+        :param sigma_0: initial scale for the scale space
+        :param scale: multiplication factor for adjacent scales
+        :param k: size of the scale dimension in the scale space
+        :param peak_threshold: threshold for local maxima classification
+        :param kernel_size: size of the gaussian kernel
+        :return: Function loads a model and a test loader, passes a single grid through the model and computes the
+                 maximum locations for both the input and the output
+        """
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        sigmoid = torch.nn.Sigmoid()
+        pf  = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mmf = ModelManipulationFunctions()
+        bdf = BlobDetectionFunctions(peak_threshold=peak_threshold, kernel_size=kernel_size)
+
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(path, epoch)
+        # ==============================================================================================================
+        # Loading the needed models and data
+        # ==============================================================================================================
+        _, test_loaders, _ = import_data_sets(1,  # BATCH_SIZE,
+                                              mixup_factor=MIXUP_FACTOR,
+                                              mixup_prob=MIXUP_PROB,
+                                              abs_sens=ABS_SENS,
+                                              dilation=DILATION)
+        test_loader = test_loaders[key]
+        mod_vae, _ = mmf.load_state_train(chosen_file)
+        mod_vae.eval()
+        # ==============================================================================================================
+        # No grad for speed
+        # ==============================================================================================================
+        with torch.no_grad():
+            loader_iter = iter(test_loader)
+            sample = next(loader_iter)
+            # ------------------------------------------------------------------------------
+            # Extracting the grids and sensitivities
+            # ------------------------------------------------------------------------------
+            grids = Variable(sample['grid_in'].float()).to(mod_vae.device)
+            grid_targets = np.squeeze(sample['grid_target'].detach().numpy()).astype(int)
+            # ------------------------------------------------------------------------------
+            # Forward pass
+            # ------------------------------------------------------------------------------
+            grid_out, _, _, _ = mod_vae(grids)
+            grid_out = np.squeeze(sigmoid(grid_out).cpu().detach().numpy())
+        # ==============================================================================================================
+        # Creating scale space and DoG space
+        # ==============================================================================================================
+        scale_space = bdf.create_scale_space(grid_targets, sigma_0=sigma_0, scale=scale, k=k)
+        dog_space   = bdf.create_dog_space(scale_space, scale=scale)
+        local_max   = bdf.extract_local_maxima(dog_space)
+        scale_space2 = bdf.create_scale_space(grid_out, sigma_0=sigma_0, scale=scale, k=k)
+        dog_space2   = bdf.create_dog_space(scale_space2, scale=scale)
+        local_max2   = bdf.extract_local_maxima(dog_space2)
+        print('hi')
+
 
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
@@ -376,9 +443,10 @@ if __name__ == '__main__':
     # prefix_list    = ['1e+05_to_2e+05']
     # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list, threshold_list)
 
+    pp.load_model_detect_blobs(c_path, c_epoch, key='3e+05_to_inf')
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path)
-    pp.get_latent_statistics(c_path, c_epoch)
+    # pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)
 
 

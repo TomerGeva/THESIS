@@ -8,11 +8,13 @@ from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlock
 # ==================================================================================================================
 # Database Variables
 # ==================================================================================================================
-XRANGE = np.array([0, 19])
-YRANGE = np.array([0, 19])
+XRANGE = np.array([0, 19])  # Range of the x coordinate of the structure in micro-meters
+YRANGE = np.array([0, 19])  # Range of the y coordinate of the structure in micro-meters
 
-XQUANTIZE = 2500
-YQUANTIZE = 2500
+XQUANTIZE = 2500  # number of quantization points in the X coordinate
+YQUANTIZE = 2500  # number of quantization points in the Y coordinate
+
+DMIN = 0.1  # minimal allowed distance between cylinder centers, in micro-meters
 
 # ==================================================================================================================
 # DATALOADER HYPER-PARAMETERS
