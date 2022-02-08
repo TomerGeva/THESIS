@@ -63,6 +63,14 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                              encoder_type=encoder_type,
                              mode=MODE,
                              model_out=MODEL_OUT)
+        elif encoder_type == encoder_type_e.SEPARABLE:
+            mod_vae = ModVAE(device=device,
+                             encoder_topology=SEPARABLE_ENCODER_TOPOLOGY,
+                             decoder_topology=DECODER_TOPOLOGY,
+                             latent_space_dim=LATENT_SPACE_DIM,
+                             encoder_type=encoder_type,
+                             mode=MODE,
+                             model_out=MODEL_OUT)
         mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
         # ================================================================================
@@ -279,7 +287,8 @@ if __name__ == '__main__':
         # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320
 
-        enc_type = encoder_type_e.VGG
+        # enc_type = encoder_type_e.VGG
+        enc_type = encoder_type_e.SEPARABLE
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,
                  copy_weights=copy_path, copy_weights_epoch=copy_epoch)

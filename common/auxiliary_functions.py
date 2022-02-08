@@ -68,6 +68,7 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
             x_dim_size = int((x_conv_size + 2 * action[1].pool_padding[0] + 2 * action[1].pool_padding[1]) / action[1].pool_size)
             y_dim_size = int((y_conv_size + 2 * action[1].pool_padding[2] + 2 * action[1].pool_padding[3]) / action[1].pool_size)
     elif 'conv' in action[0]:  # :   [                       K_tilde                                ]         S                          P                    S
+        # THIS HOLDS FOR SEPARABLE CONVOLUTION AND REGULAR CONVOLUTION
         x_dim_size = int((x_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
         y_dim_size = int((y_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
         channels = action[1].out_channels

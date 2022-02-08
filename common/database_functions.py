@@ -168,6 +168,16 @@ class ModelManipulationFunctions:
         """
         return (grid > threshold).astype(float)
 
+    @staticmethod
+    def get_nof_params(model):
+        """Return the number of trainable model parameters.
+        Args:
+            model: nn.Module.
+        Returns:
+            The number of model parameters.
+        """
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 
 class DatabaseFunctions:
     def __init__(self):

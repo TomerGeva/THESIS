@@ -136,7 +136,7 @@ class TrainerVAE:
         logger.start_log()
         if mod_vae.encoder_type == encoder_type_e.DENSE:
             logger.log_dense_model_arch(mod_vae)
-        elif mod_vae.encoder_type == encoder_type_e.VGG:
+        else:  # if mod_vae.encoder_type == encoder_type_e.VGG:
             logger.log_model_arch(mod_vae)
 
         # ==========================================================================================

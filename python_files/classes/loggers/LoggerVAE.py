@@ -2,6 +2,7 @@ import os
 import math
 from ConfigVAE import *
 from LoggerGeneric import LoggerGeneric
+from database_functions import ModelManipulationFunctions
 from auxiliary_functions import compute_output_dim
 
 
@@ -193,6 +194,7 @@ class LoggerVAE(LoggerGeneric):
         :param mod_vae:Trained model
         :return: function logs the VAE architecture
         """
+        mmf = ModelManipulationFunctions()
         # ==============================================================================================================
         # Init variables
         # ==============================================================================================================
@@ -206,6 +208,7 @@ class LoggerVAE(LoggerGeneric):
         # Encoder log
         # ==============================================================================================================
         self.log_title('VAE Encoder architecture')
+        self.log_line('Number of parameters: ' + str(mmf.get_nof_params(mod_vae)))
         self.log_line('Input size: {}X{}' .format(x_dim_size, y_dim_size))
         for action in mod_vae.encoder.topology:
             # ------------------------------------------------------------------------------------------------------

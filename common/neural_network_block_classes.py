@@ -121,7 +121,7 @@ class SeparableConvBlock(nn.Module):
                                  groups=conv_data.in_channels
                                  )
         self.conv_pw = nn.Conv2d(in_channels=conv_data.in_channels,
-                                 out_channels=conv_data.out,
+                                 out_channels=conv_data.out_channels,
                                  kernel_size=1,
                                  stride=1,
                                  padding=0,
