@@ -13,6 +13,8 @@ from auxiliary_functions        import PlottingFunctions
 from ScatterCoordinateDataset   import import_data_sets
 from global_const               import encoder_type_e
 from database_functions         import ModelManipulationFunctions, PathFindingFunctions
+from blob_detection_functions   import BlobDetectionFunctions
+from database_functions         import DatabaseFunctions
 
 
 def main_vae(encoder_type=encoder_type_e.DENSE,
@@ -192,6 +194,76 @@ def main_optim_latent(path=None, epoch=None):
     plt.grid()
     plt.show()
 
+    pass_through_save_scat(opt_vec, decoder, path, sigma_0=0.3, scale=1.15, k=15, peak_threshold=3, kernel_size=25)
+
+
+def pass_through_save_scat(latent_vec, decoder, path, sigma_0=0.3, scale=1.15, k=15, peak_threshold=3, kernel_size=25):
+    # ==============================================================================================================
+    # Local variables
+    # ==============================================================================================================
+    sigmoid = torch.nn.Sigmoid()
+    pf = PlottingFunctions()
+    dbf = DatabaseFunctions()
+    pff = PathFindingFunctions()
+    mmf = ModelManipulationFunctions()
+    bdf = BlobDetectionFunctions(peak_threshold=peak_threshold,
+                                 kernel_size=kernel_size,
+                                 sigma_0=sigma_0,
+                                 scale=scale,
+                                 k=k)
+    x_rate = (XRANGE[1] - XRANGE[0] + 1) / XQUANTIZE
+    y_rate = (YRANGE[1] - YRANGE[0] + 1) / YQUANTIZE
+    dmin = DMIN
+    threshold = 0.35
+    # ==============================================================================================================
+    # No grad for speed
+    # ==============================================================================================================
+    with torch.no_grad():
+        # ------------------------------------------------------------------------------
+        # Forward pass
+        # ------------------------------------------------------------------------------
+        grid_out, sens_out = decoder(latent_vec)
+        grid_out = np.squeeze(sigmoid(grid_out).cpu().detach().numpy())
+        grid_out_sliced = mmf.slice_grid(grid_out, threshold)
+    # ==============================================================================================================
+    # Creating scale space and DoG space
+    # ==============================================================================================================
+    print('Computing scale space . . . ')
+    scale_space = bdf.create_scale_space(grid_out)
+    scale_space_sliced = bdf.create_scale_space(grid_out_sliced)
+    print('Computing Difference of Gaussians space . . . ')
+    dog_space = bdf.create_dog_space(scale_space)
+    dog_space_sliced = bdf.create_dog_space(scale_space_sliced)
+    print('Finding local maxima . .. ')
+    local_max = bdf.extract_local_maxima(dog_space)
+    local_max_sliced = bdf.extract_local_maxima(dog_space_sliced)
+    # ==============================================================================================================
+    # Removing the cylinders based on the minimal distance and blob size
+    # ==============================================================================================================
+    print('Making array valid . . .')
+    valid_array = dbf.check_array_validity(local_max, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
+    valid_array_sliced = dbf.check_array_validity(local_max_sliced, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
+    print('Valid array saved to ' + os.path.join(path, PP_DATA))
+    dbf.save_array(valid_array, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA),
+                   name='scatter_raw.csv')
+    dbf.save_array(valid_array_sliced, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA),
+                   name='scatter_sliced.csv')
+    # ==============================================================================================================
+    # Plotting
+    # ==============================================================================================================
+    plt.figure()
+    plt.imshow(1 - grid_out, cmap='gray')
+    plt.scatter(valid_array[:, 0], valid_array[:, 1])
+    plt.legend(['original', 'reconstructed', 'original unique', 'reconstructed unique'])
+    plt.title('Raw Output')
+
+    plt.figure()
+    plt.imshow(1 - grid_out_sliced, cmap='gray')
+    plt.scatter(valid_array_sliced[:, 0], valid_array_sliced[:, 1])
+    plt.legend(['original', 'reconstructed', 'original unique', 'reconstructed unique'])
+    plt.title('Slicer at ' + str(threshold))
+    plt.show()
+
 
 if __name__ == '__main__':
     phase = 1
@@ -199,8 +271,8 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        # load_path   = None
-        load_path  = '..\\results\\12_1_2022_6_51'
+        load_path   = None
+        # load_path  = '..\\results\\12_1_2022_6_51'
         load_epoch  = 240
         copy_path   = None
         # copy_path   = '..\\results\\15_12_2021_23_46'
@@ -214,8 +286,8 @@ if __name__ == '__main__':
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================
     if phase == 2:
-        c_path = '..\\results\\5_12_2021_22_6'
-        epoch = 20
+        c_path = '..\\results\\16_1_2022_21_39'
+        c_epoch = 700
         # main_optim_input(path=c_path, epoch=epoch)
-        main_optim_latent(path=c_path, epoch=epoch)
+        main_optim_latent(path=c_path, epoch=c_epoch)
 

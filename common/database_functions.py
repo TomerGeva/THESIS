@@ -3,6 +3,7 @@
 # ***************************************************************************************************
 from ConfigVAE import *
 import os
+import csv
 import torch
 import torch.nn as nn
 import numpy as np
@@ -158,6 +159,15 @@ class ModelManipulationFunctions:
                             module_target.running_mean = module_source.running_mean
                             module_target.running_var = module_source.running_var
 
+    @staticmethod
+    def slice_grid(grid, threshold):
+        """
+        :param grid: 2D np array of a raw model output
+        :param threshold: threshold for the slicing
+        :return: 2D numpy array of the sliced array
+        """
+        return (grid > threshold).astype(float)
+
 
 class DatabaseFunctions:
     def __init__(self):
@@ -193,6 +203,124 @@ class DatabaseFunctions:
         grid_array = np.zeros([XQUANTIZE, YQUANTIZE])
         grid_array[arr[:, 1], arr[:, 0]] = 255
         return grid_array.astype(np.uint8)
+
+    @staticmethod
+    def check_array_validity(scat_locations, x_rate, y_rate, dmin):
+        """
+        :param scat_locations: 2D array containing the scatterer centers such that each row shows as follows:
+                               [x_coordinate, y_coordinate, scale]
+                               The size of the array is NX3
+        :param x_rate: conversion rate pixel to micrometer in the x direction
+        :param y_rate: conversion rate pixel to micrometer in the y direction
+        :param dmin: minimal allowed distance in micro-meters
+        :return: The function checks the distance between each scatterer and the other scatterers, computes the distance
+                 to the closest cylinder and checks that it is above the threshold. if the closest cylinder is below the
+                 threshold,we discard one of the cylinders based on their scale (bigger is better)
+        """
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        valid_array = np.zeros_like(scat_locations)
+        indexes     = np.array(list(range(scat_locations.shape[0])))
+        rates       = np.array([x_rate, y_rate])
+        counter     = 0
+        # ==============================================================================================================
+        # for each coordinate running the following
+        # ==============================================================================================================
+        for ii, coordinate in enumerate(scat_locations):
+            # ------------------------------------------------------------------------------------------------------
+            # Computing distance to all other cylinders
+            # ------------------------------------------------------------------------------------------------------
+            loc         = coordinate[0:2]
+            diffs       = np.sqrt(np.sum(np.power((scat_locations[:, 0:2] - loc) * rates, 2), axis=1))
+            diffs       = np.delete(diffs, ii)
+            # ------------------------------------------------------------------------------------------------------
+            # if min distance is bigger than threshold, add coordinate, else checking for the largest scale
+            # ------------------------------------------------------------------------------------------------------
+            if np.min(diffs) >= dmin:
+                valid_array[counter] = coordinate
+                counter += 1
+            else:
+                candidates = scat_locations[np.delete(indexes, ii)]
+                candidates = candidates[diffs < dmin]
+                if coordinate[2] > np.max(candidates[:, 2]):
+                    valid_array[counter] = coordinate
+                    counter += 1
+        return valid_array[:counter]
+
+    @staticmethod
+    def find_differences(inputs, target, x_rate, y_rate, dmin):
+        """
+        :param inputs: N X 2 array of coordinates
+        :param target: M X 2 array of coordinates
+        :param x_rate: conversion ratio pixel/micrometer in the x dimension
+        :param y_rate: conversion ratio pixel/micrometer in the y dimension
+        :param dmin: minimal distance between scatterers
+        :return: function returns two arrays:
+                    1. input_unique - K x 2 array with coordinates unique to input
+                    2. target_unique - Q X 2 array with coordinates unique to target
+                Decision rule is as follows:
+                1. Iterating over the target coordinates, computing distances between each coordinate and the input
+                   coordinates.
+                   1.1. If closest distance is smaller than dmin / 2, not unique to target
+                   1.2. else, unique to target
+                2. Iterating over the input coordinates, computing distances between each coordinate and the input
+                   coordinates.
+                   2.1. If closest distance is smaller than dmin / 2, not unique to input
+                   2.2. else, unique to input
+        """
+        rates = np.array([x_rate, y_rate])
+        target_unique = []
+        inputs_unique = []
+        # ==============================================================================================================
+        # For each coordinate in the target coordinates, running the following
+        # ==============================================================================================================
+        for ii, coordinate in enumerate(target):
+            # ------------------------------------------------------------------------------------------------------
+            # Computing distance to all other cylinders
+            # ------------------------------------------------------------------------------------------------------
+            loc = coordinate[0:2]
+            diffs = np.sqrt(np.sum(np.power((inputs[:, 0:2] - loc) * rates, 2), axis=1))
+            # ------------------------------------------------------------------------------------------------------
+            # if min distance is bigger than threshold, add coordinate
+            # ------------------------------------------------------------------------------------------------------
+            if np.min(diffs) > dmin / 2:
+                target_unique.append(list(coordinate))
+        # ==============================================================================================================
+        # For each coordinate in the input coordinates, running the following
+        # ==============================================================================================================
+        for ii, coordinate in enumerate(inputs):
+            # ------------------------------------------------------------------------------------------------------
+            # Computing distance to all other cylinders
+            # ------------------------------------------------------------------------------------------------------
+            loc = coordinate[0:2]
+            diffs = np.sqrt(np.sum(np.power((target[:, 0:2] - loc) * rates, 2), axis=1))
+            # ------------------------------------------------------------------------------------------------------
+            # if min distance is bigger than threshold, add coordinate
+            # ------------------------------------------------------------------------------------------------------
+            if np.min(diffs) > dmin:
+                inputs_unique.append(list(coordinate))
+        return np.array(inputs_unique), np.array(target_unique)
+
+    @staticmethod
+    def save_array(scat_locations, sensitivity, path, name=None):
+        """
+        :param scat_locations: NX3 array with N scatterer coordiantes:
+                               [x_coord, y_coord, scale]
+        :param sensitivity: matching sensitivity of the array
+        :param path: path to save the data
+        :param name:optional, name of the csv file
+        :return:
+        """
+        titles = ['x_coordinate', 'y_coordinate', 'scale', 'value']
+        sens_row = ['sensitivity', sensitivity]
+        filename = 'scatterer_coordinates.csv' if name is None else name
+        with open(os.path.join(path, filename), 'w', newline='') as f:
+            writer   = csv.writer(f)
+            writer.writerow(titles)
+            writer.writerow(sens_row)
+            for row in scat_locations:
+                writer.writerow(row)
 
 
 # ==================================================================================================================

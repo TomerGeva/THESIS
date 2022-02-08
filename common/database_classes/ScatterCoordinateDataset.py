@@ -101,7 +101,6 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         sample = {'grid': grid_array,
                   'sensitivity': sensitivity}
-
         # ----------------------------------------------------------------------------------------------------------
         # Transforming sample if given
         # ----------------------------------------------------------------------------------------------------------
@@ -146,6 +145,8 @@ class ScattererCoordinateDataset(Dataset):
             sample['grid'] = sample['grid'] * self.mixup_factor + mix_sample['grid'] * (1 - self.mixup_factor)
             sample['sensitivity'] = sample['sensitivity'] * self.mixup_factor + mix_sample['sensitivity'] * (1 - self.mixup_factor)
         """
+        if self.case == 'test':
+            sample['coordinate_target'] = pixel_points
         return sample
 
 
@@ -182,7 +183,7 @@ class ToTensorMap(object):
 
 
 # ======================================================================================================================
-# defining function which manipulate the classes above
+# defining functions which manipulate the classes above
 # ======================================================================================================================
 def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, dilation=0):
     """
@@ -238,6 +239,41 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, di
     threshold_list = [(ii - SENS_MEAN) / SENS_STD for ii in threshold_list] if abs_sens else [ii / SENS_STD for ii in threshold_list]
 
     return train_loader, test_loaders, threshold_list
+
+
+def import_data_set_test(path, batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, dilation=0, shuffle=False):
+    """
+    This function imports the train and test database
+    :param path: path to the database location
+    :param batch_size: size of each batch in the databases
+    :param mixup_factor: for the training dataset,  the mixup factor
+    :param mixup_prob: for the training dataset, probability of performing mixup with the mixup factor
+    :param abs_sens: if true, doing absolute value over teh sensitivity
+    :param dilation: amount of dilation done for the cylinder locations
+    :param shuffle: Boolean stating if we want to shuffle the database or not
+    :return: two datasets, training and test
+    """
+    # --------------------------------------------------------------------------------------------------------------
+    # Importing complete dataset and creating train dataloader
+    # --------------------------------------------------------------------------------------------------------------
+    dataset = ScattererCoordinateDataset(csv_files=path,
+                                         transform=ToTensorMap(),
+                                         case='test',
+                                         mix_factor=mixup_factor,
+                                         mix_prob=mixup_prob,
+                                         abs_sens=abs_sens,
+                                         dilation=dilation)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=0)
+
+    # ******************************************************************************************************
+    # extracting the data-loader key from the name
+    # ******************************************************************************************************
+    file_name_list = path[0].split('\\')[-1].split('_')
+    if 'lt' in file_name_list:
+        loader_key = '0_to_' + file_name_list[-2]
+    else:
+        loader_key = file_name_list[-2] + '_to_' + get_next_threshold(PATH_DATABASE_TEST, int(file_name_list[-2][0]))
+    return {loader_key: data_loader}
 
 
 # ======================================================================================================================

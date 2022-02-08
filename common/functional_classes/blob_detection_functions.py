@@ -34,13 +34,16 @@ class BlobDetectionFunctions:
         * peak_threshold -> threshold for the peak detection
         * kernel_size    -> size of the gaussian kernel
     """
-    def __init__(self, peak_threshold=1, kernel_size=25):
+    def __init__(self, peak_threshold=1, kernel_size=25, sigma_0=0.4, scale=1.15, k=10):
         """
         :param peak_threshold: Threshold for local maxima detection
         :param kernel_size: size of the gaussian kernel
         """
         self.peak_th     = peak_threshold
         self.kernel_size = kernel_size
+        self.sigma_0     = sigma_0
+        self.scale       = scale
+        self.k           = k
 
     @staticmethod
     def create_gaussian_kernel(size, sigma):
@@ -58,12 +61,12 @@ class BlobDetectionFunctions:
         kern2d = np.outer(kern1d, kern1d)
         return kern2d
 
-    def create_scale_space(self, image, sigma_0, scale, k=10):
+    def create_scale_space(self, image):
         """
         :param image:input image, numpy 2D array, meaning 1 channel only
-        :param sigma_0: Initial scale
-        :param scale: The multiplication factor in the scale sense.
-        :param k: size of the scale dimension
+        sigma_0: Initial scale
+        scale: The multiplication factor in the scale sense.
+        k: size of the scale dimension
         :return: The function computes a scale space from the given 2-D image. This means that:
                     sigma_i = sigma_0 * (scale^i) where i = 0,1, ... , k-1
                 For each scale we create a gaussian kernel with std sigma_i and convolve the kernel with the image.
@@ -71,6 +74,9 @@ class BlobDetectionFunctions:
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
+        sigma_0 = self.sigma_0
+        scale   = self.scale
+        k       = self.k
         scale_space = np.zeros(list(image.shape) + [k])
         # ==============================================================================================================
         # Performing convolution with the wanted kernels
@@ -81,18 +87,16 @@ class BlobDetectionFunctions:
             scale_space[:, :, ii] = convolve2d(image, kernel, mode='same')
         return scale_space
 
-    @staticmethod
-    def create_dog_space(scale_space, scale=None):
+    def create_dog_space(self, scale_space):
         """
         :param scale_space: A 3D scale space  numpy arrat where the scale dimension is at dim=2
-        :param scale: Optional, if not None, dividing the DoG space by (scale-1)
+        scale: Optional, if not None, dividing the DoG space by (scale-1)
         :return: DoG space, Difference of Gaussian space. This is an approximation for the NLoG space
         """
+        scale = self.scale
         sign = -1 if scale > 1 else 1
         dog_space = sign * (scale_space[:, :, 1:] - scale_space[:, :, :-1])
-        if scale is not None:
-            return dog_space / (scale-1)
-        return dog_space
+        return dog_space / (scale-1)
 
     def extract_local_maxima(self, dog_space):
         """
@@ -129,16 +133,6 @@ class BlobDetectionFunctions:
         xx_max = xx[max_3d]
         yy_max = yy[max_3d]
         zz_max = zz[max_3d]
+        values = dog_space[yy_max, xx_max, zz_max]
 
-        return np.hstack((xx_max[..., np.newaxis], yy_max[..., np.newaxis], zz_max[..., np.newaxis]))
-
-    @staticmethod
-    def save_blob_centers(blob_mat, path, filename=None):
-        """
-        :param blob_mat: 2D matrix holding the blob center of mass location and scale such that:
-                            [x_coord, y_coord, scale]
-        :param path: full path to save the data
-        :param filename: optional, file name of the saved csv file
-        :return: saves the blob centers and scales to a csv file
-        """
-        pass
+        return np.hstack((xx_max[..., np.newaxis], yy_max[..., np.newaxis], zz_max[..., np.newaxis], values[..., np.newaxis]))

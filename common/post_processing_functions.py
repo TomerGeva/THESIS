@@ -7,11 +7,12 @@ from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
 
-from ScatterCoordinateDataset import import_data_sets
+from ScatterCoordinateDataset import import_data_sets, import_data_set_test
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
 from roc_det_functions import RocDetFunctions
 from blob_detection_functions import BlobDetectionFunctions
+from database_functions import DatabaseFunctions
 from time import time
 
 
@@ -236,24 +237,24 @@ class PostProcessing:
                 # ------------------------------------------------------------------------------
                 # Plotting manually
                 # ------------------------------------------------------------------------------
-                plt.figure()
-                plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
-                plt.title("Target Output - Model Input")
-                plt.figure()
-                plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
-                plt.title("Model output - Raw")
-                plt.figure()
-                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
-                plt.title("Model output - After Step at 0.5")
-                plt.figure()
-                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
-                plt.title("Model output - After Step at 0.1")
+                # plt.figure()
+                # plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+                # plt.title("Target Output - Model Input")
+                # plt.figure()
+                # plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+                # plt.title("Model output - Raw")
+                # plt.figure()
+                # plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
+                # plt.title("Model output - After Step at 0.5")
+                # plt.figure()
+                # plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
+                # plt.title("Model output - After Step at 0.1")
 
                 mu_temp = mu.cpu().detach().numpy()
                 var_temp = np.exp(logvar.cpu().detach().numpy())
                 target = sensitivities.cpu().detach().numpy()
                 output = outputs.cpu().detach().numpy()
-                pf.plot_latent(mu_temp, var_temp, target, output)
+                # pf.plot_latent(mu_temp, var_temp, target, output)
                 # for jj in range(20):
                 #     mu_temp     = mu[jj, :].cpu().detach().numpy()
                 #     var_temp    = np.exp(logvar[jj, :].cpu().detach().numpy())
@@ -312,8 +313,8 @@ class PostProcessing:
         pf.plot_det_curve(main_dict, name_prefixes=prefix_list, thresholds=thr, save_plt=True, path=path, epoch=epoch)
 
     @staticmethod
-    def load_model_detect_blobs(path, epoch, key='3e+05_to_inf',
-                                sigma_0=0.25, scale=1.15, k=15, peak_threshold=3, kernel_size=25):
+    def load_model_compare_blobs(path, epoch, key='3e+05_to_inf',
+                                 sigma_0=0.3, scale=1.15, k=15, peak_threshold=3, kernel_size=25):
         """
         :param path: path to saved model
         :param epoch: epoch of saved model
@@ -324,17 +325,26 @@ class PostProcessing:
         :param peak_threshold: threshold for local maxima classification
         :param kernel_size: size of the gaussian kernel
         :return: Function loads a model and a test loader, passes a single grid through the model and computes the
-                 maximum locations for both the input and the output
+                 maximum locations for both the input and the output. Plots the differences and saves the reconstructed
+                 inputs in csv file
         """
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
         sigmoid = torch.nn.Sigmoid()
         pf  = PlottingFunctions()
+        dbf = DatabaseFunctions()
         pff = PathFindingFunctions()
         mmf = ModelManipulationFunctions()
-        bdf = BlobDetectionFunctions(peak_threshold=peak_threshold, kernel_size=kernel_size)
-
+        bdf = BlobDetectionFunctions(peak_threshold=peak_threshold,
+                                     kernel_size=kernel_size,
+                                     sigma_0=sigma_0,
+                                     scale=scale,
+                                     k=k)
+        x_rate = (XRANGE[1] - XRANGE[0] + 1) / XQUANTIZE
+        y_rate = (YRANGE[1] - YRANGE[0] + 1) / YQUANTIZE
+        dmin   = DMIN
+        threshold = 0.35
         # ==============================================================================================================
         # Extracting the full file path
         # ==============================================================================================================
@@ -342,11 +352,12 @@ class PostProcessing:
         # ==============================================================================================================
         # Loading the needed models and data
         # ==============================================================================================================
-        _, test_loaders, _ = import_data_sets(1,  # BATCH_SIZE,
-                                              mixup_factor=MIXUP_FACTOR,
-                                              mixup_prob=MIXUP_PROB,
-                                              abs_sens=ABS_SENS,
-                                              dilation=DILATION)
+        test_loaders = import_data_set_test([PATH_DATABASE_TEST[-1]], batch_size=1,
+                                            mixup_factor=MIXUP_FACTOR,
+                                            mixup_prob=MIXUP_PROB,
+                                            abs_sens=ABS_SENS,
+                                            dilation=DILATION,
+                                            shuffle=False)
         test_loader = test_loaders[key]
         mod_vae, _ = mmf.load_state_train(chosen_file)
         mod_vae.eval()
@@ -360,22 +371,67 @@ class PostProcessing:
             # Extracting the grids and sensitivities
             # ------------------------------------------------------------------------------
             grids = Variable(sample['grid_in'].float()).to(mod_vae.device)
-            grid_targets = np.squeeze(sample['grid_target'].detach().numpy()).astype(int)
+            origin_points = np.squeeze(sample['coordinate_target'].detach().numpy()).astype(int)
             # ------------------------------------------------------------------------------
             # Forward pass
             # ------------------------------------------------------------------------------
-            grid_out, _, _, _ = mod_vae(grids)
+            grid_out, sens_out, _, _ = mod_vae(grids)
             grid_out = np.squeeze(sigmoid(grid_out).cpu().detach().numpy())
+            grid_out_sliced = mmf.slice_grid(grid_out, threshold)
         # ==============================================================================================================
         # Creating scale space and DoG space
         # ==============================================================================================================
-        scale_space = bdf.create_scale_space(grid_targets, sigma_0=sigma_0, scale=scale, k=k)
-        dog_space   = bdf.create_dog_space(scale_space, scale=scale)
-        local_max   = bdf.extract_local_maxima(dog_space)
-        scale_space2 = bdf.create_scale_space(grid_out, sigma_0=sigma_0, scale=scale, k=k)
-        dog_space2   = bdf.create_dog_space(scale_space2, scale=scale)
-        local_max2   = bdf.extract_local_maxima(dog_space2)
-        print('hi')
+        print('Computing scale space . . . ')
+        scale_space         = bdf.create_scale_space(grid_out)
+        scale_space_sliced  = bdf.create_scale_space(grid_out_sliced)
+        print('Computing Difference of Gaussians space . . . ')
+        dog_space           = bdf.create_dog_space(scale_space)
+        dog_space_sliced    = bdf.create_dog_space(scale_space_sliced)
+        print('Finding local maxima . .. ')
+        local_max           = bdf.extract_local_maxima(dog_space)
+        local_max_sliced    = bdf.extract_local_maxima(dog_space_sliced)
+        # ==============================================================================================================
+        # Removing the cylinders based on the minimal distance and blob size
+        # ==============================================================================================================
+        print('Making array valid . . .')
+        valid_array         = dbf.check_array_validity(local_max, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
+        valid_array_sliced  = dbf.check_array_validity(local_max_sliced, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
+        print('Valid array saved to ' + os.path.join(path, PP_DATA))
+        dbf.save_array(valid_array, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_raw.csv')
+        dbf.save_array(valid_array_sliced, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_sliced.csv')
+        # ==============================================================================================================
+        # Getting differences between the original and reconstructed coordinates
+        # ==============================================================================================================
+        print('Computing differences . . .')
+        model_unique, origin_unique = dbf.find_differences(valid_array, origin_points, x_rate, y_rate, dmin)
+        model_unique_sliced, origin_unique_sliced = dbf.find_differences(valid_array_sliced, origin_points, x_rate, y_rate, dmin)
+        # ==============================================================================================================
+        # Plotting
+        # ==============================================================================================================
+        plt.figure()
+        plt.imshow(1-grid_out, cmap='gray')
+        plt.scatter(origin_points[:, 0], origin_points[:, 1], marker='s')
+        plt.scatter(valid_array[:, 0], valid_array[:, 1])
+        plt.scatter(origin_unique[:, 0], origin_unique[:, 1], marker='d')
+        plt.scatter(model_unique[:, 0], model_unique[:, 1], marker='^')
+        plt.legend(['original', 'reconstructed',  'original unique', 'reconstructed unique'])
+        plt.title('Raw Output: Original: ' + str(origin_points.shape[0]) +
+                  ' Reconstructed: ' + str(valid_array.shape[0]) +
+                  ', Unique Original: ' + str(origin_unique.shape[0]) +
+                  ', Unique Reconstructed: ' + str(model_unique.shape[0]))
+
+        plt.figure()
+        plt.imshow(1 - grid_out_sliced, cmap='gray')
+        plt.scatter(origin_points[:, 0], origin_points[:, 1], marker='s')
+        plt.scatter(valid_array_sliced[:, 0], valid_array_sliced[:, 1])
+        plt.scatter(origin_unique_sliced[:, 0], origin_unique_sliced[:, 1], marker='d')
+        plt.scatter(model_unique_sliced[:, 0], model_unique_sliced[:, 1], marker='^')
+        plt.legend(['original', 'reconstructed', 'original unique', 'reconstructed unique'])
+        plt.title('Slicer at ' + str(threshold) + ': Original: ' + str(origin_points.shape[0]) +
+                  ' Reconstructed: ' + str(valid_array_sliced.shape[0]) +
+                  ', Unique Original: ' + str(origin_unique_sliced.shape[0]) +
+                  ', Unique Reconstructed: ' + str(model_unique_sliced.shape[0]))
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -443,7 +499,7 @@ if __name__ == '__main__':
     # prefix_list    = ['1e+05_to_2e+05']
     # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list, threshold_list)
 
-    pp.load_model_detect_blobs(c_path, c_epoch, key='3e+05_to_inf')
+    pp.load_model_compare_blobs(c_path, c_epoch, key='3e+05_to_inf')
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path)
     # pp.get_latent_statistics(c_path, c_epoch)
