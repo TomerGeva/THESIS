@@ -266,6 +266,7 @@ def pass_through_save_scat(latent_vec, decoder, path, sigma_0=0.3, scale=1.15, k
 
 
 if __name__ == '__main__':
+    torch.manual_seed(SEED)
     phase = 1
     # ================================================================================
     # Training VAE on scatterer arrays and matching sensitivities

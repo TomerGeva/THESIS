@@ -16,6 +16,7 @@ YQUANTIZE = 2500  # number of quantization points in the Y coordinate
 
 DMIN = 0.1  # minimal allowed distance between cylinder centers, in micro-meters
 
+SEED = 140993
 # ==================================================================================================================
 # DATALOADER HYPER-PARAMETERS
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
