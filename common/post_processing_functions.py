@@ -236,10 +236,11 @@ class PostProcessing:
         pf.plot_det_curve(data_dict, name_prefixes=[key], save_plt=True, path=path, epoch=epoch)
 
     @staticmethod
-    def get_latent_statistics(path, epoch):
+    def get_latent_statistics(path, epoch, save_plt=True):
         """
         :param path: path to a model training results folder
         :param epoch: wanted epoch to load
+        :param save_plt:
         :return: the function prints out plot of the statistics regarding the latent space
         """
         pf  = PlottingFunctions()
@@ -317,14 +318,14 @@ class PostProcessing:
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
-        output_filename = key + f'_tpr_fpr_npr_epoch_{epoch}.json'
+        output_filename = key + f'_latent_statistics_epoch_{epoch}.json'
         output_filepath = os.path.join(path, 'post_processing', output_filename)
         # ----------------------------------------------------------------------------------------------------------
         # creating a dictionary with the data
         # ----------------------------------------------------------------------------------------------------------
         all_output_data = [{
-            'mean_expectation': mu_means,
-            'mean_std': std_means,
+            'mean_expectation': [list(mu_means[:, ii]) for ii in range(mu_means.shape[1])],
+            'mean_std': [list(std_means[:, ii]) for ii in range(std_means.shape[1])],
         }]
         # ----------------------------------------------------------------------------------------------------------
         # Saving
@@ -336,7 +337,8 @@ class PostProcessing:
         # ==============================================================================================================
         mu_dim = np.mean(mu_means, axis=1)
         std_dim = np.mean(std_means, axis=1)
-        plt.figure()
+        latent = plt.figure()
+        latent.set_size_inches(18.5, 10.5)
         ax1 = plt.subplot(2, 1, 1)
         plt.plot(mu_dim, 'o')
         plt.title('Expectation mean per index, latent space')
@@ -349,8 +351,95 @@ class PostProcessing:
         plt.xlabel('index')
         plt.ylabel('mean')
         plt.grid()
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None) and (epoch is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename = f'latent_statistics_{epoch}.png'
+            filename = key + '_' + filename
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            latent.savefig(os.path.join(path, FIG_DIR, filename))
         plt.show()
         pass
+
+    @staticmethod
+    def load_data_plot_latent_statistics(path, epoch, prefix_list, save_plt=True):
+        """
+        :param path:
+        :param epoch:
+        :param prefix_list:
+        :param save_plt
+        :return:
+        """
+        # ==============================================================================================================
+        # Loading the saved data
+        # ==============================================================================================================
+        main_dict = {}
+        for prefix in prefix_list:
+            filename = prefix + f'_latent_statistics_epoch_{epoch}.json'
+            filepath = os.path.join(path, PP_DATA, filename)
+            with open(filepath, mode='r', encoding='utf-8') as json_f:
+                results_dict = json.load(json_f)[-1]
+            main_dict[prefix] = results_dict
+        # ==============================================================================================================
+        # Plotting
+        # ==============================================================================================================
+        latent = plt.figure()
+        latent.set_size_inches(18.5, 10.5)
+        ax1    = plt.subplot(2, 1, 1)
+        plt.title('Expectation mean per index, latent space')
+        plt.xlabel('index')
+        plt.ylabel('mean')
+        plt.grid()
+        ax2    = plt.subplot(2, 1, 2)
+        plt.title('Variance mean per index, latent space')
+        plt.xlabel('index')
+        plt.ylabel('mean')
+        plt.grid()
+        for prefix in prefix_list:
+            # ------------------------------------------------------------------------------------------------------
+            # Extracting data
+            # ------------------------------------------------------------------------------------------------------
+            mu_means  = np.array(main_dict[prefix]['mean_expectation'])
+            std_means = np.array(main_dict[prefix]['mean_std'])
+            # ------------------------------------------------------------------------------------------------------
+            # Plotting it
+            # ------------------------------------------------------------------------------------------------------
+            mu_dim  = np.mean(mu_means, axis=0)
+            std_dim = np.mean(std_means, axis=0)
+            ax1.plot(mu_dim, 'o', label=prefix)
+            ax2.plot(std_dim, 'o', label=prefix)
+        plt.legend()
+
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None) and (epoch is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename = f'_latent_statistics_{epoch}.png'
+            filename = prefix_list[0] + '_' + filename if len(prefix_list) == 1 else 'combined_' + filename
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            latent.savefig(os.path.join(path, FIG_DIR, filename))
+        plt.show()
 
     @staticmethod
     def load_data_plot_roc_det(path, epoch, prefix_list, threshold_list=None):
@@ -577,7 +666,8 @@ if __name__ == '__main__':
     # pp.load_model_compare_blobs(c_path, c_epoch, key='3e+05_to_inf')
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path, spacing=10)
-    pp.get_latent_statistics(c_path, c_epoch)
+    # pp.get_latent_statistics(c_path, c_epoch)
+    pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
     # pp.log_to_plot(c_path)
 
 
