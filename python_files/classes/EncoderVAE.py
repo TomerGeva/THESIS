@@ -34,7 +34,7 @@ class EncoderVAE(nn.Module):
                 conv_len += 1
                 channels = action[1].out_channels
                 self.layers.append(SeparableConvBlock(action[1]))
-            if 'conv' in action[0]:
+            elif 'conv' in action[0]:
                 conv_len += 1
                 channels = action[1].out_channels
                 self.layers.append(ConvBlock(action[1]))

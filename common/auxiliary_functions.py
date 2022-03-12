@@ -185,10 +185,11 @@ class PlottingFunctions:
             leg = name_prefix + ' AuMC value: {:.3}'.format(aumc)
             plt.plot(fpr, tpr, linewidth=2, label=leg)
         # ==============================================================================================================
-        # Plotting thresholds scatter
+        # Plotting thresholds scatter if needed
         # ==============================================================================================================
-        for jj, threshold in enumerate(thresholds):
-            plt.plot(fpr_scatter[jj, :], tpr_scatter[jj, :], 'o', label=f'threshold = {threshold}')
+        if thresholds is not None:
+            for jj, threshold in enumerate(thresholds):
+                plt.plot(fpr_scatter[jj, :], tpr_scatter[jj, :], 'o', label=f'threshold = {threshold}')
         # ==============================================================================================================
         # General Plotting
         # ==============================================================================================================
@@ -265,8 +266,9 @@ class PlottingFunctions:
         # ==============================================================================================================
         # Plotting thresholds scatter
         # ==============================================================================================================
-        for jj, threshold in enumerate(thresholds):
-            plt.plot(fpr_scatter[jj, :], fnr_scatter[jj, :], 'o', label=f'threshold = {threshold}')  #  label='_nolegend_'
+        if thresholds is not None:
+            for jj, threshold in enumerate(thresholds):
+                plt.plot(fpr_scatter[jj, :], fnr_scatter[jj, :], 'o', label=f'threshold = {threshold}')  #  label='_nolegend_'
         # ==============================================================================================================
         # Changing to normal distribution presentation
         # ==============================================================================================================

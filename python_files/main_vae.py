@@ -281,14 +281,14 @@ if __name__ == '__main__':
     # ================================================================================
     if phase == 1:
         load_path   = None
-        # load_path  = '..\\results\\12_1_2022_6_51'
-        load_epoch  = 240
+        load_path  = '..\\results\\10_2_2022_16_45'
+        load_epoch  = 80
         copy_path   = None
         # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320
 
-        # enc_type = encoder_type_e.VGG
-        enc_type = encoder_type_e.SEPARABLE
+        enc_type = encoder_type_e.VGG
+        # enc_type = encoder_type_e.SEPARABLE
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,
                  copy_weights=copy_path, copy_weights_epoch=copy_epoch)

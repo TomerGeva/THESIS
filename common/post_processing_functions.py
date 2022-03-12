@@ -21,14 +21,16 @@ class PostProcessing:
         pass
 
     @staticmethod
-    def log_to_plot(path):
+    def log_to_plot(path, spacing=1, save_plt=True):
         """
         :param path: path to a result folder
+        :param spacing: epoch distance between plots
+        :param save_plt:
         :return: the function reads the log and creates a plot of RMS loss, with all the test databases documented
         """
-        # ====================================================================================================
+        # ==============================================================================================================
         # Local variables
-        # ====================================================================================================
+        # ==============================================================================================================
         filename    = os.path.join(path, 'logger_vae.txt')
         fileID      = open(filename, 'r')
         lines       = fileID.readlines()
@@ -37,67 +39,118 @@ class PostProcessing:
         reached_start  = False
         epoch_list     = []
         keys_list      = []
-        test_results   = {}
+        test_wmse      = {}
+        test_grid      = {}
 
-        train_label    = None
-        train_mse_loss = []
-        train_dkl_loss = []
-        train_tot_loss = []
-        # ====================================================================================================
+        train_label     = None
+        train_mse_loss  = []
+        train_dkl_loss  = []
+        train_grid_loss = []
+        train_tot_loss  = []
+        # ==============================================================================================================
         # Going over lines, adding to log
-        # ====================================================================================================
+        # ==============================================================================================================
         for line in lines:
-            # --------------------------------------------------------------------------------------------
+            # ------------------------------------------------------------------------------------------------------
             # Getting to beginning of training
-            # --------------------------------------------------------------------------------------------
+            # ------------------------------------------------------------------------------------------------------
             if not reached_start and 'Beginning Training' not in line:
                 continue
             elif not reached_start:
                 reached_start = True
                 continue
-            # --------------------------------------------------------------------------------------------
+            # ------------------------------------------------------------------------------------------------------
             # Reached beginning, going over cases
-            # --------------------------------------------------------------------------------------------
+            # ------------------------------------------------------------------------------------------------------
             words = list(filter(None, line.split(sep=' ')))
             if 'Epoch' in line:
-                epoch_list.append(int(words[-1]))
+                try:
+                    epoch_list.append(int(words[4]))
+                except ValueError:
+                    epoch_list.append(int(words[4][:-1]))
             elif 'train' in line.lower():
                 if train_label is None:
                     train_label = words[3]
                 train_mse_loss.append(float(words[7]))
                 train_dkl_loss.append(float(words[9]))
+                train_grid_loss.append(float(words[13]))
                 train_tot_loss.append(float(words[16]))
             elif 'MSE' in line:
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # one of the test databases
-                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 temp_key = words[3]
-                if temp_key in keys_list:
-                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    # if key already exists, appends the result
-                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    test_results[temp_key].append(float(words[10]))
-                else:
-                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                if temp_key not in keys_list:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     # if key does not exist, creates a new list
-                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     keys_list.append(temp_key)
-                    test_results[temp_key] = [float(words[10])]
+                    test_wmse[temp_key] = []
+                    test_grid[temp_key] = []
+                test_wmse[temp_key].append(float(words[10]))
+                test_grid[temp_key].append(float(words[13]))
 
-        # ====================================================================================================
+        # ==============================================================================================================
         # Plotting the results
-        # ====================================================================================================
-        plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in train_mse_loss], '-o', label=train_label)
+        # ==============================================================================================================
+        epoch_len = len(epoch_list)
+        # ------------------------------------------------------------------------------------------------------
+        # Sensitivity plot
+        # ------------------------------------------------------------------------------------------------------
+        sens_plt = plt.figure()
+        plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
         for test_db in keys_list:
             if '15_22' in path:
-                plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
+                plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db]], '-o', label=test_db)
             else:
-                plt.plot(epoch_list, [math.sqrt(x) * SENS_STD for x in test_results[test_db]], '-o', label=test_db)
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         plt.xlabel('Epoch')
         plt.ylabel('RMS Loss')
         plt.title('RMS loss vs Epoch number')
         plt.legend()
         plt.grid()
+        # ------------------------------------------------------------------------------------------------------
+        # D_kl plot
+        # ------------------------------------------------------------------------------------------------------
+        dkl_plt = plt.figure()
+        plt.plot(epoch_list[0:epoch_len:spacing], train_dkl_loss[0:epoch_len:spacing], '-o', label=train_label)
+        plt.xlabel('Epoch')
+        plt.ylabel('D_kl')
+        plt.title('D_kl loss vs Epoch number')
+        plt.grid()
+        # ------------------------------------------------------------------------------------------------------
+        # Grid loss plot
+        # ------------------------------------------------------------------------------------------------------
+        grid_plt = plt.figure()
+        plt.semilogy(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
+        for test_db in keys_list:
+            plt.plot(epoch_list[0:epoch_len:spacing], test_grid[test_db][0:epoch_len:spacing], '-o', label=test_db)
+        plt.xlabel('Epoch')
+        plt.ylabel('Cross Entropy Loss')
+        plt.title('Reconstruction loss vs Epoch number')
+        plt.legend()
+        plt.grid()
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename_sens = f'sensitivity_loss_training.png'
+            filename_dkl  = f'dkl_loss_training.png'
+            filename_grid = f'grid_loss_training.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            sens_plt.savefig(os.path.join(path, FIG_DIR, filename_sens))
+            dkl_plt.savefig(os.path.join(path, FIG_DIR, filename_dkl))
+            grid_plt.savefig(os.path.join(path, FIG_DIR, filename_grid))
         plt.show()
 
     @staticmethod
@@ -193,23 +246,21 @@ class PostProcessing:
         pff = PathFindingFunctions()
         mff = ModelManipulationFunctions()
         sigmoid = torch.nn.Sigmoid()
-        # ======================================================================================
+        # ==============================================================================================================
         # Extracting the full file path
-        # ======================================================================================
+        # ==============================================================================================================
         chosen_file = pff. get_full_path(path, epoch)
-        # ======================================================================================
+        # ==============================================================================================================
         # Loading the needed models and data
-        # ======================================================================================
+        # ==============================================================================================================
         train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
         mod_vae, trainer = mff.load_state_train(chosen_file)
 
-        # ======================================================================================
+        # ==============================================================================================================
         # Extracting statistics
-        # ======================================================================================
-        test_loader_iter = iter(test_loaders['3e+05_to_inf'])
-        # test_loader_iter = iter(test_loaders['2e+05_to_3e+05'])
-        # test_loader_iter = iter(test_loaders['1e+05_to_2e+05'])
-        # test_loader_iter = iter(test_loaders['0_to_1e+05'])
+        # ==============================================================================================================
+        key = '3e+05_to_inf'  # '3e+05_to_inf' '2e+05_to_3e+05' '1e+05_to_2e+05' '0_to_1e+05'
+        test_loader_iter = iter(test_loaders[key])
         mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         mod_vae.eval()
@@ -234,6 +285,7 @@ class PostProcessing:
                 # ------------------------------------------------------------------------------
                 mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
                 std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
+                """
                 # ------------------------------------------------------------------------------
                 # Plotting manually
                 # ------------------------------------------------------------------------------
@@ -250,10 +302,10 @@ class PostProcessing:
                 # plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
                 # plt.title("Model output - After Step at 0.1")
 
-                mu_temp = mu.cpu().detach().numpy()
-                var_temp = np.exp(logvar.cpu().detach().numpy())
-                target = sensitivities.cpu().detach().numpy()
-                output = outputs.cpu().detach().numpy()
+                # mu_temp = mu.cpu().detach().numpy()
+                # var_temp = np.exp(logvar.cpu().detach().numpy())
+                # target = sensitivities.cpu().detach().numpy()
+                # output = outputs.cpu().detach().numpy()
                 # pf.plot_latent(mu_temp, var_temp, target, output)
                 # for jj in range(20):
                 #     mu_temp     = mu[jj, :].cpu().detach().numpy()
@@ -261,10 +313,27 @@ class PostProcessing:
                 #     target      = sensitivities[jj, :].cpu().detach().numpy()
                 #     output      = outputs[jj, :].cpu().detach().numpy()
                 #     plot_latent(mu_temp, var_temp, target, output)
-
-        # ======================================================================================
+                """
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        output_filename = key + f'_tpr_fpr_npr_epoch_{epoch}.json'
+        output_filepath = os.path.join(path, 'post_processing', output_filename)
+        # ----------------------------------------------------------------------------------------------------------
+        # creating a dictionary with the data
+        # ----------------------------------------------------------------------------------------------------------
+        all_output_data = [{
+            'mean_expectation': mu_means,
+            'mean_std': std_means,
+        }]
+        # ----------------------------------------------------------------------------------------------------------
+        # Saving
+        # ----------------------------------------------------------------------------------------------------------
+        with open(output_filepath, 'w', encoding='utf-8') as f:
+            json.dump(all_output_data, f, indent=4)
+        # ==============================================================================================================
         # Plotting statistics
-        # ======================================================================================
+        # ==============================================================================================================
         mu_dim = np.mean(mu_means, axis=1)
         std_dim = np.mean(std_means, axis=1)
         plt.figure()
@@ -357,7 +426,7 @@ class PostProcessing:
                                             mixup_prob=MIXUP_PROB,
                                             abs_sens=ABS_SENS,
                                             dilation=DILATION,
-                                            shuffle=False)
+                                            shuffle=True)
         test_loader = test_loaders[key]
         mod_vae, _ = mmf.load_state_train(chosen_file)
         mod_vae.eval()
@@ -490,19 +559,25 @@ if __name__ == '__main__':
     # 2_1_2022_7_50 -  VGG latent space 50, scatterer dilation of 3  after padding fix
     # 12_1_2022_6_51 - VGG latent space 50, scaterrer dilation of 4 after padding fix, GREAT RESULTS!
     # c_path = '..\\results\\12_12_2021_23_5'
-    c_path = '..\\results\\16_1_2022_21_39'
-    c_epoch = 700
+    # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
+    # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
+
+    # c_path = '..\\results\\16_1_2022_21_39'
+    # c_path = '..\\results\\10_2_2022_16_45'
+    c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
+
+    c_epoch = 680
     pp = PostProcessing()
 
     threshold_list = [0.1, 0.2, 0.5]
     prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
-    # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list, threshold_list)
+    # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
-    pp.load_model_compare_blobs(c_path, c_epoch, key='3e+05_to_inf')
+    # pp.load_model_compare_blobs(c_path, c_epoch, key='3e+05_to_inf')
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
-    # pp.log_to_plot(c_path)
-    # pp.get_latent_statistics(c_path, c_epoch)
+    # pp.log_to_plot(c_path, spacing=10)
+    pp.get_latent_statistics(c_path, c_epoch)
     # pp.log_to_plot(c_path)
 
 

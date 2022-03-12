@@ -33,6 +33,7 @@ MIXUP_FACTOR   = 0.3  # mixup parameter for the data
 MIXUP_PROB     = 0  # mixup probability
 NUM_WORKERS    = 8
 BATCH_SIZE     = 64
+OPTIMIZE_TIME  = True
 
 
 # ==================================================================================================================

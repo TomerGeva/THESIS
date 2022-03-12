@@ -52,18 +52,19 @@ class ScattererCoordinateDataset(Dataset):
         self.dbf          = DatabaseFunctions()
 
     def __len__(self):
-        return sum(self.csv_lens)
+        return 2 * sum(self.csv_lens)
 
     def __getitem__(self, idx, mixup=True):
         if torch.is_tensor(idx):
             idx = idx.tolist()
+        idx_new = idx - sum(self.csv_lens) if idx >= sum(self.csv_lens) else idx
         # ----------------------------------------------------------------------------------------------------------
         # Extracting row from specific file
         # ----------------------------------------------------------------------------------------------------------
         counter = 0
         for file_idx in range(len(self.csv_lens)):
-            if idx < counter + self.csv_lens[file_idx]:
-                row_idx = idx - counter
+            if idx_new < counter + self.csv_lens[file_idx]:
+                row_idx = idx_new - counter
                 break
             else:
                 counter += self.csv_lens[file_idx]
@@ -89,8 +90,12 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # Converting the points to a 2-D array
         # ----------------------------------------------------------------------------------------------------------
+        # training has 50% chance to flip, test checks un-flipped and flipped
+        if idx >= sum(self.csv_lens):
+            # print(self.case, idx)
+            # print(idx, idx_new, sum(self.csv_lens))
+            pixel_points = np.fliplr(pixel_points)
         grid_array = self.dbf.points2mat(pixel_points)
-
         # ----------------------------------------------------------------------------------------------------------
         # Dilating the cylinder locations
         # ----------------------------------------------------------------------------------------------------------
@@ -145,8 +150,8 @@ class ScattererCoordinateDataset(Dataset):
             sample['grid'] = sample['grid'] * self.mixup_factor + mix_sample['grid'] * (1 - self.mixup_factor)
             sample['sensitivity'] = sample['sensitivity'] * self.mixup_factor + mix_sample['sensitivity'] * (1 - self.mixup_factor)
         """
-        if self.case == 'test':
-            sample['coordinate_target'] = pixel_points
+        # if self.case == 'test':
+        #     sample['coordinate_target'] = pixel_points
         return sample
 
 
@@ -204,8 +209,8 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, di
                                             mix_factor=mixup_factor,
                                             mix_prob=mixup_prob,
                                             abs_sens=abs_sens,
-                                            dilation=dilation)
-    train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS)
+                                            dilation=dilation,)
+    train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
 
     # --------------------------------------------------------------------------------------------------------------
     # Importing complete dataset and creating test dataloaders
@@ -231,7 +236,8 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, di
         # ******************************************************************************************************
         # creating data-loader
         # ******************************************************************************************************
-        test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False, num_workers=1)
+        test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False,
+                                              num_workers=NUM_WORKERS, pin_memory=True)
 
     # --------------------------------------------------------------------------------------------------------------
     # normalizing thresholds

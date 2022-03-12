@@ -1,6 +1,7 @@
 from ConfigVAE import *
 from torch.autograd import Variable
 from global_const import encoder_type_e
+from time import time
 import os
 import torch
 import torch.nn as nn
@@ -13,7 +14,7 @@ class TrainerVAE:
     This class holds the Trainer for the Variational auto-encoder
     """
     def __init__(self, net, lr=1e-2, mom=0.9, beta_dkl=1, beta_grid=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
-                 group_thresholds=None, group_weights=None, abs_sens=True, training=True):
+                 group_thresholds=None, group_weights=None, abs_sens=True, training=True, optimize_time=False):
         # -------------------------------------
         # cost function
         # -------------------------------------
@@ -50,6 +51,7 @@ class TrainerVAE:
         self.grad_clip      = grad_clip
         self.abs_sens       = abs_sens
         self.training       = training
+        self.optimize_time  = optimize_time
 
     def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets=0, grid_outputs=0, model_out=model_output_e.BOTH):
         if self.training:
@@ -142,8 +144,12 @@ class TrainerVAE:
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
-        # torch.backends.cudnn.benchmark  = True
-        # torch.backends.cudnn.enabled    = True
+        if self.optimize_time:
+            # torch.backends.cudnn.benchmark  = True
+            # torch.backends.cudnn.enabled    = True
+            torch.autograd.set_detect_anomaly(False)  # Warns about gradients getting Nan of Inf
+            torch.autograd.profiler.profile(False)    # Logs time spent on CPU and GPU
+            torch.autograd.profiler.emit_nvtx(False)  # Used for NVIDIA visualizations
         mse_last_group = 1e5  # if mse of last group is better, save the epoch results
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
@@ -154,6 +160,7 @@ class TrainerVAE:
             train_kl_div    = 0.0
             train_grid_mse  = 0.0
             counter         = 0
+            t = time()
             for _ in range(len(train_loader)):
                 # ------------------------------------------------------------------------------
                 # Working with iterables, much faster
@@ -185,7 +192,8 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Back propagation
                 # ------------------------------------------------------------------------------
-                self.optimizer.zero_grad()
+                for param in mod_vae.parameters():  # zero gradients
+                    param.grad = None
                 # gpu_usage()  # DEBUG
                 if mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.SENS:
                     sens_mse_loss.backward()
@@ -200,7 +208,7 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             # Normalizing and documenting training results with LoggerVAE
             # ------------------------------------------------------------------------------
-            logger.log_epoch(epoch)
+            logger.log_epoch(epoch, t)
             train_cost      = train_cost / counter
             train_sens_mse  = train_sens_mse / counter
             train_kl_div    = train_kl_div / counter

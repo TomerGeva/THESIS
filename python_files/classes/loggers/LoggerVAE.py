@@ -4,6 +4,7 @@ from ConfigVAE import *
 from LoggerGeneric import LoggerGeneric
 from database_functions import ModelManipulationFunctions
 from auxiliary_functions import compute_output_dim
+from time import time
 
 
 class LoggerVAE(LoggerGeneric):
@@ -172,8 +173,8 @@ class LoggerVAE(LoggerGeneric):
     # ==================================================================================================================
     # Logging functions
     # ==================================================================================================================
-    def log_epoch(self, epoch_num):
-        self.log_line('Epoch: {0:5d}'.format(epoch_num))
+    def log_epoch(self, epoch_num, t):
+        self.log_line('Epoch: {0:5d}, training time: {1:5.2f}'.format(epoch_num, time() - t))
 
     def log_epoch_results_train(self, header, sens_wmse, d_kl, grid_mse, cost):
         self.log_line(self.get_header(header) + self._get_result_string_train(sens_wmse, d_kl, grid_mse, cost))
