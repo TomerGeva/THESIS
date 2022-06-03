@@ -281,7 +281,10 @@ class DatabaseFunctions:
         """
         rates = np.array([x_rate, y_rate])
         target_unique = []
+        target_approx = []
         inputs_unique = []
+        inputs_approx = []
+        commons       = []
         # ==============================================================================================================
         # For each coordinate in the target coordinates, running the following
         # ==============================================================================================================
@@ -296,6 +299,10 @@ class DatabaseFunctions:
             # ------------------------------------------------------------------------------------------------------
             if np.min(diffs) > dmin / 2:
                 target_unique.append(list(coordinate))
+            elif np.min(diffs) > 0:
+                target_approx.append(list(coordinate))
+            else:
+                commons.append(list(coordinate))
         # ==============================================================================================================
         # For each coordinate in the input coordinates, running the following
         # ==============================================================================================================
@@ -310,20 +317,23 @@ class DatabaseFunctions:
             # ------------------------------------------------------------------------------------------------------
             if np.min(diffs) > dmin:
                 inputs_unique.append(list(coordinate))
-        return np.array(inputs_unique), np.array(target_unique)
+            elif np.min(diffs) > 0:
+                inputs_approx.append(list(coordinate))
+        return np.array(inputs_unique), np.array(target_unique), np.array(inputs_approx), np.array(target_approx), np.array(commons)
 
     @staticmethod
-    def save_array(scat_locations, sensitivity, path, name=None):
+    def save_array(scat_locations, sensitivity, path, name=None, target_sensitivity=None):
         """
         :param scat_locations: NX3 array with N scatterer coordiantes:
                                [x_coord, y_coord, scale]
         :param sensitivity: matching sensitivity of the array
         :param path: path to save the data
         :param name:optional, name of the csv file
+        :param target_sensitivity
         :return:
         """
         titles = ['x_coordinate', 'y_coordinate', 'scale', 'value']
-        sens_row = ['sensitivity', sensitivity]
+        sens_row = ['sensitivity', sensitivity] if target_sensitivity is None else ['sensitivity', sensitivity, 'target', target_sensitivity]
         filename = 'scatterer_coordinates.csv' if name is None else name
         with open(os.path.join(path, filename), 'w', newline='') as f:
             writer   = csv.writer(f)

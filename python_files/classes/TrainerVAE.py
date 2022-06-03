@@ -14,11 +14,13 @@ class TrainerVAE:
     This class holds the Trainer for the Variational auto-encoder
     """
     def __init__(self, net, lr=1e-2, mom=0.9, beta_dkl=1, beta_grid=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
-                 group_thresholds=None, group_weights=None, abs_sens=True, training=True, optimize_time=False):
+                 group_thresholds=None, group_weights=None, abs_sens=True, training=True, optimize_time=False,
+                 grid_pos_weight=1):
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum')
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([XQUANTIZE, YQUANTIZE], device=device) * grid_pos_weight)
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         # -------------------------------------
@@ -48,6 +50,7 @@ class TrainerVAE:
         self.mom            = mom
         self.beta_dkl       = beta_dkl
         self.beta_grid      = beta_grid
+        self.grid_pos_weight = grid_pos_weight
         self.grad_clip      = grad_clip
         self.abs_sens       = abs_sens
         self.training       = training

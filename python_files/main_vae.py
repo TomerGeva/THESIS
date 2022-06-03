@@ -100,7 +100,8 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                              grad_clip=GRAD_CLIP,
                              group_thresholds=thresholds,
                              group_weights=MSE_GROUP_WEIGHT,
-                             abs_sens=ABS_SENS)
+                             abs_sens=ABS_SENS,
+                             grid_pos_weight=GRID_POS_WEIGHT)
     else:
         print('Loading model . . .')
         # ==============================================================================
@@ -281,7 +282,8 @@ if __name__ == '__main__':
     # ================================================================================
     if phase == 1:
         load_path   = None
-        load_path  = '..\\results\\10_2_2022_16_45'
+        # load_path = '..\\results\\9_4_2022_18_43'
+        # load_path  = '..\\results\\11_4_2022_8_10'
         load_epoch  = 80
         copy_path   = None
         # copy_path   = '..\\results\\15_12_2021_23_46'

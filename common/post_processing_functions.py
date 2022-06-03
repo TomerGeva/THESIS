@@ -260,7 +260,7 @@ class PostProcessing:
         # ==============================================================================================================
         # Extracting statistics
         # ==============================================================================================================
-        key = '3e+05_to_inf'  # '3e+05_to_inf' '2e+05_to_3e+05' '1e+05_to_2e+05' '0_to_1e+05'
+        key = '3e+03_to_inf'  # '3e+05_to_inf' '2e+05_to_3e+05' '1e+05_to_2e+05' '0_to_1e+05'
         test_loader_iter = iter(test_loaders[key])
         mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
@@ -286,23 +286,21 @@ class PostProcessing:
                 # ------------------------------------------------------------------------------
                 mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
                 std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
-                """
                 # ------------------------------------------------------------------------------
                 # Plotting manually
                 # ------------------------------------------------------------------------------
-                # plt.figure()
-                # plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
-                # plt.title("Target Output - Model Input")
-                # plt.figure()
-                # plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
-                # plt.title("Model output - Raw")
-                # plt.figure()
-                # plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
-                # plt.title("Model output - After Step at 0.5")
-                # plt.figure()
-                # plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
-                # plt.title("Model output - After Step at 0.1")
-
+                plt.figure()
+                plt.imshow(1 - np.squeeze(sample_batched['grid_target'][0, 0, :, :].cpu().detach().numpy()), cmap='gray')
+                plt.title("Target Output - Model Input")
+                plt.figure()
+                plt.imshow(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()), cmap='gray')
+                plt.title("Model output - Raw")
+                plt.figure()
+                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.5, 1, 0), cmap='gray')
+                plt.title("Model output - After Step at 0.5")
+                plt.figure()
+                plt.imshow(np.where(np.squeeze(1 - sigmoid(grid_outs[0, 0, :, :]).cpu().detach().numpy()) >= 0.9, 1, 0), cmap='gray')
+                plt.title("Model output - After Step at 0.1")
                 # mu_temp = mu.cpu().detach().numpy()
                 # var_temp = np.exp(logvar.cpu().detach().numpy())
                 # target = sensitivities.cpu().detach().numpy()
@@ -314,7 +312,7 @@ class PostProcessing:
                 #     target      = sensitivities[jj, :].cpu().detach().numpy()
                 #     output      = outputs[jj, :].cpu().detach().numpy()
                 #     plot_latent(mu_temp, var_temp, target, output)
-                """
+                print('hi')
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
@@ -502,7 +500,7 @@ class PostProcessing:
         x_rate = (XRANGE[1] - XRANGE[0] + 1) / XQUANTIZE
         y_rate = (YRANGE[1] - YRANGE[0] + 1) / YQUANTIZE
         dmin   = DMIN
-        threshold = 0.35
+        threshold = 0.5
         # ==============================================================================================================
         # Extracting the full file path
         # ==============================================================================================================
@@ -510,7 +508,7 @@ class PostProcessing:
         # ==============================================================================================================
         # Loading the needed models and data
         # ==============================================================================================================
-        test_loaders = import_data_set_test([PATH_DATABASE_TEST[-1]], batch_size=1,
+        test_loaders = import_data_set_test([PATH_DATABASE_TEST[-2]], batch_size=1,
                                             mixup_factor=MIXUP_FACTOR,
                                             mixup_prob=MIXUP_PROB,
                                             abs_sens=ABS_SENS,
@@ -530,6 +528,7 @@ class PostProcessing:
             # ------------------------------------------------------------------------------
             grids = Variable(sample['grid_in'].float()).to(mod_vae.device)
             origin_points = np.squeeze(sample['coordinate_target'].detach().numpy()).astype(int)
+            sens_target   = (sample['sensitivity'].detach().numpy() * SENS_STD) + SENS_MEAN
             # ------------------------------------------------------------------------------
             # Forward pass
             # ------------------------------------------------------------------------------
@@ -555,40 +554,66 @@ class PostProcessing:
         valid_array         = dbf.check_array_validity(local_max, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
         valid_array_sliced  = dbf.check_array_validity(local_max_sliced, x_rate=x_rate, y_rate=y_rate, dmin=dmin)
         print('Valid array saved to ' + os.path.join(path, PP_DATA))
-        dbf.save_array(valid_array, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_raw.csv')
-        dbf.save_array(valid_array_sliced, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_sliced.csv')
+        dbf.save_array(valid_array, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_raw7.csv', target_sensitivity=sens_target[0, 0])
+        dbf.save_array(valid_array_sliced, (sens_out.item() * SENS_STD) + SENS_MEAN, os.path.join(path, PP_DATA), name='scatter_sliced7.csv', target_sensitivity=sens_target[0, 0])
         # ==============================================================================================================
         # Getting differences between the original and reconstructed coordinates
         # ==============================================================================================================
         print('Computing differences . . .')
-        model_unique, origin_unique = dbf.find_differences(valid_array, origin_points, x_rate, y_rate, dmin)
-        model_unique_sliced, origin_unique_sliced = dbf.find_differences(valid_array_sliced, origin_points, x_rate, y_rate, dmin)
+        model_unique, origin_unique, model_approx, origin_approx, commons                                    = dbf.find_differences(valid_array, origin_points, x_rate, y_rate, dmin)
+        model_unique_sliced, origin_unique_sliced, model_approx_sliced, origin_approx_sliced, commons_sliced = dbf.find_differences(valid_array_sliced, origin_points, x_rate, y_rate, dmin)
         # ==============================================================================================================
         # Plotting
         # ==============================================================================================================
         plt.figure()
+        leg = []
         plt.imshow(1-grid_out, cmap='gray')
-        plt.scatter(origin_points[:, 0], origin_points[:, 1], marker='s')
-        plt.scatter(valid_array[:, 0], valid_array[:, 1])
-        plt.scatter(origin_unique[:, 0], origin_unique[:, 1], marker='d')
-        plt.scatter(model_unique[:, 0], model_unique[:, 1], marker='^')
-        plt.legend(['original', 'reconstructed',  'original unique', 'reconstructed unique'])
+        if commons.shape[0] > 0:
+            plt.scatter(commons[:, 0], commons[:, 1])
+            leg.append('Similar')
+        if origin_approx.shape[0] > 0:
+            plt.scatter(origin_approx[:, 0], origin_approx[:, 1])
+            leg.append('neighboring, target')
+        if model_approx.shape[0] > 0:
+            plt.scatter(model_approx[:, 0], model_approx[:, 1])
+            leg.append('neighboring, model')
+        if origin_unique.shape[0] > 0:
+            plt.scatter(origin_unique[:, 0], origin_unique[:, 1], marker='d')
+            leg.append('target unique')
+        if model_unique.shape[0] > 0:
+            plt.scatter(model_unique[:, 0], model_unique[:, 1], marker='^')
+            leg.append('model unique')
+        plt.legend(leg)
         plt.title('Raw Output: Original: ' + str(origin_points.shape[0]) +
                   ' Reconstructed: ' + str(valid_array.shape[0]) +
                   ', Unique Original: ' + str(origin_unique.shape[0]) +
                   ', Unique Reconstructed: ' + str(model_unique.shape[0]))
 
         plt.figure()
+        leg = []
         plt.imshow(1 - grid_out_sliced, cmap='gray')
-        plt.scatter(origin_points[:, 0], origin_points[:, 1], marker='s')
-        plt.scatter(valid_array_sliced[:, 0], valid_array_sliced[:, 1])
-        plt.scatter(origin_unique_sliced[:, 0], origin_unique_sliced[:, 1], marker='d')
-        plt.scatter(model_unique_sliced[:, 0], model_unique_sliced[:, 1], marker='^')
-        plt.legend(['original', 'reconstructed', 'original unique', 'reconstructed unique'])
+        if commons_sliced.shape[0] > 0:
+            plt.scatter(commons_sliced[:, 0], commons_sliced[:, 1])
+            leg.append('Similar')
+        if origin_approx_sliced.shape[0] > 0:
+            plt.scatter(origin_approx_sliced[:, 0], origin_approx_sliced[:, 1])
+            leg.append('neighboring, target')
+        if model_approx_sliced.shape[0] > 0:
+            plt.scatter(model_approx_sliced[:, 0], model_approx_sliced[:, 1])
+            leg.append('neighboring, model')
+        if origin_unique_sliced.shape[0] > 0:
+            plt.scatter(origin_unique_sliced[:, 0], origin_unique_sliced[:, 1], marker='d')
+            leg.append('target unique')
+        if model_unique_sliced.shape[0] > 0:
+            plt.scatter(model_unique_sliced[:, 0], model_unique_sliced[:, 1], marker='^')
+            leg.append('model unique')
+        plt.legend(leg)
         plt.title('Slicer at ' + str(threshold) + ': Original: ' + str(origin_points.shape[0]) +
                   ' Reconstructed: ' + str(valid_array_sliced.shape[0]) +
                   ', Unique Original: ' + str(origin_unique_sliced.shape[0]) +
                   ', Unique Reconstructed: ' + str(model_unique_sliced.shape[0]))
+
+        print(f'Target sensitivity: {sens_target[0,0]} ; Predicted sensitivity: {(sens_out.item() * SENS_STD) + SENS_MEAN}')
         plt.show()
 
 
@@ -651,23 +676,27 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
+    c_epoch = 220
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
-    c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
+    # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
+    # c_path = '..\\results\\5_4_2022_10_27'
+    # c_path = '..\\results\\13_4_2022_22_58'
+    c_path = '..\\results\\15_5_2022_17_9'
 
-    c_epoch = 680
     pp = PostProcessing()
 
     threshold_list = [0.1, 0.2, 0.5]
-    prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
+    # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
+    prefix_list    = ['3e+03_to_inf']
     # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
-    # pp.load_model_compare_blobs(c_path, c_epoch, key='3e+05_to_inf')
+    # pp.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path, spacing=10)
-    # pp.get_latent_statistics(c_path, c_epoch)
-    pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
+    pp.get_latent_statistics(c_path, c_epoch)
+    # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
     # pp.log_to_plot(c_path)
 
 
