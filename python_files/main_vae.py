@@ -48,29 +48,20 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
         # Creating the net & trainer objects
         # ============================================================================
         if encoder_type == encoder_type_e.DENSE:
-            mod_vae = ModVAE(device=device,
-                             encoder_topology=DENSE_ENCODER_TOPOLOGY,
-                             decoder_topology=DECODER_TOPOLOGY,
-                             latent_space_dim=LATENT_SPACE_DIM,
-                             encoder_type=encoder_type,
-                             mode=MODE,
-                             model_out=MODEL_OUT)
+            encoder_topology = DENSE_ENCODER_TOPOLOGY
         elif encoder_type == encoder_type_e.VGG:
-            mod_vae = ModVAE(device=device,
-                             encoder_topology=VGG_ENCODER_TOPOLOGY,
-                             decoder_topology=DECODER_TOPOLOGY,
-                             latent_space_dim=LATENT_SPACE_DIM,
-                             encoder_type=encoder_type,
-                             mode=MODE,
-                             model_out=MODEL_OUT)
+            encoder_topology = VGG_ENCODER_TOPOLOGY
         elif encoder_type == encoder_type_e.SEPARABLE:
-            mod_vae = ModVAE(device=device,
-                             encoder_topology=SEPARABLE_ENCODER_TOPOLOGY,
-                             decoder_topology=DECODER_TOPOLOGY,
-                             latent_space_dim=LATENT_SPACE_DIM,
-                             encoder_type=encoder_type,
-                             mode=MODE,
-                             model_out=MODEL_OUT)
+            encoder_topology = SEPARABLE_ENCODER_TOPOLOGY
+        elif encoder_type == encoder_type_e.TANSFORMER:
+            encoder_topology = TRANS_ENCODER_TOPOLOGY
+        mod_vae = ModVAE(device=device,
+                         encoder_topology=encoder_topology,
+                         decoder_topology=DECODER_TOPOLOGY,
+                         latent_space_dim=LATENT_SPACE_DIM,
+                         encoder_type=encoder_type,
+                         mode=MODE,
+                         model_out=MODEL_OUT)
         mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
         # ================================================================================
@@ -289,7 +280,8 @@ if __name__ == '__main__':
         # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320
 
-        enc_type = encoder_type_e.VGG
+        enc_type = encoder_type_e.TANSFORMER
+        # enc_type = encoder_type_e.VGG
         # enc_type = encoder_type_e.SEPARABLE
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,

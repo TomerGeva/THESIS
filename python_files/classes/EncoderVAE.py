@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import math
 import torch.nn as nn
-from neural_network_block_classes import ConvBlock, SeparableConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, PadPool
+from neural_network_block_classes import ConvBlock, SeparableConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, PadPool, SelfAttentionBlock
 from auxiliary_functions import compute_output_dim
 
 
@@ -16,6 +16,7 @@ class EncoderVAE(nn.Module):
         self.layers             = nn.ModuleList()
 
         x_dim, y_dim, channels  = self.compute_dim_sizes()
+        self.flatten            = True
 
         self.x_dim              = x_dim
         self.y_dim              = y_dim
@@ -60,6 +61,11 @@ class EncoderVAE(nn.Module):
                     action[1].in_neurons = action_prev[1].out_neurons
                 self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
+            elif 'transformer' in action[0]:
+                linear_len += 1
+                self.layers.append(SelfAttentionBlock(action[1]))
+                action_prev = action
+                self.flatten = False
 
         self.conv_len   = conv_len
         self.fc_len     = linear_len
@@ -84,7 +90,8 @@ class EncoderVAE(nn.Module):
         # ---------------------------------------------------------
         # flattening for the FC layers
         # ---------------------------------------------------------
-        x = x.view(-1, self.x_dim * self.y_dim * self.midpoint_channels)
+        if self.flatten:
+            x = x.view(-1, self.x_dim * self.y_dim * self.midpoint_channels)
         # ---------------------------------------------------------
         # passing through the fully connected blocks
         # ---------------------------------------------------------

@@ -6,6 +6,7 @@ class encoder_type_e(Enum):
     VGG             = 1
     FULLY_CONNECTED = 2
     SEPARABLE       = 3
+    TANSFORMER      = 4
 
 
 class activation_type_e(Enum):

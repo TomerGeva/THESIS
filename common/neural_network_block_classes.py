@@ -3,6 +3,8 @@ import torch.nn as nn
 from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
+from einops import rearrange, reduce
+from einops.layers.torch import Rearrange
 
 
 class Activator(nn.Module):
@@ -316,4 +318,60 @@ class FullyConnectedBlock(nn.Module):
             out = self.bnorm(out)
         out = self.act(out)
 
+        return out
+
+
+class SelfAttentionExperiment(nn.Module):
+    def __init__(self, self_attention_data):
+        super(SelfAttentionExperiment, self).__init__()
+        self.data = self_attention_data
+        self.patch_size_x = self_attention_data.patch_size_x
+        self.patch_size_y = self_attention_data.patch_size_y
+
+    def flatten_patches(self, batch):
+        """
+        :param batch:
+        :return: converts the image batch to a batch of flattened patches, to which we can perform the attention
+        """
+        return rearrange(batch, 'b c (h s1) (w s2) -> b (h w) (s1 s2 c)', s1=self.patch_size_y, s2=self.patch_size_x)
+
+    def forward(self, x):
+        # converting to flattened patches
+        x_patches = self.flatten_patches(x)
+
+        energy    = torch.einsum("bql,bkl->bqk", [x_patches, x_patches])
+        attention = torch.softmax(energy / (self.patch_size_y ** 0.5), dim=2)
+
+
+class SelfAttentionBlock(nn.Module):  # single head attention
+    def __init__(self, self_attention_data):
+        super(SelfAttentionBlock, self).__init__()
+        self.data = self_attention_data
+        self.patch_size_x = self_attention_data.patch_size_x
+        self.patch_size_y = self_attention_data.patch_size_y
+        self.embed_size   = self_attention_data.embed_size
+        self.patch_embed  = nn.Sequential(
+            nn.Conv2d(1, self.embed_size,
+                      kernel_size=(self.patch_size_y, self.patch_size_x),
+                      stride=(self.patch_size_y, self.patch_size_x)),
+            Rearrange('b e h w -> b (h w) e')
+        )
+        self.projection = nn.Linear(self.embed_size, self.embed_size)
+
+    def flatten_patches_embed(self, batch):
+        """
+        :param batch:
+        :return: converts the image batch to a batch of flattened patches, to which we can perform the attention
+        """
+        return self.patch_embed(batch)
+
+    def forward(self, x):
+        # converting to flattened patches
+        x_patches = self.flatten_patches_embed(x)
+
+        energy    = torch.einsum("bql,bkl->bqk", x_patches, x_patches)
+        attention = torch.softmax(energy / (self.patch_size_y ** 0.5), dim=-1)
+        out       = torch.einsum('bnl,blp -> bnp', attention, x_patches)  # (batch, number of patches, patch length)
+        out       = reduce(out, 'b n p -> b p', reduction='mean')
+        out       = self.projection(out)
         return out

@@ -72,11 +72,16 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         x_dim_size = int((x_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
         y_dim_size = int((y_dim - ((action[1].dilation * action[1].kernel - (action[1].dilation-1)) - action[1].stride) + 2 * action[1].padding) / action[1].stride)
         channels = action[1].out_channels
-    else:  # linear case
+    elif 'linear' in action[0]:  # linear case
         x_dim_size = x_dim
         y_dim_size = y_dim
         channels   = ch_num
-
+    elif 'transformer' in action[0]:
+        x_dim_size = 1
+        y_dim_size = 1
+        channels   = x_dim // action[1].patch_size_x * y_dim // action[1].patch_size_y
+    else:
+        raise ValueError('Invalid layer description')
     return x_dim_size, y_dim_size, channels
 
 

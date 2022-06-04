@@ -3,7 +3,7 @@
 # **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
-from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ConvTransposeBlockData, PadPoolData
+from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ConvTransposeBlockData, PadPoolData, SelfAttentionData
 
 # ==================================================================================================================
 # Database Variables
@@ -130,6 +130,15 @@ SEPARABLE_ENCODER_TOPOLOGY = [
     ['linear', FCBlockData(300,                  batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
+TRANS_ENCODER_TOPOLOGY = [
+        ['transformer', SelfAttentionData(patch_size_x=50, patch_size_y=50, embed_size=1250)],
+        ['linear', FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(500,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(500,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(300,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(300,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+    ]
 # VGG_DECODER_TOPOLOGY
 if XQUANTIZE == 2500:
     # ******************************************

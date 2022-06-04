@@ -109,3 +109,11 @@ class PadPoolData:
         self.pool_type = pool_type  # MAX or AVG
         self.pad       = pad        # padding, can be either an index or a tuple with size of 4
         self.kernel    = kernel     # pooling kernel size
+
+
+class SelfAttentionData:
+    def __init__(self, patch_size_x, patch_size_y, embed_size):
+        self.patch_size_x = patch_size_x
+        self.patch_size_y = patch_size_y
+        self.embed_size   = embed_size
+        self.out_neurons  = embed_size
