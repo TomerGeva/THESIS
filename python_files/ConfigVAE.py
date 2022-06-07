@@ -3,7 +3,8 @@
 # **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
-from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ConvTransposeBlockData, PadPoolData, SelfAttentionData
+from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ResFCBlockData,\
+    ConvTransposeBlockData, PadPoolData, SelfAttentionData
 
 # ==================================================================================================================
 # Database Variables
@@ -84,8 +85,8 @@ INIT_WEIGHT_STD  = 0.02
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BETA_DKL         = 1              # the KL coefficient in the cost function
-BETA_GRID        = 0.1
-GRID_POS_WEIGHT  = 1            # for 1450 it was set to 1 since dilation was enough
+BETA_GRID        = 1e-3
+GRID_POS_WEIGHT  = 1e4            # for 1450 it was set to 1 since dilation was enough
 MSE_GROUP_WEIGHT = [1, 2, 2, 15]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
@@ -130,14 +131,21 @@ SEPARABLE_ENCODER_TOPOLOGY = [
     ['linear', FCBlockData(300,                  batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
+# TRANS_ENCODER_TOPOLOGY = [
+#         ['transformer', SelfAttentionData(patch_size_x=50, patch_size_y=50, embed_size=1250)],
+#         ['linear', FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#         ['linear', FCBlockData(500,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+#         ['linear', FCBlockData(500,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#         ['linear', FCBlockData(300,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+#         ['linear', FCBlockData(300,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#         ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+#     ]
 TRANS_ENCODER_TOPOLOGY = [
         ['transformer', SelfAttentionData(patch_size_x=50, patch_size_y=50, embed_size=1250)],
-        ['linear', FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(500,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(500,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(300,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(300,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+        ['linear',      FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['res-linear',  ResFCBlockData(300, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
 # VGG_DECODER_TOPOLOGY
 if XQUANTIZE == 2500:

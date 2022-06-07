@@ -94,6 +94,7 @@ class PostProcessing:
         # Plotting the results
         # ==============================================================================================================
         epoch_len = len(epoch_list)
+        plt.rcParams["figure.figsize"] = (20, 10)
         # ------------------------------------------------------------------------------------------------------
         # Sensitivity plot
         # ------------------------------------------------------------------------------------------------------
@@ -682,7 +683,8 @@ if __name__ == '__main__':
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
     # c_path = '..\\results\\5_4_2022_10_27'
     # c_path = '..\\results\\13_4_2022_22_58'
-    c_path = '..\\results\\15_5_2022_17_9'
+    # c_path = '..\\results\\15_5_2022_17_9'
+    c_path = '..\\results\\6_6_2022_19_7'
 
     pp = PostProcessing()
 
@@ -695,8 +697,8 @@ if __name__ == '__main__':
     # pp.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
     # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
     # pp.log_to_plot(c_path, spacing=10)
-    pp.get_latent_statistics(c_path, c_epoch)
+    # pp.get_latent_statistics(c_path, c_epoch)
     # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
-    # pp.log_to_plot(c_path)
+    pp.log_to_plot(c_path)
 
 

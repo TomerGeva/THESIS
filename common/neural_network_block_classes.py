@@ -306,7 +306,8 @@ class FullyConnectedBlock(nn.Module):
                             out_features=fc_data.out_neurons,
                             bias=fc_data.bias
                             )
-        self.bnorm = nn.BatchNorm1d(fc_data.out_neurons) if fc_data.bnorm is True else None
+        self.bnorm = nn.LayerNorm(fc_data.out_neurons) if fc_data.bnorm is True else None
+        # self.bnorm = nn.BatchNorm1d(fc_data.out_neurons) if fc_data.bnorm is True else None
         self.drop = nn.Dropout(fc_data.drate) if fc_data.drate > 0 else None
         self.act = Activator(act_type=fc_data.act, alpha=fc_data.alpha)
 
@@ -319,6 +320,46 @@ class FullyConnectedBlock(nn.Module):
         out = self.act(out)
 
         return out
+
+
+class FullyConnectedResidualBlock(nn.Module):
+    def __init__(self, fc_data):
+        super(FullyConnectedResidualBlock, self).__init__()
+        self.data = fc_data
+        self.layers = nn.ModuleList()
+        self.transient_fc = nn.Linear(in_features=fc_data.in_neurons, out_features=fc_data.out_neurons, bias=fc_data.bias) if fc_data.in_neurons != fc_data.out_neurons else None
+        self.bnorm = nn.LayerNorm(fc_data.out_neurons) if fc_data.bnorm is True else None
+        # self.bnorm = nn.BatchNorm1d(fc_data.out_neurons) if fc_data.bnorm is True else None
+        self.drop = nn.Dropout(fc_data.drate) if fc_data.drate > 0 else None
+        self.act = Activator(act_type=fc_data.act, alpha=fc_data.alpha)
+
+        for _ in range(fc_data.layers - 1):
+            self.layers.append(nn.Linear(in_features=fc_data.in_neurons, out_features=fc_data.in_neurons))
+        self.layers.append(nn.Linear(in_features=fc_data.in_neurons, out_features=fc_data.out_neurons))
+
+    def forward(self, x):
+        # ===========================================
+        # short path
+        # ===========================================
+        if self.transient_fc is not None:
+            out_short = self.transient_fc(x)
+        else:
+            out_short = x
+        # ===========================================
+        # Long path
+        # ===========================================
+        for ii in range(len(self.layers)):
+            layer = self.layers[ii]
+            x = layer(x)
+        out_total = x + out_short
+
+        if self.data.drate > 0:
+            out_total = self.drop(out_total)
+        if self.data.bnorm:
+            out_total = self.bnorm(out_total)
+        out_total = self.act(out_total)
+
+        return out_total
 
 
 class SelfAttentionExperiment(nn.Module):

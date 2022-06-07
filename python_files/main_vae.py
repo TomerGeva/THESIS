@@ -280,8 +280,8 @@ if __name__ == '__main__':
         # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320
 
-        enc_type = encoder_type_e.TANSFORMER
-        # enc_type = encoder_type_e.VGG
+        # enc_type = encoder_type_e.TANSFORMER
+        enc_type = encoder_type_e.VGG
         # enc_type = encoder_type_e.SEPARABLE
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,

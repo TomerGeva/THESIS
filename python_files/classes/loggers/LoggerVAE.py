@@ -72,6 +72,15 @@ class LoggerVAE(LoggerGeneric):
                    'd} activation:  {4:^' + str(self.desc_space) + 's}'
         return temp_str.format(num_in, num_out, str(bnorm), drate, active.name)
 
+    def _get_residual_linear_layer_string(self, num_in, num_out, layers, bnorm, drate, active):
+        temp_str = 'Input size:     {0:^' + str(self.desc_space) +\
+                   'd} Output size: {1:^' + str(self.desc_space) + \
+                   'd} layers:      {2:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {3:^' + str(self.desc_space) + \
+                   's} drop_rate:   {4:^' + str(self.desc_space) + \
+                   'd} activation:  {5:^' + str(self.desc_space) + 's}'
+        return temp_str.format(num_in, num_out, layers, str(bnorm), drate, active.name)
+
     def _get_transformer_layer_string(self, patch_size_x, patch_size_y, embed_size):
         temp_str = 'patch_size_x: {0:^1' + str(self.desc_space) + \
                    '} patch_size_y: {1:^' + str(self.desc_space) + \
@@ -153,6 +162,13 @@ class LoggerVAE(LoggerGeneric):
                                                                                          action[1].pool_size,
                                                                                          x_dim_size,
                                                                                          y_dim_size))
+        elif 'res-linear' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_residual_linear_layer_string(action[1].in_neurons,
+                                                                                              action[1].out_neurons,
+                                                                                              action[1].layers,
+                                                                                              action[1].bnorm,
+                                                                                              action[1].drate,
+                                                                                              action[1].act))
         elif 'linear' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
                                                                                      action[1].out_neurons,

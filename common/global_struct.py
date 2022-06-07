@@ -104,6 +104,22 @@ class FCBlockData:
         self.alpha          = alpha
 
 
+class ResFCBlockData:
+    def __init__(self, out_neurons, in_neurons=None, layers=2, bias=True, batch_norm=True, dropout_rate=0.0,
+                 activation=activation_type_e.null, alpha=0.01):
+        self.in_neurons     = in_neurons  # computed during encoder Init
+        self.out_neurons    = out_neurons
+        self.layers         = layers
+        if bias is None:
+            self.bias = not batch_norm
+        else:
+            self.bias = bias
+        self.bnorm          = batch_norm
+        self.drate          = dropout_rate
+        self.act            = activation
+        self.alpha          = alpha
+
+
 class PadPoolData:
     def __init__(self, pool_type, pad=0, kernel=2):
         self.pool_type = pool_type  # MAX or AVG

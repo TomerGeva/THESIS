@@ -1,7 +1,8 @@
 from ConfigVAE import *
 import math
 import torch.nn as nn
-from neural_network_block_classes import ConvBlock, SeparableConvBlock, DenseBlock, DenseTransitionBlock, FullyConnectedBlock, PadPool, SelfAttentionBlock
+from neural_network_block_classes import ConvBlock, SeparableConvBlock, DenseBlock, DenseTransitionBlock,\
+    FullyConnectedResidualBlock, FullyConnectedBlock, PadPool, SelfAttentionBlock
 from auxiliary_functions import compute_output_dim
 
 
@@ -53,6 +54,14 @@ class EncoderVAE(nn.Module):
                 self.layers.append(DenseTransitionBlock(action[1])
                                    )
                 channels = math.floor(channels * action[1].reduction_rate)
+            elif 'res-linear' in action[0]:
+                linear_len += 1
+                if action_prev is None:  # First linear layer
+                    action[1].in_neurons = x_dim * y_dim * channels
+                else:
+                    action[1].in_neurons = action_prev[1].out_neurons
+                self.layers.append(FullyConnectedResidualBlock(action[1]))
+                action_prev = action
             elif 'linear' in action[0]:
                 linear_len += 1
                 if action_prev is None:  # First linear layer
