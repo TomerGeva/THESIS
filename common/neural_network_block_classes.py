@@ -101,6 +101,70 @@ class ConvBlock(nn.Module):
         return out
 
 
+class ResidualConvBlock(nn.Module):
+    def __init__(self, conv_data):
+        super(ResidualConvBlock, self).__init__()
+        self.data = conv_data
+
+        self.layers = nn.ModuleList()
+
+        self.transient_conv = nn.Conv2d(in_channels=conv_data.in_channels,
+                                        out_channels=conv_data.out_channels,
+                                        kernel_size=conv_data.kernel,
+                                        stride=conv_data.stride,
+                                        padding=conv_data.padding,
+                                        dilation=conv_data.dilation,
+                                        bias=conv_data.bias
+                                        ) if conv_data.in_channels != conv_data.out_channels else None
+        self.drop = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
+        self.bnorm = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
+        self.act = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
+
+        for _ in range(conv_data.layers - 1):
+            self.layers.append(nn.Conv2d(in_channels=conv_data.in_channels,
+                                         out_channels=conv_data.in_channels,
+                                         kernel_size=conv_data.kernel,
+                                         stride=conv_data.stride,
+                                         padding=conv_data.padding,
+                                         dilation=conv_data.dilation,
+                                         bias=conv_data.bias
+                                         ))
+        self.layers.append(nn.Conv2d(in_channels=conv_data.in_channels,
+                                     out_channels=conv_data.out_channels,
+                                     kernel_size=conv_data.kernel,
+                                     stride=conv_data.stride,
+                                     padding=conv_data.padding,
+                                     dilation=conv_data.dilation,
+                                     bias=conv_data.bias
+                                     ))
+
+    def forward(self, x):
+        # ===========================================
+        # short path
+        # ===========================================
+        if self.transient_conv is not None:
+            out_short = self.transient_conv(x)
+        else:
+            out_short = x
+        # ===========================================
+        # Long path
+        # ===========================================
+        for ii in range(len(self.layers)):
+            layer = self.layers[ii]
+            x = layer(x)
+        out_total = x + out_short
+        # ===========================================
+        # Other functionalities
+        # ===========================================
+        if self.data.drate > 0:
+            out_total = self.drop(out_total)
+        if self.data.bnorm:
+            out_total = self.bnorm(out_total)
+        out_total = self.act(out_total)
+
+        return out_total
+
+
 class SeparableConvBlock(nn.Module):
     """
     This class implements a convolution block, support batch morn, dropout and activations
@@ -352,7 +416,9 @@ class FullyConnectedResidualBlock(nn.Module):
             layer = self.layers[ii]
             x = layer(x)
         out_total = x + out_short
-
+        # ===========================================
+        # Other functionalities
+        # ===========================================
         if self.data.drate > 0:
             out_total = self.drop(out_total)
         if self.data.bnorm:

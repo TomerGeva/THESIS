@@ -3,7 +3,7 @@
 # **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
-from global_struct import ConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ResFCBlockData,\
+from global_struct import ConvBlockData, ResConvBlockData, DenseBlockData, TransBlockData, FCBlockData, ResFCBlockData,\
     ConvTransposeBlockData, PadPoolData, SelfAttentionData
 
 # ==================================================================================================================
@@ -86,14 +86,14 @@ INIT_WEIGHT_STD  = 0.02
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BETA_DKL         = 1              # the KL coefficient in the cost function
 BETA_GRID        = 1e-3
-GRID_POS_WEIGHT  = 1e4            # for 1450 it was set to 1 since dilation was enough
+GRID_POS_WEIGHT  = 1e3            # for 1450 it was set to 1 since dilation was enough
 MSE_GROUP_WEIGHT = [1, 2, 2, 15]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 EPOCH_NUM        = 1001
 LR               = 3e-4  # learning rate
-SCHEDULER_STEP   = 50
+SCHEDULER_STEP   = 100
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
 GRAD_CLIP        = 5
@@ -206,6 +206,21 @@ elif XQUANTIZE == 600:
         ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
         # DO NOT CHANGE THIS LINE EVER
     ]
+    VGG_RES_ENCODER_TOPOLOGY = [
+        ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],              # 600   --> 50          LOS 12
+        # ['conv', ConvBlockData(32, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],            # 100   --> 100         LOS 25
+        # ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 100   --> 50          LOS 50
+        ['res-conv', ResConvBlockData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50    --> 50          LOS 16
+        ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                      # 50    --> 25          LOS 32
+        ['res-conv', ResConvBlockData(64, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 25    --> 25          LOS 32
+        ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                           # 25    --> 26 --> 13   LOS 64
+        ['res-conv', ResConvBlockData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13    --> 13          LOS 64
+        ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                           # 13    --> 14 --> 7    LOS 128
+        ['res-conv', ResConvBlockData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7     --> 7           LOS 128
+        ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                      # 7     --> 1           LOS 800 + 300
+        ['linear',   FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear',   FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # DO NOT CHANGE THIS LINE EVER
+    ]
 """
 DENSE_ENCODER_TOPOLOGY = [
     ['conv',      ConvBlockData(1, 6, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -263,12 +278,26 @@ elif XQUANTIZE == 600:
         ['linear', FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(400, 128, 16, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 1   --> 16
+        ['convTrans', ConvTransposeBlockData(128, 64, 6, 3, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 16  --> 51
+        ['convTrans', ConvTransposeBlockData(64, 32, 4, 2, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 51  --> 100
+        ['convTrans', ConvTransposeBlockData(32, 16, 6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 100 --> 299
+        ['convTrans', ConvTransposeBlockData(16, 8, 4, 2, padding=0, batch_norm=True, dropout_rate=0,  activation=activation_type_e.lReLU)],     # 299 --> 600
+        ['convTrans', ConvTransposeBlockData(8, 1, 5, 1, padding=2, batch_norm=True, dropout_rate=0,   activation=activation_type_e.null)],      # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
+    ]
+    RES_DECODER_TOPOLOGY = [
+        ['linear', FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['convTrans', ConvTransposeBlockData(400, 128, 16, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 1   --> 16
+        ['res-conv',  ResConvBlockData(128, 128, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(128,  64,  6, 3, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 16  --> 51
+        ['res-conv',  ResConvBlockData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(64,   32,  4, 2, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 51  --> 100
+        ['res-conv',  ResConvBlockData(32, 32, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(32,   16,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 100 --> 299
         ['convTrans', ConvTransposeBlockData(16,    8,  4, 2, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 299 --> 600
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
+
 """
 DECODER_TOPOLOGY = [
     ['linear',      FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],

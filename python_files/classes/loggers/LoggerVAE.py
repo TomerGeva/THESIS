@@ -46,6 +46,19 @@ class LoggerVAE(LoggerGeneric):
                    's} Output size: {8:^' + str(self.desc_space) + '}X{9:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
 
+    def _get_residual_conv_layer_string(self, in_ch, out_ch, layers, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) +\
+                   'd} Out channels:{1:^' + str(self.desc_space) +\
+                   'd} Layers:      {2:^' + str(self.desc_space) + \
+                   'd} Kernel:      {3:^' + str(self.desc_space) + \
+                   'd} Stride:      {4:^' + str(self.desc_space) + \
+                   'd} Padding:     {5:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, layers, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
+
     def _get_conv_transpose_layer_string(self, in_ch, out_ch, ktilde, stride, pad, out_pad, bnorm, drate, active, x_dim,
                                          y_dim):
         temp_str = 'In channels:    {0:^' + str(self.desc_space) +\
@@ -137,6 +150,18 @@ class LoggerVAE(LoggerGeneric):
                                                                                              action[1].act,
                                                                                              x_dim_size,
                                                                                              y_dim_size))
+        elif 'res-conv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_residual_conv_layer_string(action[1].in_channels,
+                                                                                            action[1].out_channels,
+                                                                                            action[1].layers,
+                                                                                            action[1].kernel,
+                                                                                            action[1].stride,
+                                                                                            action[1].padding,
+                                                                                            action[1].bnorm,
+                                                                                            action[1].drate,
+                                                                                            action[1].act,
+                                                                                            x_dim_size,
+                                                                                            y_dim_size))
         elif 'dense' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_dense_layer_string(channels,
                                                                                     action[1].depth,

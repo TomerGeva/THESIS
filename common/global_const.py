@@ -7,6 +7,7 @@ class encoder_type_e(Enum):
     FULLY_CONNECTED = 2
     SEPARABLE       = 3
     TANSFORMER      = 4
+    RES_VGG         = 5
 
 
 class activation_type_e(Enum):

@@ -49,15 +49,23 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
         # ============================================================================
         if encoder_type == encoder_type_e.DENSE:
             encoder_topology = DENSE_ENCODER_TOPOLOGY
+            decoder_topology = DECODER_TOPOLOGY
         elif encoder_type == encoder_type_e.VGG:
             encoder_topology = VGG_ENCODER_TOPOLOGY
+            decoder_topology = DECODER_TOPOLOGY
         elif encoder_type == encoder_type_e.SEPARABLE:
             encoder_topology = SEPARABLE_ENCODER_TOPOLOGY
+            decoder_topology = DECODER_TOPOLOGY
         elif encoder_type == encoder_type_e.TANSFORMER:
             encoder_topology = TRANS_ENCODER_TOPOLOGY
+            decoder_topology = DECODER_TOPOLOGY
+        elif encoder_type == encoder_type_e.RES_VGG:
+            encoder_topology = VGG_RES_ENCODER_TOPOLOGY
+            decoder_topology = RES_DECODER_TOPOLOGY
+
         mod_vae = ModVAE(device=device,
                          encoder_topology=encoder_topology,
-                         decoder_topology=DECODER_TOPOLOGY,
+                         decoder_topology=decoder_topology,
                          latent_space_dim=LATENT_SPACE_DIM,
                          encoder_type=encoder_type,
                          mode=MODE,
@@ -281,7 +289,8 @@ if __name__ == '__main__':
         copy_epoch  = 320
 
         # enc_type = encoder_type_e.TANSFORMER
-        enc_type = encoder_type_e.VGG
+        # enc_type = encoder_type_e.VGG
+        enc_type = encoder_type_e.RES_VGG
         # enc_type = encoder_type_e.SEPARABLE
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,
