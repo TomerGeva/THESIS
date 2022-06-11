@@ -86,7 +86,7 @@ INIT_WEIGHT_STD  = 0.02
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BETA_DKL         = 1              # the KL coefficient in the cost function
 BETA_GRID        = 1e-3
-GRID_POS_WEIGHT  = 1e3            # for 1450 it was set to 1 since dilation was enough
+GRID_POS_WEIGHT  = 1e4            # for 1450 it was set to 1 since dilation was enough
 MSE_GROUP_WEIGHT = [1, 2, 2, 15]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
@@ -294,7 +294,9 @@ elif XQUANTIZE == 600:
         ['convTrans', ConvTransposeBlockData(64,   32,  4, 2, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 51  --> 100
         ['res-conv',  ResConvBlockData(32, 32, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(32,   16,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 100 --> 299
+        ['res-conv',  ResConvBlockData(16, 16, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(16,    8,  4, 2, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 299 --> 600
+        ['res-conv',  ResConvBlockData(8, 8, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
 

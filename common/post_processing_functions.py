@@ -21,11 +21,12 @@ class PostProcessing:
         pass
 
     @staticmethod
-    def log_to_plot(path, spacing=1, save_plt=True):
+    def log_to_plot(path, spacing=1, save_plt=True, plt_joined=True):
         """
         :param path: path to a result folder
         :param spacing: epoch distance between plots
         :param save_plt:
+        :param plt_joined:
         :return: the function reads the log and creates a plot of RMS loss, with all the test databases documented
         """
         # ==============================================================================================================
@@ -101,10 +102,7 @@ class PostProcessing:
         sens_plt = plt.figure()
         plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
         for test_db in keys_list:
-            if '15_22' in path:
-                plt.plot(epoch_list[0:-1], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db]], '-o', label=test_db)
-            else:
-                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         plt.xlabel('Epoch')
         plt.ylabel('RMS Loss')
         plt.title('RMS loss vs Epoch number')
@@ -131,6 +129,34 @@ class PostProcessing:
         plt.title('Reconstruction loss vs Epoch number')
         plt.legend()
         plt.grid()
+        # ------------------------------------------------------------------------------------------------------
+        # joined
+        # ------------------------------------------------------------------------------------------------------
+        if plt_joined:
+            _, ax = plt.subplots(3, 1)
+            ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+            for test_db in keys_list:
+                ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            ax[0].set_xlabel('Epoch')
+            ax[0].set_ylabel('RMS Loss')
+            ax[0].set_title('RMS loss vs Epoch number')
+            ax[0].legend()
+            ax[0].grid()
+
+            ax[1].plot(epoch_list[0:epoch_len:spacing], train_dkl_loss[0:epoch_len:spacing], '-o', label=train_label)
+            ax[1].set_xlabel('Epoch')
+            ax[1].set_ylabel('D_kl')
+            ax[1].set_title('D_kl loss vs Epoch number')
+            ax[1].grid()
+
+            ax[2].semilogy(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
+            for test_db in keys_list:
+                ax[2].plot(epoch_list[0:epoch_len:spacing], test_grid[test_db][0:epoch_len:spacing], '-o', label=test_db)
+            ax[2].set_xlabel('Epoch')
+            ax[2].set_ylabel('Cross Entropy Loss')
+            ax[2].set_title('Reconstruction loss vs Epoch number')
+            ax[2].legend()
+            ax[2].grid()
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
@@ -685,7 +711,7 @@ if __name__ == '__main__':
     # c_path = '..\\results\\13_4_2022_22_58'
     # c_path = '..\\results\\15_5_2022_17_9'
     c_path = '..\\results\\6_6_2022_19_7'
-    c_path = '..\\results\\8_6_2022_10_59'
+    c_path = '..\\results\\9_6_2022_8_28'
 
     pp = PostProcessing()
 

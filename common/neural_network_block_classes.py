@@ -151,7 +151,7 @@ class ResidualConvBlock(nn.Module):
         # ===========================================
         for ii in range(len(self.layers)):
             layer = self.layers[ii]
-            x = layer(x)
+            x = self.act(layer(x))
         out_total = x + out_short
         # ===========================================
         # Other functionalities
@@ -414,7 +414,7 @@ class FullyConnectedResidualBlock(nn.Module):
         # ===========================================
         for ii in range(len(self.layers)):
             layer = self.layers[ii]
-            x = layer(x)
+            x = self.act(layer(x))
         out_total = x + out_short
         # ===========================================
         # Other functionalities
