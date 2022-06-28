@@ -78,22 +78,22 @@ PP_DATA = 'post_processing'
 # MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 50                   # number of dimensions in the latent space
+LATENT_SPACE_DIM = 500                   # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0
 INIT_WEIGHT_STD  = 0.02
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-BETA_DKL         = 1              # the KL coefficient in the cost function
+BETA_DKL         = 1e-3              # the KL coefficient in the cost function
 BETA_GRID        = 1e-3
-GRID_POS_WEIGHT  = 1e4            # for 1450 it was set to 1 since dilation was enough
-MSE_GROUP_WEIGHT = [1, 2, 2, 15]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+GRID_POS_WEIGHT  = 25            # for 1450 it was set to 1 since dilation was enough
+MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 EPOCH_NUM        = 1001
-LR               = 3e-4  # learning rate
-SCHEDULER_STEP   = 100
+LR               = 2e-4  # learning rate
+SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
 GRAD_CLIP        = 5
@@ -218,7 +218,7 @@ elif XQUANTIZE == 600:
         ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                           # 13    --> 14 --> 7    LOS 128
         ['res-conv', ResConvBlockData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7     --> 7           LOS 128
         ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                      # 7     --> 1           LOS 800 + 300
-        ['linear',   FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear',   FCBlockData(1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['linear',   FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # DO NOT CHANGE THIS LINE EVER
     ]
 """
@@ -285,18 +285,18 @@ elif XQUANTIZE == 600:
         ['convTrans', ConvTransposeBlockData(8, 1, 5, 1, padding=2, batch_norm=True, dropout_rate=0,   activation=activation_type_e.null)],      # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
     RES_DECODER_TOPOLOGY = [
-        ['linear', FCBlockData(200, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['convTrans', ConvTransposeBlockData(400, 128, 16, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 1   --> 16
+        ['linear', FCBlockData(500, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['linear_last', FCBlockData(500, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        ['convTrans', ConvTransposeBlockData(500, 128, 16, 1, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 1   --> 16
         ['res-conv',  ResConvBlockData(128, 128, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(128,  64,  6, 3, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 16  --> 51
         ['res-conv',  ResConvBlockData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(64,   32,  4, 2, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 51  --> 100
-        ['res-conv',  ResConvBlockData(32, 32, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        # ['res-conv',  ResConvBlockData(32, 32, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(32,   16,  6, 3, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 100 --> 299
-        ['res-conv',  ResConvBlockData(16, 16, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        # ['res-conv',  ResConvBlockData(16, 16, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(16,    8,  4, 2, padding=0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 299 --> 600
-        ['res-conv',  ResConvBlockData(8, 8, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+        # ['res-conv',  ResConvBlockData(8, 8, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
 

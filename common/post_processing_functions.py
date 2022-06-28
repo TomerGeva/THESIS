@@ -287,7 +287,7 @@ class PostProcessing:
         # ==============================================================================================================
         # Extracting statistics
         # ==============================================================================================================
-        key = '3e+03_to_inf'  # '3e+05_to_inf' '2e+05_to_3e+05' '1e+05_to_2e+05' '0_to_1e+05'
+        key = '4e+03_to_inf'  # '3e+05_to_inf' '2e+05_to_3e+05' '1e+05_to_2e+05' '0_to_1e+05'
         test_loader_iter = iter(test_loaders[key])
         mu_means  = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
         std_means = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
@@ -703,7 +703,7 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
-    c_epoch = 220
+    c_epoch = 200
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -711,7 +711,8 @@ if __name__ == '__main__':
     # c_path = '..\\results\\13_4_2022_22_58'
     # c_path = '..\\results\\15_5_2022_17_9'
     c_path = '..\\results\\6_6_2022_19_7'
-    c_path = '..\\results\\9_6_2022_8_28'
+    c_path = '..\\results\\14_6_2022_16_8'
+    c_path = '..\\results\\19_6_2022_5_57'
 
     pp = PostProcessing()
 
