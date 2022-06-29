@@ -13,24 +13,40 @@ class TrainerVAE:
     """
     This class holds the Trainer for the Variational auto-encoder
     """
-    def __init__(self, net, lr=1e-2, mom=0.9, beta_dkl=1, beta_grid=1, sched_step=20, sched_gamma=0.5, grad_clip=5,
-                 group_thresholds=None, group_weights=None, abs_sens=True, training=True, optimize_time=False,
-                 grid_pos_weight=1):
+    def __init__(self, net, lr=1e-2, mom=0.9,
+                 beta_dkl=1, beta_grid=1,
+                 sched_step=20, sched_gamma=0.5, grad_clip=5,
+                 group_thresholds=None, group_weights=None,
+                 abs_sens=True,
+                 training=True, optimize_time=False,
+                 grid_pos_weight=1,
+                 xquantize=2500, yquantize=2500, coord2map_sigma=1, n=1):
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         # -------------------------------------
         # cost function
         # -------------------------------------
-        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([XQUANTIZE, YQUANTIZE], device=device) * grid_pos_weight)
+        self.abs_sens            = abs_sens
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
+        if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
+            self.reconstruction_loss = coord_reconstruction_loss
+        else:
+            self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([xquantize, yquantize], device=device) * grid_pos_weight)
+        self.encoder_type    = net.encoder_type
+        self.coord2map_sigma = coord2map_sigma
+        self.n               = n
         # -------------------------------------
         # optimizer
         # -------------------------------------
-        # self.optimizer = optim.SGD(net.parameters(), lr=lr, momentum=mu)
+        # self.optimizer = optim.SGD(net.parameters(), lr=lr, momentum=mom)
         self.optimizer = optim.Adam(net.parameters(), lr=lr)
+        self.learning_rate  = lr
+        self.mom            = mom
+        self.grad_clip      = grad_clip
         # -------------------------------------
         # Scheduler, reduces learning rate
         # -------------------------------------
+        self.optimize_time = optimize_time
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer,
                                                    step_size=sched_step,
                                                    gamma=sched_gamma,
@@ -43,18 +59,15 @@ class TrainerVAE:
         # -------------------------------------
         # Misc training parameters
         # -------------------------------------
-        self.cost           = []
-        self.group_th       = group_thresholds
-        self.group_weights  = group_weights
-        self.learning_rate  = lr
-        self.mom            = mom
-        self.beta_dkl       = beta_dkl
-        self.beta_grid      = beta_grid
+        self.cost            = []
+        # MSE parameters
+        self.group_th        = group_thresholds
+        self.group_weights   = group_weights
+        # Cost function summation parameters
+        self.beta_dkl        = beta_dkl
+        self.beta_grid       = beta_grid
         self.grid_pos_weight = grid_pos_weight
-        self.grad_clip      = grad_clip
-        self.abs_sens       = abs_sens
-        self.training       = training
-        self.optimize_time  = optimize_time
+        self.training        = training
 
     def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets=0, grid_outputs=0, model_out=model_output_e.BOTH):
         if self.training:
@@ -65,7 +78,10 @@ class TrainerVAE:
         if model_out is model_output_e.SENS:
             grid_mse_loss = torch.zeros(1).to(kl_div.device)
         else:
-            grid_mse_loss   = self.reconstruction_loss(grid_outputs, grid_targets)
+            if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                grid_mse_loss = self.reconstruction_loss(grid_targets, grid_outputs, self.n, self.sigma, self.xquantize, self.yquantize)
+            else:
+                grid_mse_loss = self.reconstruction_loss(grid_outputs, grid_targets)
 
         return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
@@ -358,6 +374,49 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
     return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
+
+
+def coord_reconstruction_loss(targets, outputs, n, sigma, xquantize, yquantize):
+    """
+    :param targets: B X 2N where 0 dim is batch, 1 dim is [x1,y1,x2,y2,...] coord vec
+    :param outputs: B X 2N where 0 dim is batch, 1 dim is [x1,y1,x2,y2,...] coord vec
+    :param n: power of the gaussian. if n=1 we have the standard Gaussian, if n approaches infinity the gaussian
+              approaches the box function
+    :param sigma: denominator of the gaussian, controls the width of the gaussian
+    :param xquantize: grid size in the x axis
+    :param yquantize: grid size in the y axis
+    :return:  computes a map out of the coordinates, then computes a loss for all of them
+    """
+    mse_sum = 0
+    for ii in range(targets.size()[0]):  # going over all the batch
+        target_map = coord2map(outputs[ii, :], n, sigma, xquantize, yquantize)
+        output_map = coord2map(outputs[ii, :], n, sigma, xquantize, yquantize)
+        mse_sum += grid_mse(target_map, output_map)
+    return mse_sum / targets.size()[0]
+
+
+def coord2map(coordinates_vec, n, sigma, xquantize, yquantize):
+    """
+    :param coordinates_vec: 1D vector of coordinates [x1,y1,x2,y2,...]
+    :param n: power of the gaussian. if n=1 we have the standard Gaussian, if n approaches infinity the gaussian
+              approaches the box function
+    :param sigma: denominator of the gaussian, controls the width of the gaussian
+    :param xquantize: grid size in the x axis
+    :param yquantize: grid size in the y axis
+    :return: Creates
+    """
+    # =================================================
+    # Local variables
+    # =================================================
+    grid  = torch.zeros([yquantize, xquantize])
+    x_vec = np.arange(0, xquantize)
+    y_vec = np.arange(0, yquantize)
+    xgrid, ygrid = np.meshgrid(x_vec, y_vec)
+    xgrid, ygrid = torch.tensor(xgrid), torch.Tensor(ygrid)
+
+    for ii in range(len(coordinates_vec) // 2):
+        grid += np.exp(-1*((xgrid - coordinates_vec[2*ii])**(2*n) + (ygrid - coordinates_vec[2*ii+1])**(2*n)) / (2*sigma**2))
+    return grid
 
 
 def grid_mse(targets, outputs):

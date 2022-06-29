@@ -62,6 +62,11 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
         elif encoder_type == encoder_type_e.RES_VGG:
             encoder_topology = VGG_RES_ENCODER_TOPOLOGY
             decoder_topology = RES_DECODER_TOPOLOGY
+        elif encoder_type == encoder_type_e.FULLY_CONNECTED:
+            encoder_topology = FC_ENCODER_TOPOLOGY
+            decoder_topology = FC_DECODER_TOPOLOGY
+        else:
+            raise ValueError('Unknown encoder type inputted')
 
         mod_vae = ModVAE(device=device,
                          encoder_topology=encoder_topology,
@@ -89,18 +94,33 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
         # ================================================================================
         # Creating trainer
         # ================================================================================
-        trainer = TrainerVAE(mod_vae,
-                             lr=LR,
-                             mom=MOM,
-                             beta_dkl=BETA_DKL,
-                             beta_grid=BETA_GRID,
-                             sched_step=SCHEDULER_STEP,
-                             sched_gamma=SCHEDULER_GAMMA,
-                             grad_clip=GRAD_CLIP,
-                             group_thresholds=thresholds,
-                             group_weights=MSE_GROUP_WEIGHT,
-                             abs_sens=ABS_SENS,
-                             grid_pos_weight=GRID_POS_WEIGHT)
+        if encoder_type == encoder_type_e.FULLY_CONNECTED:
+            trainer = TrainerVAE(mod_vae,
+                                 lr=LR,
+                                 mom=MOM,
+                                 beta_dkl=BETA_DKL,
+                                 beta_grid=BETA_GRID,
+                                 sched_step=SCHEDULER_STEP,
+                                 sched_gamma=SCHEDULER_GAMMA,
+                                 grad_clip=GRAD_CLIP,
+                                 group_thresholds=thresholds,  # sens cost
+                                 group_weights=MSE_GROUP_WEIGHT,  # sens cost
+                                 abs_sens=ABS_SENS,
+                                 xquantize=XQUANTIZE, yquantize=YQUANTIZE, n=N, coord2map_sigma=COORD2MAP_SIGMA)
+        else:
+            trainer = TrainerVAE(mod_vae,
+                                 lr=LR,
+                                 mom=MOM,
+                                 beta_dkl=BETA_DKL,
+                                 beta_grid=BETA_GRID,
+                                 sched_step=SCHEDULER_STEP,
+                                 sched_gamma=SCHEDULER_GAMMA,
+                                 grad_clip=GRAD_CLIP,
+                                 group_thresholds=thresholds,  # sens cost
+                                 group_weights=MSE_GROUP_WEIGHT,  # sens cost
+                                 abs_sens=ABS_SENS,
+                                 grid_pos_weight=GRID_POS_WEIGHT,
+                                 xquantize=XQUANTIZE, yquantize=YQUANTIZE)
     else:
         print('Loading model . . .')
         # ==============================================================================
@@ -291,8 +311,9 @@ if __name__ == '__main__':
 
         # enc_type = encoder_type_e.TANSFORMER
         # enc_type = encoder_type_e.VGG
-        enc_type = encoder_type_e.RES_VGG
+        # enc_type = encoder_type_e.RES_VGG
         # enc_type = encoder_type_e.SEPARABLE
+        enc_type = encoder_type_e.FULLY_CONNECTED
         main_vae(enc_type,
                  load_model=load_path, start_epoch=load_epoch,
                  copy_weights=copy_path, copy_weights_epoch=copy_epoch)

@@ -23,15 +23,26 @@ SEED = 140993
 # when the grid is '0' for cylinder absence, and '1' for cylinder present,
 # these are the std and mean for 1450 cylinders, need to normalize
 # ==================================================================================================================
+# --------------------------------------------------------------------------------------------------------------
+# Convolution based dataloader configurations
+# --------------------------------------------------------------------------------------------------------------
 DILATION    = 4
 GRID_MEAN   = 0.000232
 GRID_STD    = 0.015229786
 SENS_MEAN   = 1655  # 64458    # output normalization factor - mean sensitivity
 SENS_STD    = 385   # 41025
-ABS_SENS    = True
 IMG_CHANNELS   = 1
 MIXUP_FACTOR   = 0.3  # mixup parameter for the data
-MIXUP_PROB     = 0  # mixup probability
+MIXUP_PROB     = 0    # mixup probability
+# --------------------------------------------------------------------------------------------------------------
+# Fully Connected based dataloader configurations
+# --------------------------------------------------------------------------------------------------------------
+COORD2MAP_SIGMA = 3  # deliminator in the coord2map function
+N               = 1  # power of the gaussian
+# --------------------------------------------------------------------------------------------------------------
+# Common configurations
+# --------------------------------------------------------------------------------------------------------------
+ABS_SENS    = True
 NUM_WORKERS    = 8
 BATCH_SIZE     = 64
 OPTIMIZE_TIME  = True
@@ -79,8 +90,8 @@ PP_DATA = 'post_processing'
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
 LATENT_SPACE_DIM = 500                   # number of dimensions in the latent space
-INIT_WEIGHT_MEAN = 0
-INIT_WEIGHT_STD  = 0.02
+INIT_WEIGHT_MEAN = 0                     # weight init mean
+INIT_WEIGHT_STD  = 0.02                  # weight init std
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -147,6 +158,9 @@ TRANS_ENCODER_TOPOLOGY = [
         ['res-linear',  ResFCBlockData(300, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
         ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
+FC_ENCODER_TOPOLOGY = [
+
+]
 # VGG_DECODER_TOPOLOGY
 if XQUANTIZE == 2500:
     # ******************************************
@@ -299,6 +313,9 @@ elif XQUANTIZE == 600:
         # ['res-conv',  ResConvBlockData(8, 8, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
+FC_DECODER_TOPOLOGY = [
+
+]
 
 """
 DECODER_TOPOLOGY = [
