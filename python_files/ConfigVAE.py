@@ -89,7 +89,7 @@ PP_DATA = 'post_processing'
 # MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 500                   # number of dimensions in the latent space
+LATENT_SPACE_DIM = 100                   # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
 INIT_WEIGHT_STD  = 0.02                  # weight init std
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -159,7 +159,11 @@ TRANS_ENCODER_TOPOLOGY = [
         ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
 FC_ENCODER_TOPOLOGY = [
-
+    ['linear',      FCBlockData(500, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(250, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(250, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 # VGG_DECODER_TOPOLOGY
 if XQUANTIZE == 2500:
@@ -314,7 +318,11 @@ elif XQUANTIZE == 600:
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
 FC_DECODER_TOPOLOGY = [
-
+    ['linear',      FCBlockData(250, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 
 """

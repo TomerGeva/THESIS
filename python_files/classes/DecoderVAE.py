@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import torch.nn as nn
 from torch import zeros as t_zeros
-from neural_network_block_classes import FullyConnectedBlock, ConvTransposeBlock, ResidualConvBlock
+from neural_network_block_classes import FullyConnectedBlock, ConvTransposeBlock, ResidualConvBlock, FullyConnectedResidualBlock
 
 
 class DecoderVAE(nn.Module):
@@ -20,13 +20,22 @@ class DecoderVAE(nn.Module):
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
+        shared_len      = 0
         linear_idx      = 0
         conv_trans_idx  = 0
         action_prev     = None
         sens_in_neurons = None
         for ii in range(len(self.topology)):
             action = self.topology[ii]
-            if 'linear' in action[0]:
+            if 'res-linear' in action[0]:
+                linear_idx += 1
+                if action_prev is None and ii > 0:  # First linear layer
+                    action[1].in_neurons = latent_dim
+                else:
+                    action[1].in_neurons = action_prev[1].out_neurons
+                self.layers.append(FullyConnectedResidualBlock(action[1]))
+                action_prev = action
+            elif 'linear' in action[0]:
                 linear_idx += 1
                 if action_prev is None:  # First linear layer
                     action[1].in_neurons = latent_dim
@@ -36,6 +45,7 @@ class DecoderVAE(nn.Module):
                 action_prev = action
                 if 'last' in action[0]:
                     sens_in_neurons = action[1].out_neurons
+                    shared_len      = linear_idx
             elif 'res-conv' in action[0]:
                 conv_trans_idx += 1
                 in_channels = action[1].out_channels
@@ -56,6 +66,7 @@ class DecoderVAE(nn.Module):
         else:
             self.sens_out_layer = None
 
+        self.shared_len     = shared_len
         self.fc_len         = linear_idx
         self.convTrans_len  = conv_trans_idx
 
@@ -63,7 +74,7 @@ class DecoderVAE(nn.Module):
         # ---------------------------------------------------------
         # passing through the fully connected blocks
         # ---------------------------------------------------------
-        for ii in range(self.fc_len):
+        for ii in range(self.shared_len):
             layer = self.layers[ii]
             x = layer(x)
         if self.model_out is model_output_e.SENS:
@@ -79,8 +90,13 @@ class DecoderVAE(nn.Module):
         # Restoring the grid
         # ---------------------------------------------------------
         x = x.view(-1, x.size(1), 1, 1)
-        for ii in range(self.convTrans_len):
-            layer = self.layers[self.fc_len + ii]
-            x = layer(x)
+        if self.shared_len == self.fc_len:
+            for ii in range(self.convTrans_len):
+                layer = self.layers[self.fc_len + ii]
+                x = layer(x)
+        else:
+            for ii in range(self.shared_len, self.fc_len):
+                layer = self.layers[self.fc_len + ii]
+                x = layer(x)
 
         return x, sensitivity

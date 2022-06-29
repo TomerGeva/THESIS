@@ -60,7 +60,7 @@ class EncoderVAE(nn.Module):
                 channels = math.floor(channels * action[1].reduction_rate)
             elif 'res-linear' in action[0]:
                 linear_len += 1
-                if action_prev is None:  # First linear layer
+                if action_prev is None and ii > 0:  # First linear layer
                     action[1].in_neurons = x_dim * y_dim * channels
                 else:
                     action[1].in_neurons = action_prev[1].out_neurons
@@ -68,9 +68,9 @@ class EncoderVAE(nn.Module):
                 action_prev = action
             elif 'linear' in action[0]:
                 linear_len += 1
-                if action_prev is None:  # First linear layer
+                if action_prev is None and ii > 0:  # First linear layer
                     action[1].in_neurons = x_dim * y_dim * channels
-                else:
+                elif action[1].in_neurons is None:
                     action[1].in_neurons = action_prev[1].out_neurons
                 self.layers.append(FullyConnectedBlock(action[1]))
                 action_prev = action
