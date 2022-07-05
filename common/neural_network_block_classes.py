@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
@@ -12,38 +13,37 @@ class Activator(nn.Module):
     This block implement all possibilities of activators wanted, as defined in the enumerator
     """
 
-    def __init__(self, act_type, alpha=0.01):
+    def __init__(self, act_type, alpha=0.2):
         super(Activator, self).__init__()
-        self.alpha = alpha
-        if act_type == activation_type_e.null:
-            self.activator = None
-        elif act_type == activation_type_e.ReLU:
-            self.activator = nn.ReLU()
-        elif act_type == activation_type_e.tanh:
-            self.activator = nn.Tanh()
-        elif act_type == activation_type_e.sig:
-            self.activator = nn.Sigmoid()
-        elif act_type == activation_type_e.lReLU:
-            self.activator = nn.LeakyReLU(negative_slope=alpha)
-        elif act_type == activation_type_e.tReLU:
-            self.activator = truncated_relu
-        elif act_type == activation_type_e.SELU:
-            self.activator = nn.SELU()
+        self.alpha    = alpha
+        self.act_type = act_type
 
     def forward(self, x):
-        if self.activator is None:
+        if self.act_type == activation_type_e.null:
             return x
+        elif self.act_type == activation_type_e.ReLU:
+            return F.relu(x)
+        elif self.act_type == activation_type_e.tanh:
+            return F.tanh(x)
+        elif self.act_type == activation_type_e.sig:
+            return F.sigmoid(x)
+        elif self.act_type == activation_type_e.lReLU:
+            return F.leaky_relu(x, negative_slope=self.alpha)
+        elif self.act_type == activation_type_e.tReLU:
+            return truncated_relu(x)
+        elif self.act_type == activation_type_e.SELU:
+            return F.selu(x)
         else:
-            return self.activator(x)
+            raise ValueError('Unknown activation used!')
 
 
-class PadPool(nn.Module):
+class PadPool2D(nn.Module):
     """
         This class implements max pooling block, with zero padding
     """
 
     def __init__(self, padpool_data):
-        super(PadPool, self).__init__()
+        super(PadPool2D, self).__init__()
         self.kernel = padpool_data.kernel
         self.padding = padpool_data.pad
 
@@ -66,7 +66,7 @@ class PadPool(nn.Module):
         return x
 
 
-class ConvBlock(nn.Module):
+class ConvBlock2D(nn.Module):
     """
     This class implements a convolution block, support batch morn, dropout and activations
 
@@ -75,7 +75,7 @@ class ConvBlock(nn.Module):
     """
 
     def __init__(self, conv_data):
-        super(ConvBlock, self).__init__()
+        super(ConvBlock2D, self).__init__()
         self.data = conv_data
 
         self.conv = nn.Conv2d(in_channels=conv_data.in_channels,
@@ -101,9 +101,9 @@ class ConvBlock(nn.Module):
         return out
 
 
-class ResidualConvBlock(nn.Module):
+class ResidualConvBlock2D(nn.Module):
     def __init__(self, conv_data):
-        super(ResidualConvBlock, self).__init__()
+        super(ResidualConvBlock2D, self).__init__()
         self.data = conv_data
 
         self.layers = nn.ModuleList()
@@ -165,7 +165,7 @@ class ResidualConvBlock(nn.Module):
         return out_total
 
 
-class SeparableConvBlock(nn.Module):
+class SeparableConvBlock2D(nn.Module):
     """
     This class implements a convolution block, support batch morn, dropout and activations
 
@@ -174,7 +174,7 @@ class SeparableConvBlock(nn.Module):
     """
 
     def __init__(self, conv_data):
-        super(SeparableConvBlock, self).__init__()
+        super(SeparableConvBlock2D, self).__init__()
         self.data = conv_data
 
         self.conv_cw = nn.Conv2d(in_channels=conv_data.in_channels,
@@ -211,7 +211,7 @@ class SeparableConvBlock(nn.Module):
         return out
 
 
-class ConvTransposeBlock(nn.Module):
+class ConvTransposeBlock2D(nn.Module):
     """
    This class implements a convolution block, support batch morn, dropout and activations
 
@@ -220,7 +220,7 @@ class ConvTransposeBlock(nn.Module):
    """
 
     def __init__(self, conv_data):
-        super(ConvTransposeBlock, self).__init__()
+        super(ConvTransposeBlock2D, self).__init__()
         self.data = conv_data
 
         self.conv = nn.ConvTranspose2d(in_channels=conv_data.in_channels,
@@ -333,24 +333,24 @@ class DenseTransitionBlock(nn.Module):
         super(DenseTransitionBlock, self).__init__()
         self.data = transition_data
 
-        self.conv = ConvBlock(ConvBlockData(in_channels=transition_data.in_channels,
-                                            out_channels=transition_data.out_channels,
-                                            kernel_size=transition_data.kernel,
-                                            stride=transition_data.stride,
-                                            padding=transition_data.padding,
-                                            dilation=transition_data.dilation,
-                                            bias=transition_data.bias,
-                                            batch_norm=transition_data.bnorm,
-                                            dropout_rate=transition_data.drate,
-                                            activation=transition_data.act,
-                                            alpha=transition_data.alpha
-                                            )
-                              )
-        self.padpool = PadPool(PadPoolData(pool_type=transition_data.pool_type,
-                                           kernel=transition_data.pool_size,
-                                           pad=transition_data.pool_padding
-                                           )
-                               )
+        self.conv = ConvBlock2D(ConvBlockData(in_channels=transition_data.in_channels,
+                                              out_channels=transition_data.out_channels,
+                                              kernel_size=transition_data.kernel,
+                                              stride=transition_data.stride,
+                                              padding=transition_data.padding,
+                                              dilation=transition_data.dilation,
+                                              bias=transition_data.bias,
+                                              batch_norm=transition_data.bnorm,
+                                              dropout_rate=transition_data.drate,
+                                              activation=transition_data.act,
+                                              alpha=transition_data.alpha
+                                              )
+                                )
+        self.padpool = PadPool2D(PadPoolData(pool_type=transition_data.pool_type,
+                                             kernel=transition_data.pool_size,
+                                             pad=transition_data.pool_padding
+                                             )
+                                 )
 
     def forward(self, x):
         out = self.conv(x)

@@ -1,7 +1,7 @@
 from ConfigVAE import *
 import torch.nn as nn
 from torch import zeros as t_zeros
-from neural_network_block_classes import FullyConnectedBlock, ConvTransposeBlock, ResidualConvBlock, FullyConnectedResidualBlock
+from neural_network_block_classes import FullyConnectedBlock, ConvTransposeBlock2D, ResidualConvBlock2D, FullyConnectedResidualBlock
 
 
 class DecoderVAE(nn.Module):
@@ -49,11 +49,11 @@ class DecoderVAE(nn.Module):
             elif 'res-conv' in action[0]:
                 conv_trans_idx += 1
                 in_channels = action[1].out_channels
-                self.layers.append(ResidualConvBlock(action[1]))
+                self.layers.append(ResidualConvBlock2D(action[1]))
             elif 'convTrans' in action[0]:
                 conv_trans_idx += 1
                 in_channels = action[1].out_channels
-                self.layers.append(ConvTransposeBlock(action[1]))
+                self.layers.append(ConvTransposeBlock2D(action[1]))
         # ---------------------------------------------------------
         # Adding additional layer for the sensitivity output
         # ---------------------------------------------------------

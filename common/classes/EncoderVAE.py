@@ -1,8 +1,8 @@
 from ConfigVAE import *
 import math
 import torch.nn as nn
-from neural_network_block_classes import ConvBlock, ResidualConvBlock, SeparableConvBlock, DenseBlock,\
-    DenseTransitionBlock, FullyConnectedResidualBlock, FullyConnectedBlock, PadPool, SelfAttentionBlock
+from neural_network_block_classes import ConvBlock2D, ResidualConvBlock2D, SeparableConvBlock2D, DenseBlock,\
+    DenseTransitionBlock, FullyConnectedResidualBlock, FullyConnectedBlock, PadPool2D, SelfAttentionBlock
 from auxiliary_functions import compute_output_dim
 
 
@@ -34,18 +34,18 @@ class EncoderVAE(nn.Module):
             if 'sep-conv' in action[0]:
                 conv_len += 1
                 channels = action[1].out_channels
-                self.layers.append(SeparableConvBlock(action[1]))
+                self.layers.append(SeparableConvBlock2D(action[1]))
             elif 'res-conv' in action[0]:
                 conv_len += 1
                 channels = action[1].out_channels
-                self.layers.append(ResidualConvBlock(action[1]))
+                self.layers.append(ResidualConvBlock2D(action[1]))
             elif 'conv' in action[0]:
                 conv_len += 1
                 channels = action[1].out_channels
-                self.layers.append(ConvBlock(action[1]))
+                self.layers.append(ConvBlock2D(action[1]))
             elif 'pool' in action[0]:
                 conv_len += 1
-                self.layers.append(PadPool(action[1]))
+                self.layers.append(PadPool2D(action[1]))
             elif 'dense' in action[0]:
                 conv_len += 1
                 action[1].in_channels = channels
