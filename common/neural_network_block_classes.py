@@ -335,18 +335,18 @@ class DenseBlock(nn.Module):
         # ---------------------------------------------------------
         for ii in range(dense_data.depth):
             self.module_list.append(
-                BasicDenseBlock(ConvBlock2DData(in_channels=dense_data.in_channels + ii * dense_data.growth,
-                                                out_channels=dense_data.growth,
-                                                kernel_size=dense_data.kernel,
-                                                stride=dense_data.stride,
-                                                padding=dense_data.padding,
-                                                dilation=dense_data.dilation,
-                                                bias=dense_data.bias,
-                                                batch_norm=dense_data.bnorm,
-                                                dropout_rate=dense_data.drate,
-                                                activation=dense_data.act,
-                                                alpha=dense_data.alpha
-                                                )
+                BasicDenseBlock(ConvBlockData(in_channels=dense_data.in_channels + ii * dense_data.growth,
+                                              out_channels=dense_data.growth,
+                                              kernel_size=dense_data.kernel,
+                                              stride=dense_data.stride,
+                                              padding=dense_data.padding,
+                                              dilation=dense_data.dilation,
+                                              bias=dense_data.bias,
+                                              batch_norm=dense_data.bnorm,
+                                              dropout_rate=dense_data.drate,
+                                              activation=dense_data.act,
+                                              alpha=dense_data.alpha
+                                              )
                                 )
                 )
 
@@ -365,18 +365,18 @@ class DenseTransitionBlock(nn.Module):
         super(DenseTransitionBlock, self).__init__()
         self.data = transition_data
 
-        self.conv = ConvBlock2D(ConvBlock2DData(in_channels=transition_data.in_channels,
-                                                out_channels=transition_data.out_channels,
-                                                kernel_size=transition_data.kernel,
-                                                stride=transition_data.stride,
-                                                padding=transition_data.padding,
-                                                dilation=transition_data.dilation,
-                                                bias=transition_data.bias,
-                                                batch_norm=transition_data.bnorm,
-                                                dropout_rate=transition_data.drate,
-                                                activation=transition_data.act,
-                                                alpha=transition_data.alpha
-                                                )
+        self.conv = ConvBlock2D(ConvBlockData(in_channels=transition_data.in_channels,
+                                              out_channels=transition_data.out_channels,
+                                              kernel_size=transition_data.kernel,
+                                              stride=transition_data.stride,
+                                              padding=transition_data.padding,
+                                              dilation=transition_data.dilation,
+                                              bias=transition_data.bias,
+                                              batch_norm=transition_data.bnorm,
+                                              dropout_rate=transition_data.drate,
+                                              activation=transition_data.act,
+                                              alpha=transition_data.alpha
+                                              )
                                 )
         self.padpool = PadPool2D(PadPool2DData(pool_type=transition_data.pool_type,
                                                kernel=transition_data.pool_size,
