@@ -17,7 +17,6 @@ class EncoderVAE(nn.Module):
         self.layers             = nn.ModuleList()
 
         x_dim, y_dim, channels  = self.compute_dim_sizes()
-        self.flatten            = True
 
         self.x_dim              = x_dim
         self.y_dim              = y_dim
@@ -80,6 +79,7 @@ class EncoderVAE(nn.Module):
                 action_prev = action
                 self.flatten = False
 
+        self.flatten    = conv_len > 0
         self.conv_len   = conv_len
         self.fc_len     = linear_len
 
