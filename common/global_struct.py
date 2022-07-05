@@ -2,7 +2,7 @@ from global_const import activation_type_e, pool_e
 import math
 
 
-class ConvBlockData:
+class ConvBlock2DData:
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels
@@ -21,7 +21,7 @@ class ConvBlockData:
         self.alpha          = alpha
 
 
-class ResConvBlockData:
+class ResConvBlock2DData:
     def __init__(self, in_channels, out_channels, layers, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels
@@ -41,7 +41,7 @@ class ResConvBlockData:
         self.alpha          = alpha
 
 
-class ConvTransposeBlockData:
+class ConvTransposeBlock2DData:
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, output_padding=0, bias=True,
                  batch_norm=True, dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels
@@ -140,7 +140,7 @@ class ResFCBlockData:
         self.alpha          = alpha
 
 
-class PadPoolData:
+class PadPool2DData:
     def __init__(self, pool_type, pad=0, kernel=2):
         self.pool_type = pool_type  # MAX or AVG
         self.pad       = pad        # padding, can be either an index or a tuple with size of 4
