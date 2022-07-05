@@ -140,7 +140,7 @@ class ResFCBlockData:
         self.alpha          = alpha
 
 
-class PadPool2DData:
+class PadPoolData:
     def __init__(self, pool_type, pad=0, kernel=2):
         self.pool_type = pool_type  # MAX or AVG
         self.pad       = pad        # padding, can be either an index or a tuple with size of 4

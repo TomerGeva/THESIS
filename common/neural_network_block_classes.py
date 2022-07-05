@@ -37,6 +37,32 @@ class Activator(nn.Module):
             raise ValueError('Unknown activation used!')
 
 
+class PadPool1D(nn.Module):
+    """
+        This class implements max pooling block, with zero padding
+    """
+
+    def __init__(self, padpool_data):
+        super(PadPool2D, self).__init__()
+        self.kernel = padpool_data.kernel
+        self.padding = padpool_data.pad
+
+        self.pad = nn.ConstantPad1d(self.padding, 0.0) if self.padding > 0 else None
+        if padpool_data.pool_type is pool_e.MAX:
+            self.pool = nn.MaxPool1d(kernel_size=self.kernel) if self.kernel > 1 else None
+        elif padpool_data.pool_type is pool_e.AVG:
+            self.pool = nn.AvgPool1d(kernel_size=self.kernel) if self.kernel > 1 else None
+        else:
+            self.pool = None
+
+    def forward(self, x):
+        if self.pad is not None:
+            x = self.pad(x)
+        if self.pool is not None:
+            x = self.pool(x)
+        return x
+
+
 class PadPool2D(nn.Module):
     """
         This class implements max pooling block, with zero padding
