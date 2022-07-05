@@ -2,7 +2,7 @@ from global_const import activation_type_e, pool_e
 import math
 
 
-class ConvBlock2DData:
+class ConvBlockData:
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation=1, bias=True, batch_norm=True,
                  dropout_rate=0.0, activation=activation_type_e.null, alpha=0.01):
         self.in_channels    = in_channels

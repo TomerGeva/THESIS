@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
-from global_struct import ConvBlockData, PadPoolData
+from global_struct import ConvBlock2DData, PadPool2DData
 from auxiliary_functions import truncated_relu
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
@@ -66,6 +66,17 @@ class PadPool2D(nn.Module):
         return x
 
 
+class ConvBlock1D(nn.module):
+    """
+   This class implements a convolution block, support batch morn, dropout and activations
+
+   Input ---> conv1D ---> dropout ---> batch_norm ---> activation ---> Output
+   """
+    def __init__(self, conv_data):
+        super(ConvBlock1D, self).__init__()
+        self.data = conv_data
+
+
 class ConvBlock2D(nn.Module):
     """
     This class implements a convolution block, support batch morn, dropout and activations
@@ -77,8 +88,7 @@ class ConvBlock2D(nn.Module):
     def __init__(self, conv_data):
         super(ConvBlock2D, self).__init__()
         self.data = conv_data
-
-        self.conv = nn.Conv2d(in_channels=conv_data.in_channels,
+        self.conv = nn.Conv1d(in_channels=conv_data.in_channels,
                               out_channels=conv_data.out_channels,
                               kernel_size=conv_data.kernel,
                               stride=conv_data.stride,
@@ -87,7 +97,7 @@ class ConvBlock2D(nn.Module):
                               bias=conv_data.bias
                               )
         self.drop = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
-        self.bnorm = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
+        self.bnorm = nn.BatchNorm1d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
         self.act = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
 
     def forward(self, x):
@@ -303,18 +313,18 @@ class DenseBlock(nn.Module):
         # ---------------------------------------------------------
         for ii in range(dense_data.depth):
             self.module_list.append(
-                BasicDenseBlock(ConvBlockData(in_channels=dense_data.in_channels + ii * dense_data.growth,
-                                              out_channels=dense_data.growth,
-                                              kernel_size=dense_data.kernel,
-                                              stride=dense_data.stride,
-                                              padding=dense_data.padding,
-                                              dilation=dense_data.dilation,
-                                              bias=dense_data.bias,
-                                              batch_norm=dense_data.bnorm,
-                                              dropout_rate=dense_data.drate,
-                                              activation=dense_data.act,
-                                              alpha=dense_data.alpha
-                                              )
+                BasicDenseBlock(ConvBlock2DData(in_channels=dense_data.in_channels + ii * dense_data.growth,
+                                                out_channels=dense_data.growth,
+                                                kernel_size=dense_data.kernel,
+                                                stride=dense_data.stride,
+                                                padding=dense_data.padding,
+                                                dilation=dense_data.dilation,
+                                                bias=dense_data.bias,
+                                                batch_norm=dense_data.bnorm,
+                                                dropout_rate=dense_data.drate,
+                                                activation=dense_data.act,
+                                                alpha=dense_data.alpha
+                                                )
                                 )
                 )
 
@@ -333,23 +343,23 @@ class DenseTransitionBlock(nn.Module):
         super(DenseTransitionBlock, self).__init__()
         self.data = transition_data
 
-        self.conv = ConvBlock2D(ConvBlockData(in_channels=transition_data.in_channels,
-                                              out_channels=transition_data.out_channels,
-                                              kernel_size=transition_data.kernel,
-                                              stride=transition_data.stride,
-                                              padding=transition_data.padding,
-                                              dilation=transition_data.dilation,
-                                              bias=transition_data.bias,
-                                              batch_norm=transition_data.bnorm,
-                                              dropout_rate=transition_data.drate,
-                                              activation=transition_data.act,
-                                              alpha=transition_data.alpha
-                                              )
+        self.conv = ConvBlock2D(ConvBlock2DData(in_channels=transition_data.in_channels,
+                                                out_channels=transition_data.out_channels,
+                                                kernel_size=transition_data.kernel,
+                                                stride=transition_data.stride,
+                                                padding=transition_data.padding,
+                                                dilation=transition_data.dilation,
+                                                bias=transition_data.bias,
+                                                batch_norm=transition_data.bnorm,
+                                                dropout_rate=transition_data.drate,
+                                                activation=transition_data.act,
+                                                alpha=transition_data.alpha
+                                                )
                                 )
-        self.padpool = PadPool2D(PadPoolData(pool_type=transition_data.pool_type,
-                                             kernel=transition_data.pool_size,
-                                             pad=transition_data.pool_padding
-                                             )
+        self.padpool = PadPool2D(PadPool2DData(pool_type=transition_data.pool_type,
+                                               kernel=transition_data.pool_size,
+                                               pad=transition_data.pool_padding
+                                               )
                                  )
 
     def forward(self, x):
