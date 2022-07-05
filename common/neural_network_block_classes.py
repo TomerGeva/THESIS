@@ -66,7 +66,7 @@ class PadPool2D(nn.Module):
         return x
 
 
-class ConvBlock1D(nn.module):
+class ConvBlock1D(nn.Module):
     """
    This class implements a convolution block, support batch morn, dropout and activations
 
@@ -88,7 +88,7 @@ class ConvBlock2D(nn.Module):
     def __init__(self, conv_data):
         super(ConvBlock2D, self).__init__()
         self.data = conv_data
-        self.conv = nn.Conv1d(in_channels=conv_data.in_channels,
+        self.conv = nn.Conv2d(in_channels=conv_data.in_channels,
                               out_channels=conv_data.out_channels,
                               kernel_size=conv_data.kernel,
                               stride=conv_data.stride,
