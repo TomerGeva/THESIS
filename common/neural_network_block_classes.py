@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
-from global_struct import ConvBlock2DData, PadPool2DData
+from global_struct import ConvBlockData, PadPool2DData
 from auxiliary_functions import truncated_relu
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
