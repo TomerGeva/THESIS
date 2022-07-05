@@ -52,7 +52,8 @@ class ScattererCoordinateDataset(Dataset):
         self.dbf          = DatabaseFunctions()
 
     def __len__(self):
-        return 2 * sum(self.csv_lens)
+        # return 2 * sum(self.csv_lens)
+        return sum(self.csv_lens)
 
     def __getitem__(self, idx, mixup=True):
         if torch.is_tensor(idx):
@@ -105,6 +106,7 @@ class ScattererCoordinateDataset(Dataset):
         # Creating the sample dict
         # ----------------------------------------------------------------------------------------------------------
         sample = {'grid': grid_array,
+                  'coordinate_target': points,
                   'sensitivity': sensitivity}
         # ----------------------------------------------------------------------------------------------------------
         # Transforming sample if given
@@ -150,8 +152,6 @@ class ScattererCoordinateDataset(Dataset):
             sample['grid'] = sample['grid'] * self.mixup_factor + mix_sample['grid'] * (1 - self.mixup_factor)
             sample['sensitivity'] = sample['sensitivity'] * self.mixup_factor + mix_sample['sensitivity'] * (1 - self.mixup_factor)
         """
-        # if self.case == 'test':
-        #     sample['coordinate_target'] = pixel_points
         return sample
 
 
@@ -172,23 +172,25 @@ class ToTensorMap(object):
         ])
 
     def __call__(self, sample):
-        grid, sensitivity = sample['grid'], sample['sensitivity']
+        grid, sensitivity, pixel_points = sample['grid'], sample['sensitivity'], sample['coordinate_target']
 
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
         grid_normalized = self.trans_grids(grid)
-        sensitivity = np.expand_dims(sensitivity, axis=0)
-        sensitivity = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
-        sensitivity = torch.from_numpy(np.array(sensitivity))
+        sensitivity  = np.expand_dims(sensitivity, axis=0)
+        sensitivity  = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
+        sensitivity  = torch.from_numpy(np.array(sensitivity))
+        pixel_points = torch.from_numpy(np.reshape(pixel_points, -1))
         return {'grid_target': self.to_tensor(grid),
                 'grid_in': grid_normalized,
-                'sensitivity': sensitivity}
+                'sensitivity': sensitivity,
+                'coordinate_target': pixel_points}
 
 
 # ======================================================================================================================
-# defining functions which manipulate the classes above
+# Defining functions which manipulate the classes above
 # ======================================================================================================================
 def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, dilation=0):
     """

@@ -29,12 +29,15 @@ class TrainerVAE:
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
-            self.reconstruction_loss = coord_reconstruction_loss
+            # self.reconstruction_loss = coord_reconstruction_loss
+            self.reconstruction_loss = grid_mse
         else:
             self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([xquantize, yquantize], device=device) * grid_pos_weight)
         self.encoder_type    = net.encoder_type
         self.coord2map_sigma = coord2map_sigma
         self.n               = n
+        self.xquantize       = xquantize
+        self.yquantize       = yquantize
         # -------------------------------------
         # optimizer
         # -------------------------------------
@@ -78,12 +81,13 @@ class TrainerVAE:
         if model_out is model_output_e.SENS:
             grid_mse_loss = torch.zeros(1).to(kl_div.device)
         else:
-            if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
-                grid_mse_loss = self.reconstruction_loss(grid_targets, grid_outputs, self.n, self.sigma, self.xquantize, self.yquantize)
-            else:
-                grid_mse_loss = self.reconstruction_loss(grid_outputs, grid_targets)
+            grid_mse_loss = self.reconstruction_loss(grid_outputs, grid_targets)
+            # if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+            #     grid_mse_loss = self.reconstruction_loss(grid_targets, grid_outputs, self.n, self.coord2map_sigma, self.xquantize, self.yquantize)
+            # else:
+            #     grid_mse_loss = self.reconstruction_loss(grid_outputs, grid_targets)
 
-        return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
+        return sens_mse_loss, kl_div, grid_mse_loss
 
     def test_model(self, mod_vae, loader):
         """
@@ -118,19 +122,22 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
-                grids           = Variable(sample['grid_in'].float()).to(mod_vae.device)
                 sensitivities   = sample['sensitivity'].float().to(mod_vae.device)
-                grid_targets    = sample['grid_target'].float().to(mod_vae.device)
-
+                if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                    grid_targets = Variable(sample['coordinate_target'].float()).to(mod_vae.device)
+                    grids        = Variable(sample['coordinate_target'].float()).to(mod_vae.device)
+                else:
+                    grid_targets = sample['grid_target'].float().to(mod_vae.device)
+                    grids        = Variable(sample['grid_in'].float()).to(mod_vae.device)
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
                 grid_out, sens_out, mu, logvar = mod_vae(grids)
-
                 # ------------------------------------------------------------------------------
                 # Cost computations
                 # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
+                sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
+                cost = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
                 test_sens_mse   += sens_mse_loss.item()
                 counter         += sensitivities.size(0)
@@ -192,9 +199,14 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Extracting the grids and sensitivities
                 # ------------------------------------------------------------------------------
-                grids         = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
-                sensitivities = Variable(sample_batched['sensitivity'].float()).to(mod_vae.device)
-                grid_targets  = Variable(sample_batched['grid_target'].float()).to(mod_vae.device)
+                sensitivities = sample_batched['sensitivity'].float().to(mod_vae.device)
+                if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                    # grid_targets = sample_batched['grid_target'].float().to(mod_vae.device)
+                    grid_targets = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
+                    grids        = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
+                else:
+                    grid_targets = sample_batched['grid_target'].float().to(mod_vae.device)
+                    grids        = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
                 # ------------------------------------------------------------------------------
                 # Forward pass
                 # ------------------------------------------------------------------------------
@@ -202,7 +214,8 @@ class TrainerVAE:
                 # ------------------------------------------------------------------------------
                 # Backward computations
                 # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss, cost = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
+                sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
+                cost = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
                 train_cost      += cost.item()
                 train_sens_mse  += sens_mse_loss.item()
                 train_kl_div    += kl_div.item()
@@ -388,8 +401,9 @@ def coord_reconstruction_loss(targets, outputs, n, sigma, xquantize, yquantize):
     :return:  computes a map out of the coordinates, then computes a loss for all of them
     """
     mse_sum = 0
-    for ii in range(targets.size()[0]):  # going over all the batch
-        target_map = coord2map(outputs[ii, :], n, sigma, xquantize, yquantize)
+    for ii in range(targets.size()[0]):
+        # target_map = coord2map(targets[ii, :], n, sigma, xquantize, yquantize)
+        target_map =targets[ii][0]
         output_map = coord2map(outputs[ii, :], n, sigma, xquantize, yquantize)
         mse_sum += grid_mse(target_map, output_map)
     return mse_sum / targets.size()[0]
@@ -408,17 +422,24 @@ def coord2map(coordinates_vec, n, sigma, xquantize, yquantize):
     # =================================================
     # Local variables
     # =================================================
-    grid  = torch.zeros([yquantize, xquantize])
-    x_vec = np.arange(0, xquantize)
-    y_vec = np.arange(0, yquantize)
-    xgrid, ygrid = np.meshgrid(x_vec, y_vec)
-    xgrid, ygrid = torch.tensor(xgrid), torch.Tensor(ygrid)
-
+    box_size = 9
+    grid     = torch.zeros([yquantize, xquantize]).to(coordinates_vec.device)
+    # x_vec = np.arange(0, xquantize)
+    # y_vec = np.arange(0, yquantize)
+    # xgrid, ygrid = np.meshgrid(x_vec, y_vec)
+    # xgrid, ygrid = torch.tensor(xgrid).to(coordinates_vec.device), torch.Tensor(ygrid).to(coordinates_vec.device)
+    # =================================================
+    # Building the picture
+    # =================================================
     for ii in range(len(coordinates_vec) // 2):
-        grid += np.exp(-1*((xgrid - coordinates_vec[2*ii])**(2*n) + (ygrid - coordinates_vec[2*ii+1])**(2*n)) / (2*sigma**2))
+        x_vec = np.arange(max(0, int(coordinates_vec[2*ii].item()) - box_size), min(grid.size()[1], int(coordinates_vec[2*ii].item()) + box_size + 1))
+        y_vec = np.arange(max(0, int(coordinates_vec[2*ii+1].item()) - box_size), min(grid.size()[0], int(coordinates_vec[2*ii+1].item()) + box_size + 1))
+        xgrid, ygrid = np.meshgrid(x_vec, y_vec)
+        xgrid, ygrid = torch.tensor(xgrid).type(torch.LongTensor).to(coordinates_vec.device), torch.Tensor(ygrid).type(torch.LongTensor).to(coordinates_vec.device)
+        grid[ygrid, xgrid] += torch.exp(-1*((xgrid - coordinates_vec[2*ii])**(2*n) + (ygrid - coordinates_vec[2*ii+1])**(2*n)) / (2*sigma**2))
     return grid
 
 
 def grid_mse(targets, outputs):
-    return 0.5 * torch.sum((targets - outputs).pow(2))
+    return 0.5 * torch.sum(torch.pow(targets - outputs, 2.0))
 

@@ -61,14 +61,14 @@ PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_
 #                        '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_1e+05_test.csv',
 #                        '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_2e+05_test.csv',
 #                        '..\\..\\databases\\corner_1450_db_30p5k_signed_gt_3e+05_test.csv']
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_31k_500scat_signed_lt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_3e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_4e+03_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_31k_500scat_signed_lt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_3e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_31k_500scat_signed_gt_4e+03_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_30k_500scat_signed_lt_2e+03_train.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_2e+03_train.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_3e+03_train.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_4e+03_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_30k_500scat_signed_lt_2e+03_test.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_2e+03_test.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_3e+03_test.csv',
+                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_4e+03_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results'
 # --------------------------------------------------------------------------------------------------------------
 # Post processing paths
@@ -89,16 +89,16 @@ PP_DATA = 'post_processing'
 # MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 100                   # number of dimensions in the latent space
+LATENT_SPACE_DIM = 175                 # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
-INIT_WEIGHT_STD  = 0.02                  # weight init std
+INIT_WEIGHT_STD  = 0.05                  # weight init std
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BETA_DKL         = 1e-3              # the KL coefficient in the cost function
-BETA_GRID        = 1e-3
+BETA_GRID        = 1
 GRID_POS_WEIGHT  = 25            # for 1450 it was set to 1 since dilation was enough
-MSE_GROUP_WEIGHT = [1, 2, 2, 20]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+MSE_GROUP_WEIGHT = [1, 2, 2, 4]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -159,10 +159,11 @@ TRANS_ENCODER_TOPOLOGY = [
         ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
 FC_ENCODER_TOPOLOGY = [
-    ['linear',      FCBlockData(500, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['res-linear',  ResFCBlockData(250, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['res-linear',  ResFCBlockData(250, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(1250, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(800, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(700, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(600, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(600, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 # VGG_DECODER_TOPOLOGY
@@ -318,10 +319,12 @@ elif XQUANTIZE == 600:
         ['convTrans', ConvTransposeBlockData(8,     1,  5, 1, padding=2, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
 FC_DECODER_TOPOLOGY = [
-    ['linear',      FCBlockData(250, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(350, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear', FCBlockData(600, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['res-linear',  ResFCBlockData(800, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 

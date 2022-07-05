@@ -60,12 +60,14 @@ class DecoderVAE(nn.Module):
         if self.model_out == model_output_e.BOTH:
             # self.sens_out_layer = FullyConnectedBlock(FCBlockData(1, in_neurons=sens_in_neurons, batch_norm=True, dropout_rate=0, activation=activation_type_e.null)),
             self.sens_out_layer = nn.Sequential(
-                FullyConnectedBlock(FCBlockData(25, in_neurons=sens_in_neurons, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)),
+                FullyConnectedBlock(FCBlockData(100, in_neurons=sens_in_neurons, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)),
+                FullyConnectedBlock(FCBlockData(25, in_neurons=100, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)),
                 FullyConnectedBlock(FCBlockData(1, in_neurons=25, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)),
             )
         else:
             self.sens_out_layer = None
 
+        self.unflatten      = conv_trans_idx > 0
         self.shared_len     = shared_len
         self.fc_len         = linear_idx
         self.convTrans_len  = conv_trans_idx
@@ -89,14 +91,15 @@ class DecoderVAE(nn.Module):
         # ---------------------------------------------------------
         # Restoring the grid
         # ---------------------------------------------------------
-        x = x.view(-1, x.size(1), 1, 1)
+        if self.unflatten:
+            x = x.view(-1, x.size(1), 1, 1)
         if self.shared_len == self.fc_len:
             for ii in range(self.convTrans_len):
                 layer = self.layers[self.fc_len + ii]
                 x = layer(x)
         else:
             for ii in range(self.shared_len, self.fc_len):
-                layer = self.layers[self.fc_len + ii]
+                layer = self.layers[ii]
                 x = layer(x)
 
         return x, sensitivity

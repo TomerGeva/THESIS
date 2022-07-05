@@ -2,6 +2,7 @@
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
 from ConfigVAE import *
+from global_const import encoder_type_e
 import os
 import csv
 import torch
@@ -128,9 +129,10 @@ class ModelManipulationFunctions:
         """
         for module in net.modules():
             if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
-                nn.init.normal_(module.weight.data, mean, std)
-                if isinstance(module, nn.Linear):
-                    pass
+                if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                    nn.init.xavier_normal_(module.weight.data)
+                else:
+                    nn.init.normal_(module.weight.data, mean, std)
 
     @staticmethod
     def copy_net_weights(source_net, target_net):

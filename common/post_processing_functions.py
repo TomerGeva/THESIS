@@ -121,7 +121,7 @@ class PostProcessing:
         # Grid loss plot
         # ------------------------------------------------------------------------------------------------------
         grid_plt = plt.figure()
-        plt.semilogy(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
+        plt.plot(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
         for test_db in keys_list:
             plt.plot(epoch_list[0:epoch_len:spacing], test_grid[test_db][0:epoch_len:spacing], '-o', label=test_db)
         plt.xlabel('Epoch')
@@ -149,7 +149,7 @@ class PostProcessing:
             ax[1].set_title('D_kl loss vs Epoch number')
             ax[1].grid()
 
-            ax[2].semilogy(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
+            ax[2].plot(epoch_list[0:epoch_len:spacing], train_grid_loss[0:epoch_len:spacing], '-o', label=train_label)
             for test_db in keys_list:
                 ax[2].plot(epoch_list[0:epoch_len:spacing], test_grid[test_db][0:epoch_len:spacing], '-o', label=test_db)
             ax[2].set_xlabel('Epoch')
@@ -703,16 +703,16 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
-    c_epoch = 200
+    c_epoch = 320
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
     # c_path = '..\\results\\5_4_2022_10_27'
     # c_path = '..\\results\\13_4_2022_22_58'
     # c_path = '..\\results\\15_5_2022_17_9'
-    c_path = '..\\results\\6_6_2022_19_7'
-    c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results\\19_6_2022_5_57'
+    # c_path = '..\\results\\6_6_2022_19_7'
+    # c_path = '..\\results\\14_6_2022_16_8'
+    c_path = '..\\results\\3_7_2022_15_41'
 
     pp = PostProcessing()
 
