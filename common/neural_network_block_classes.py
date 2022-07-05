@@ -72,9 +72,31 @@ class ConvBlock1D(nn.Module):
 
    Input ---> conv1D ---> dropout ---> batch_norm ---> activation ---> Output
    """
+
     def __init__(self, conv_data):
         super(ConvBlock1D, self).__init__()
         self.data = conv_data
+        self.conv = nn.Conv1d(in_channels=conv_data.in_channels,
+                              out_channels=conv_data.out_channels,
+                              kernel_size=conv_data.kernel,
+                              stride=conv_data.stride,
+                              padding=conv_data.padding,
+                              dilation=conv_data.dilation,
+                              bias=conv_data.bias
+                              )
+        self.drop = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
+        self.bnorm = nn.BatchNorm1d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
+        self.act = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
+
+    def forward(self, x):
+        out = self.conv(x)
+        if self.data.drate > 0:
+            out = self.drop(out)
+        if self.data.bnorm:
+            out = self.bnorm(out)
+        out = self.act(out)
+
+        return out
 
 
 class ConvBlock2D(nn.Module):
