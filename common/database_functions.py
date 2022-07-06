@@ -120,19 +120,22 @@ class ModelManipulationFunctions:
         return decoder, latent_dim
 
     @staticmethod
-    def initialize_weights(net, mean, std):
+    def initialize_weights(net, mean=0.0, std=0.02, method='guassian'):
         """
         :param net: the model which is being normalized
         :param mean: the target mean of the weights
         :param std: the target standard deviation of the weights
+        :param method: stated the initialization method
         :return: nothing, just adjusts the weights
         """
         for module in net.modules():
-            if isinstance(module, (nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
-                if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
+            if isinstance(module, (nn.Conv1d, nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
+                if method == 'xavier':
                     nn.init.xavier_normal_(module.weight.data)
-                else:
+                elif method == 'gaussian':
                     nn.init.normal_(module.weight.data, mean, std)
+                else:
+                    raise ValueError('Weight init method is unknown!')
 
     @staticmethod
     def copy_net_weights(source_net, target_net):

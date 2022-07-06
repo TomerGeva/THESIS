@@ -349,21 +349,6 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # ==================================================================================================================
     return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 
-# ==================================================================================================================
-# DGCNN functions
-# ==================================================================================================================
-class IOStream:
-    def __init__(self, path):
-        self.f = open(path, 'a')
-
-    def cprint(self, text):
-        print(text)
-        self.f.write(text+'\n')
-        self.f.flush()
-
-    def close(self):
-        self.f.close()
-
 
 # ==================================================================================================================
 # Init the files and folders

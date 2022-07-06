@@ -74,7 +74,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                          encoder_type=encoder_type,
                          mode=MODE,
                          model_out=MODEL_OUT)
-        mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
+        mmf.initialize_weights(mod_vae, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
         # ================================================================================
         # Copy weights if needed
