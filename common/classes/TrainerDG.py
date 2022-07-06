@@ -100,7 +100,7 @@ class TrainerDG:
                 sens_mse_loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), self.grad_clip)
                 self.optimizer.step()
-        return loss / counter
+        return loss / counter, counter
 
     def test_model(self, model, loader):
         # ==========================================================================================
@@ -109,10 +109,10 @@ class TrainerDG:
         model.eval()
         self.trainer_eval()
         with torch.no_grad():
-            test_loss = self.run_single_epoch(model, loader)
+            test_loss, counter = self.run_single_epoch(model, loader)
         model.train()
         self.trainer_train()
-        return test_loss
+        return test_loss, counter
 
     def train(self, model, train_loader, test_loaders, logger, epochs, save_per_epochs=1):
         """
@@ -143,6 +143,7 @@ class TrainerDG:
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}'.format(epochs))
         model.train()
         for epoch in range(self.epoch, epochs):
+            t = time()
             # ----------------------------------------------------------------------------------
             # Training single epoch
             # ----------------------------------------------------------------------------------
@@ -150,12 +151,93 @@ class TrainerDG:
             # ----------------------------------------------------------------------------------
             # Logging training results
             # ----------------------------------------------------------------------------------
+            logger.log_epoch(epoch, t)
             logger.log_epoch_results_train('train_weighted', train_loss)
             # ----------------------------------------------------------------------------------
             # Testing accuracy
             # ----------------------------------------------------------------------------------
+            test_sens_mse_vec = []
+            test_counters_vec = []
+            for key in test_loaders:
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Testing the results of the current group
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                test_loss, counter = self.test_model(model, test_loaders[key])
+                test_sens_mse_vec.append(test_loss)
+                test_counters_vec.append(counter)
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Getting the respective group weight, logging
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                test_mse_weight = self.get_test_group_weight(key)
+                logger.log_epoch_results_test(key, test_loss, test_mse_weight)
+            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            # Computing total cost for all test loaders and logging with LoggerVAE
+            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            test_sens_mse = 0.0
+            test_counter  = 0
+            for sens_mse, count in zip(test_sens_mse_vec, test_counters_vec):
+                test_sens_mse += (sens_mse * count)
+                test_counter  += count
+            test_sens_mse   = test_sens_mse / test_counter
+            logger.log_epoch_results_test('test_total', test_sens_mse, 0)
+            # ------------------------------------------------------------------------------
+            # Advancing the scheduler of the lr
+            # ------------------------------------------------------------------------------
+            self.scheduler.step()
+            # ------------------------------------------------------------------------------
+            # Saving the training state
+            # save every x epochs and on the last epoch
+            # ------------------------------------------------------------------------------
+            if epoch % save_per_epochs == 0 or epoch == epochs - 1 or test_sens_mse_vec[-1] < init_mse:
+                self.save_state_train(logger.logdir, model, epoch, self.learning_rate, self.mom, self.beta_dkl, self.beta_grid)
+                if test_sens_mse_vec[-1] < init_mse:
+                    init_mse = test_sens_mse_vec[-1]
 
+    def save_state_train(self, logdir, vae, epoch, lr, mom, beta_dkl, beta_grid, norm_fact, filename=None):
+        """Saving model and optimizer to drive, as well as current epoch and loss
+        # When saving a general checkpoint, to be used for either inference or resuming training, you must save more
+        # than just the model’s state_dict.
+        # It is important to also save the optimizer’s state_dict, as this contains buffers and parameters that are
+        # updated as the model trains.
+        """
+        if filename is None:
+            name = 'VAE_model_data_lr_' + str(lr) + '_epoch_' + str(epoch) + '.tar'
+            path = os.path.join(logdir, name)
+        else:
+            path = os.path.join(logdir, filename)
 
+        data_to_save = {'epoch': epoch,
+                        'vae_state_dict':       vae.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'lr':                   lr,
+                        'mom':                  mom,
+                        'beta_dkl':             beta_dkl,
+                        'beta_grid':            beta_grid,
+                        'norm_fact':            norm_fact,
+                        'encoder_topology':     vae.encoder.topology,
+                        'decoder_topology':     vae.decoder.topology,
+                        'latent_dim':           vae.latent_dim,
+                        'encoder_type':         vae.encoder_type,
+                        'mode':                 vae.mode,
+                        'model_out':            vae.model_out
+                        }
+        torch.save(data_to_save, path)
 
+    def trainer_eval(self, model=None):
+        self.training = False
+        if model is not None:
+            model.eval()
+
+    def trainer_train(self, model=None):
+        self.training = True
+        if model is not None:
+            model.train()
+
+    def get_test_group_weight(self, test_group):
+        low_threshold = eval(test_group.split('_')[0])
+        for ii, th in enumerate(self.group_th):
+            if low_threshold < th:
+                return self.group_weights[ii]
+        return self.group_weights[-1]
 
 
