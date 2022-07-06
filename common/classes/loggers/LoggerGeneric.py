@@ -2,6 +2,7 @@ import os
 import math
 import datetime
 from ConfigVAE import *
+from time import time
 
 
 class LoggerGeneric:
@@ -127,6 +128,95 @@ class LoggerGeneric:
         return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_type.name,
                                pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
 
+    def _get_transformer_layer_string(self, patch_size_x, patch_size_y, embed_size):
+        temp_str = 'patch_size_x: {0:^1' + str(self.desc_space) + \
+                   '} patch_size_y: {1:^' + str(self.desc_space) + \
+                   '} embed_size: {2:^' + str(self.desc_space) + '}'
+        return temp_str.format(patch_size_x, patch_size_y, embed_size)
+
+    def _get_layer_log_string(self, x_dim_size, y_dim_size, channels, action):
+        if 'convTrans' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_conv_transpose_layer_string(action[1].in_channels,
+                                                                                             action[1].out_channels,
+                                                                                             action[1].kernel,
+                                                                                             action[1].stride,
+                                                                                             action[1].padding,
+                                                                                             action[1].output_padding,
+                                                                                             action[1].bnorm,
+                                                                                             action[1].drate,
+                                                                                             action[1].act,
+                                                                                             x_dim_size,
+                                                                                             y_dim_size))
+        elif 'res-conv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_residual_conv_layer_string(action[1].in_channels,
+                                                                                            action[1].out_channels,
+                                                                                            action[1].layers,
+                                                                                            action[1].kernel,
+                                                                                            action[1].stride,
+                                                                                            action[1].padding,
+                                                                                            action[1].bnorm,
+                                                                                            action[1].drate,
+                                                                                            action[1].act,
+                                                                                            x_dim_size,
+                                                                                            y_dim_size))
+        elif 'dense' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_dense_layer_string(channels,
+                                                                                    action[1].depth,
+                                                                                    action[1].growth,
+                                                                                    action[1].kernel,
+                                                                                    action[1].stride,
+                                                                                    action[1].padding,
+                                                                                    action[1].bnorm,
+                                                                                    action[1].drate,
+                                                                                    action[1].act,
+                                                                                    x_dim_size,
+                                                                                    y_dim_size))
+        elif 'transition' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_transition_layer_string(channels,
+                                                                                         action[1].reduction_rate,
+                                                                                         action[1].kernel,
+                                                                                         action[1].stride,
+                                                                                         action[1].padding,
+                                                                                         action[1].bnorm,
+                                                                                         action[1].drate,
+                                                                                         action[1].act,
+                                                                                         action[1].pool_type,
+                                                                                         action[1].pool_size,
+                                                                                         x_dim_size,
+                                                                                         y_dim_size))
+        elif 'res-linear' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_residual_linear_layer_string(action[1].in_neurons,
+                                                                                              action[1].out_neurons,
+                                                                                              action[1].layers,
+                                                                                              action[1].bnorm,
+                                                                                              action[1].drate,
+                                                                                              action[1].act))
+        elif 'linear' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
+                                                                                     action[1].out_neurons,
+                                                                                     action[1].bnorm,
+                                                                                     action[1].drate,
+                                                                                     action[1].act))
+        elif 'conv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_conv_layer_string(action[1].in_channels,
+                                                                                   action[1].out_channels,
+                                                                                   action[1].kernel,
+                                                                                   action[1].stride,
+                                                                                   action[1].padding,
+                                                                                   action[1].bnorm,
+                                                                                   action[1].drate,
+                                                                                   action[1].act,
+                                                                                   x_dim_size,
+                                                                                   y_dim_size))
+        elif 'pool' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_pool_layer_string(action[1].kernel,  # kernel
+                                                                                   x_dim_size,
+                                                                                   y_dim_size))
+        elif 'transformer' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_transformer_layer_string(action[1].patch_size_x,
+                                                                                          action[1].patch_size_y,
+                                                                                          action[1].embed_size))
+
     # ==================================================================================================================
     # Logging functions
     # ==================================================================================================================
@@ -186,4 +276,7 @@ class LoggerGeneric:
         self.log_line('-------------------------------------------------------------------------------------------')
         self.log_line('{0:^86}'.format(title))
         self.log_line('-------------------------------------------------------------------------------------------')
+
+    def log_epoch(self, epoch_num, t):
+        self.log_line('Epoch: {0:5d}, training time: {1:5.2f}'.format(epoch_num, time() - t))
 
