@@ -6,6 +6,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from auxiliary_functions import weighted_mse
 from GPUtil import showUtilization as gpu_usage  # for debug only
 
 
@@ -362,31 +363,6 @@ def d_kl(mu, logvar):
              normal distribution form the normal distribution N(0, I)
     """
     return torch.sum(0.5 * torch.sum(logvar.exp() + mu.pow(2) - 1 - logvar, dim=1))
-
-
-def weighted_mse(targets, outputs, weights=None, thresholds=None):
-    """
-    :param targets: model targets
-    :param outputs: model outputs
-    :param weights: weights of the mse according to the groups
-    :param thresholds: the thresholds between the different groups
-    :return:
-    """
-    # ==================================================================================================================
-    # Getting the weight vector
-    # ==================================================================================================================
-    if (weights is None) or (thresholds is None):
-        weight_vec = torch.ones_like(targets)
-    else:
-        weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
-        for ii in range(1, len(thresholds)):
-            weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
-        weight_vec += (targets >= thresholds[-1]) * weights[-1]
-
-    # ==================================================================================================================
-    # Computing weighted MSE as a sum, not mean
-    # ==================================================================================================================
-    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 
 
 def coord_reconstruction_loss(targets, outputs, n, sigma, xquantize, yquantize):
