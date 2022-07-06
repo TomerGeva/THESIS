@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
-from global_struct import ConvBlockData, PadPool2DData
+from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
@@ -43,7 +43,7 @@ class PadPool1D(nn.Module):
     """
 
     def __init__(self, padpool_data):
-        super(PadPool2D, self).__init__()
+        super(PadPool1D, self).__init__()
         self.kernel = padpool_data.kernel
         self.padding = padpool_data.pad
 
@@ -404,10 +404,10 @@ class DenseTransitionBlock(nn.Module):
                                               alpha=transition_data.alpha
                                               )
                                 )
-        self.padpool = PadPool2D(PadPool2DData(pool_type=transition_data.pool_type,
-                                               kernel=transition_data.pool_size,
-                                               pad=transition_data.pool_padding
-                                               )
+        self.padpool = PadPool2D(PadPoolData(pool_type=transition_data.pool_type,
+                                             kernel=transition_data.pool_size,
+                                             pad=transition_data.pool_padding
+                                             )
                                  )
 
     def forward(self, x):

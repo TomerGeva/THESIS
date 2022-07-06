@@ -19,14 +19,11 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, case='train', mix_factor=0, mix_prob=0, abs_sens=True, dilation=0):
+    def __init__(self, csv_files, transform=None, abs_sens=True, dilation=0):
         """
         Args:
         :param csv_files: logdir to the file with all the database
         :param transform: transformation flag of the data
-        :param      case: train or test database
-        :param mix_factor: mixup parameter, should be between 0 and 1
-        :param mix_prob: probability to do mixup when calling __get_item__(), should be between 0 and 1
         :param abs_sens: if true, doing abs on the sensitivity
         :param dilation: amount of dilation done for the cylinder locations
         """
@@ -43,9 +40,6 @@ class ScattererCoordinateDataset(Dataset):
             else:
                 self.cumsum.append(self.cumsum[-1] + len(self.csv_data[-1]))
         self.transform    = transform
-        self.case         = case
-        self.mixup_factor = mix_factor
-        self.mixup_prob   = mix_prob
         self.abs_sens     = abs_sens
         self.dilation     = dilation
         self.kernel       = create_circle_kernel(radius=self.dilation) if dilation > 0 else 0
@@ -91,10 +85,7 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # Converting the points to a 2-D array
         # ----------------------------------------------------------------------------------------------------------
-        # training has 50% chance to flip, test checks un-flipped and flipped
         if idx >= sum(self.csv_lens):
-            # print(self.case, idx)
-            # print(idx, idx_new, sum(self.csv_lens))
             pixel_points = np.fliplr(pixel_points)
         grid_array = self.dbf.points2mat(pixel_points)
         # ----------------------------------------------------------------------------------------------------------
@@ -113,45 +104,7 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         if self.transform:
             sample = self.transform(sample)
-        """
-        # ----------------------------------------------------------------------------------------------------------
-        # Doing mixup, if indicated and possible
-        # ----------------------------------------------------------------------------------------------------------
-        if mixup and self.case == 'train' and len(self.csv_lens) > 1 and self.mixup_prob > 0:
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # Randomly deciding to do mixup or not
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            eps = rnd.random()
-            if eps >= self.mixup_prob:  # 0.1:
-                return sample
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # Raffling a different group
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            groups = list(range(0, len(self.csv_lens)))
-            for ii, size in enumerate(self.cumsum):
-                if idx <= size:
-                    groups.remove(ii)
-                    break
-            group = rnd.choice(groups)
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # Raffling an index from the group
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            index = rnd.randint(0, self.csv_lens[group] - 1)
-            # print('doing mixup, chosen row index ' + str(index))
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # Fetching the data of that index
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            if group == 0:  # If group is 0, no need to add anything to the index
-                full_idx = index
-            else:  # adding the cumsum of the previous group
-                full_idx = self.cumsum[group-1] + index
-            mix_sample = self.__getitem__(full_idx, mixup=False)
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # Performing the mixup
-            # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            sample['grid'] = sample['grid'] * self.mixup_factor + mix_sample['grid'] * (1 - self.mixup_factor)
-            sample['sensitivity'] = sample['sensitivity'] * self.mixup_factor + mix_sample['sensitivity'] * (1 - self.mixup_factor)
-        """
+
         return sample
 
 
@@ -167,9 +120,6 @@ class ToTensorMap(object):
             Normalize(mean=[GRID_MEAN]*IMG_CHANNELS, std=[GRID_STD]*IMG_CHANNELS)
         ])
         self.to_tensor = ToTensor()
-        self.trans_sens = Compose([
-            Normalize(mean=[SENS_MEAN]*IMG_CHANNELS, std=[SENS_STD]*IMG_CHANNELS)
-        ])
 
     def __call__(self, sample):
         grid, sensitivity, pixel_points = sample['grid'], sample['sensitivity'], sample['coordinate_target']
@@ -192,12 +142,10 @@ class ToTensorMap(object):
 # ======================================================================================================================
 # Defining functions which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, dilation=0):
+def import_data_sets_pics(batch_size, abs_sens=True, dilation=0):
     """
     This function imports the train and test database
     :param batch_size: size of each batch in the databases
-    :param mixup_factor: for the training dataset,  the mixup factor
-    :param mixup_prob: for the training dataset, probability of performing mixup with the mixup factor
     :param abs_sens: if true, doing absolute value over teh sensitivity
     :param dilation: amount of dilation done for the cylinder locations
     :return: two datasets, training and test
@@ -207,9 +155,6 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, di
     # --------------------------------------------------------------------------------------------------------------
     data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN,
                                             transform=ToTensorMap(),
-                                            case='train',
-                                            mix_factor=mixup_factor,
-                                            mix_prob=mixup_prob,
                                             abs_sens=abs_sens,
                                             dilation=dilation,)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
@@ -223,7 +168,6 @@ def import_data_sets(batch_size, mixup_factor=0, mixup_prob=0, abs_sens=True, di
         data_list = [dataset]
         temp_data = ScattererCoordinateDataset(csv_files=data_list,
                                                transform=ToTensorMap(),
-                                               case='test',
                                                abs_sens=abs_sens,
                                                dilation=dilation)
         # ******************************************************************************************************
@@ -266,9 +210,6 @@ def import_data_set_test(path, batch_size, mixup_factor=0, mixup_prob=0, abs_sen
     # --------------------------------------------------------------------------------------------------------------
     dataset = ScattererCoordinateDataset(csv_files=path,
                                          transform=ToTensorMap(),
-                                         case='test',
-                                         mix_factor=mixup_factor,
-                                         mix_prob=mixup_prob,
                                          abs_sens=abs_sens,
                                          dilation=dilation)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=0)

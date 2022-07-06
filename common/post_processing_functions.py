@@ -712,7 +712,7 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results\\3_7_2022_15_41'
+    c_path = '..\\results_vae\\5_7_2022_16_5'
 
     pp = PostProcessing()
 

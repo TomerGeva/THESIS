@@ -10,7 +10,7 @@ from TrainerVAE                 import TrainerVAE
 from TrainerLatent              import TrainerLatent
 from ModVAE                     import ModVAE
 from auxiliary_functions        import PlottingFunctions
-from ScatterCoordinateDataset   import import_data_sets
+from ScatterCoordinateDataset   import import_data_sets_pics
 from global_const               import encoder_type_e
 from database_functions         import ModelManipulationFunctions, PathFindingFunctions
 from blob_detection_functions   import BlobDetectionFunctions
@@ -38,11 +38,9 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
     # ================================================================================
     # Importing the data
     # ================================================================================
-    train_loader, test_loaders, thresholds = import_data_sets(BATCH_SIZE,
-                                                              mixup_factor=MIXUP_FACTOR,
-                                                              mixup_prob=MIXUP_PROB,
-                                                              abs_sens=ABS_SENS,
-                                                              dilation=DILATION)
+    train_loader, test_loaders, thresholds = import_data_sets_pics(BATCH_SIZE,
+                                                                   abs_sens=ABS_SENS,
+                                                                   dilation=DILATION)
     if load_model is None:
         # ============================================================================
         # Creating the net & trainer objects

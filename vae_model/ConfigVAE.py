@@ -26,14 +26,12 @@ SEED = 140993
 # --------------------------------------------------------------------------------------------------------------
 # Convolution based dataloader configurations
 # --------------------------------------------------------------------------------------------------------------
-DILATION    = 4
-GRID_MEAN   = 0.000232
-GRID_STD    = 0.015229786
-SENS_MEAN   = 1655  # 64458    # output normalization factor - mean sensitivity
-SENS_STD    = 385   # 41025
-IMG_CHANNELS   = 1
-MIXUP_FACTOR   = 0.3  # mixup parameter for the data
-MIXUP_PROB     = 0    # mixup probability
+DILATION     = 4
+GRID_MEAN    = 0.000232
+GRID_STD     = 0.015229786
+SENS_MEAN    = 1655  # 64458    # output normalization factor - mean sensitivity
+SENS_STD     = 385   # 41025
+IMG_CHANNELS = 1
 # --------------------------------------------------------------------------------------------------------------
 # Fully Connected based dataloader configurations
 # --------------------------------------------------------------------------------------------------------------
@@ -89,7 +87,7 @@ PP_DATA = 'post_processing'
 # MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 175                 # number of dimensions in the latent space
+LATENT_SPACE_DIM = 165                 # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
 INIT_WEIGHT_STD  = 0.05                  # weight init std
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -162,7 +160,6 @@ FC_ENCODER_TOPOLOGY = [
     ['linear',      FCBlockData(1250, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(800, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(700, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',      FCBlockData(600, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(600, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
@@ -320,10 +317,8 @@ elif XQUANTIZE == 600:
     ]
 FC_DECODER_TOPOLOGY = [
     ['linear',      FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',      FCBlockData(350, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(600, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(800, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
