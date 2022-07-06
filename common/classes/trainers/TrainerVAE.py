@@ -90,7 +90,69 @@ class TrainerVAE:
 
         return sens_mse_loss, kl_div, grid_mse_loss
 
-    def test_model(self, mod_vae, loader):
+    def run_single_epoch(self, model, loader):
+        # ==========================================================================================
+        # Init variables
+        # ==========================================================================================
+        loss      = 0.0
+        loss_sens = 0.0
+        loss_dkl  = 0.0
+        loss_grid = 0.0
+        counter = 0
+        loader_iter = iter(loader)
+        for _ in range(len(loader)):
+            # ------------------------------------------------------------------------------
+            # Working with iterables, much faster
+            # ------------------------------------------------------------------------------
+            try:
+                sample = next(loader_iter)
+            except StopIteration:
+                loader_iter = iter(loader)
+                sample = next(loader_iter)
+            # ------------------------------------------------------------------------------
+            # Extracting the grids and sensitivities
+            # ------------------------------------------------------------------------------
+            sensitivities = sample['sensitivity'].float().to(model.device)
+            if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                grid_targets = Variable(sample['coordinate_target'].float()).to(model.device)
+                grids = Variable(sample['coordinate_target'].float()).to(model.device)
+            else:
+                grid_targets = sample['grid_target'].float().to(model.device)
+                grids = Variable(sample['grid_in'].float()).to(model.device)
+            # ------------------------------------------------------------------------------
+            # Forward pass
+            # ------------------------------------------------------------------------------
+            grid_out, sens_out, mu, logvar = model(grids)
+            # ------------------------------------------------------------------------------
+            # Cost computations
+            # ------------------------------------------------------------------------------
+            sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets,
+                                                                     grid_out, model_out=model.model_out)
+            loss_batch = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
+
+            loss_sens += sens_mse_loss.item()
+            loss_dkl  += kl_div.item()
+            loss_grid += grid_mse_loss.item()
+            loss      += loss_batch.item()
+            counter   += sensitivities.size(0)
+            # ------------------------------------------------------------------------------
+            # Back propagation
+            # ------------------------------------------------------------------------------
+            if self.training:
+                for param in model.parameters():  # zero gradients
+                    param.grad = None
+                # gpu_usage()  # DEBUG
+                if model.mode is mode_e.AUTOENCODER and model.model_out is model_output_e.SENS:
+                    sens_mse_loss.backward()
+                elif model.mode is mode_e.AUTOENCODER and model.model_out is model_output_e.GRID:
+                    grid_mse_loss.backward()
+                else:
+                    loss_batch.backward()
+                nn.utils.clip_grad_norm_(model.parameters(), self.grad_clip)
+                self.optimizer.step()
+        return loss_sens / counter, loss_dkl / counter, loss_grid / counter, loss / counter, counter
+
+    def test_model(self, model, loader):
         """
         :param mod_vae: VAE we want to test
         :param loader: lodaer with the test database
@@ -99,55 +161,16 @@ class TrainerVAE:
         # ==========================================================================================
         # Init variables
         # ==========================================================================================
-        test_cost       = 0.0
-        test_sens_mse   = 0.0
-        test_grid_mse   = 0.0
-        counter         = 0
-
+        model.eval()
+        self.trainer_eval()
         # ==========================================================================================
         # Begin of testing
         # ==========================================================================================
-        mod_vae.eval()
-        self.trainer_eval()
         with torch.no_grad():
-            loader_iter = iter(loader)
-            for _ in range(len(loader)):
-                # ------------------------------------------------------------------------------
-                # Working with iterables, much faster
-                # ------------------------------------------------------------------------------
-                try:
-                    sample = next(loader_iter)
-                except StopIteration:
-                    loader_iter = iter(loader)
-                    sample = next(loader_iter)
-                # ------------------------------------------------------------------------------
-                # Extracting the grids and sensitivities
-                # ------------------------------------------------------------------------------
-                sensitivities   = sample['sensitivity'].float().to(mod_vae.device)
-                if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
-                    grid_targets = Variable(sample['coordinate_target'].float()).to(mod_vae.device)
-                    grids        = Variable(sample['coordinate_target'].float()).to(mod_vae.device)
-                else:
-                    grid_targets = sample['grid_target'].float().to(mod_vae.device)
-                    grids        = Variable(sample['grid_in'].float()).to(mod_vae.device)
-                # ------------------------------------------------------------------------------
-                # Forward pass
-                # ------------------------------------------------------------------------------
-                grid_out, sens_out, mu, logvar = mod_vae(grids)
-                # ------------------------------------------------------------------------------
-                # Cost computations
-                # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
-                cost = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
-
-                test_sens_mse   += sens_mse_loss.item()
-                counter         += sensitivities.size(0)
-                test_grid_mse   += grid_mse_loss.item()
-                test_cost       += cost.item()
-
-        mod_vae.train()
+            test_sens_mse, test_dkl, test_grid_mse, test_loss, counter = self.run_single_epoch(self, model, loader)
+        model.train()
         self.trainer_train()
-        return test_sens_mse, test_grid_mse, counter, test_cost
+        return test_sens_mse, test_grid_mse, counter, test_loss
 
     def train(self, mod_vae, train_loader, test_loaders, logger, save_per_epochs=1):
         """
@@ -182,71 +205,15 @@ class TrainerVAE:
         mod_vae.train()
 
         for epoch in range(self.epoch, EPOCH_NUM):
-            train_cost      = 0.0
-            train_sens_mse  = 0.0
-            train_kl_div    = 0.0
-            train_grid_mse  = 0.0
-            counter         = 0
             t = time()
-            train_loader_iter = iter(train_loader)
-            for _ in range(len(train_loader)):
-                # ------------------------------------------------------------------------------
-                # Working with iterables, much faster
-                # ------------------------------------------------------------------------------
-                try:
-                    sample_batched = next(train_loader_iter)
-                except StopIteration:
-                    train_loader_iter = iter(train_loader)
-                    sample_batched    = next(train_loader_iter)
-                # ------------------------------------------------------------------------------
-                # Extracting the grids and sensitivities
-                # ------------------------------------------------------------------------------
-                sensitivities = sample_batched['sensitivity'].float().to(mod_vae.device)
-                if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
-                    # grid_targets = sample_batched['grid_target'].float().to(mod_vae.device)
-                    grid_targets = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
-                    grids        = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
-                else:
-                    grid_targets = sample_batched['grid_target'].float().to(mod_vae.device)
-                    grids        = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
-                # ------------------------------------------------------------------------------
-                # Forward pass
-                # ------------------------------------------------------------------------------
-                grid_out, sens_out, mu, logvar = mod_vae(grids)
-                # ------------------------------------------------------------------------------
-                # Backward computations
-                # ------------------------------------------------------------------------------
-                sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets, grid_out, model_out=mod_vae.model_out)
-                cost = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
-                train_cost      += cost.item()
-                train_sens_mse  += sens_mse_loss.item()
-                train_kl_div    += kl_div.item()
-                train_grid_mse  += grid_mse_loss.item()
-                counter         += sensitivities.size(0)
-                # ------------------------------------------------------------------------------
-                # Back propagation
-                # ------------------------------------------------------------------------------
-                for param in mod_vae.parameters():  # zero gradients
-                    param.grad = None
-                # gpu_usage()  # DEBUG
-                if mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.SENS:
-                    sens_mse_loss.backward()
-                elif mod_vae.mode is mode_e.AUTOENCODER and mod_vae.model_out is model_output_e.GRID:
-                    grid_mse_loss.backward()
-                else:
-                    cost.backward()
-                nn.utils.clip_grad_norm_(mod_vae.parameters(), self.grad_clip)
-                self.optimizer.step()
-
-            self.cost = train_cost / len(train_loader.dataset)
             # ------------------------------------------------------------------------------
-            # Normalizing and documenting training results with LoggerVAE
+            # Training a single epoch
+            # ------------------------------------------------------------------------------
+            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _ = self.run_single_epoch(self, mod_vae, train_loader)
+            # ------------------------------------------------------------------------------
+            # Logging
             # ------------------------------------------------------------------------------
             logger.log_epoch(epoch, t)
-            train_cost      = train_cost / counter
-            train_sens_mse  = train_sens_mse / counter
-            train_kl_div    = train_kl_div / counter
-            train_grid_mse  = train_grid_mse / counter
             logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_cost)
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
@@ -264,9 +231,6 @@ class TrainerVAE:
                 # Testing the results of the current group
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 test_sens_mse, test_grid_mse, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
-                test_sens_mse = test_sens_mse / test_counter
-                test_grid_mse = test_grid_mse / test_counter
-                test_cost     = test_cost / test_counter
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Logging
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -281,15 +245,15 @@ class TrainerVAE:
             test_sens_mse   = 0.0
             test_grid_mse   = 0.0
             test_counter    = 0
-            test_cost       = 0.0
-            for sens_mse, grid_mse, count, cost in zip(test_sens_mse_vec, test_grid_mse_vec, test_counters_vec, test_costs_vec):
+            test_loss       = 0.0
+            for sens_mse, grid_mse, count, loss in zip(test_sens_mse_vec, test_grid_mse_vec, test_counters_vec, test_costs_vec):
                 test_sens_mse += (sens_mse * count)
                 test_grid_mse += (grid_mse * count)
-                test_cost     += (cost * count)
+                test_loss     += (loss * count)
                 test_counter  += count
             test_sens_mse   = test_sens_mse / test_counter
             test_grid_mse   = test_grid_mse / test_counter
-            test_cost       = test_cost / test_counter
+            test_loss       = test_loss / test_counter
             logger.log_epoch_results_test('test_total', test_sens_mse, test_grid_mse, 0)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
