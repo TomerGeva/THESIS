@@ -180,7 +180,7 @@ class TrainerVAE:
         mse_last_group = 1e5  # if mse of last group is better, save the epoch results
         logger.log_title('Beginning Training! ! ! ! number of epochs: {}' .format(EPOCH_NUM))
         mod_vae.train()
-        train_loader_iter = iter(train_loader)
+
         for epoch in range(self.epoch, EPOCH_NUM):
             train_cost      = 0.0
             train_sens_mse  = 0.0
@@ -188,6 +188,7 @@ class TrainerVAE:
             train_grid_mse  = 0.0
             counter         = 0
             t = time()
+            train_loader_iter = iter(train_loader)
             for _ in range(len(train_loader)):
                 # ------------------------------------------------------------------------------
                 # Working with iterables, much faster
