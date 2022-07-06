@@ -8,9 +8,9 @@ import csv
 import torch
 import torch.nn as nn
 import numpy as np
-from ModVAE import ModVAE
-from TrainerVAE import TrainerVAE
-from DecoderVAE import DecoderVAE
+from models.ModVAE import ModVAE
+from trainers.TrainerVAE import TrainerVAE
+from models.DecoderVAE import DecoderVAE
 
 
 class ModelManipulationFunctions:

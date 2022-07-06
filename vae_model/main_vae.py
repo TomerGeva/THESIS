@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
 from LoggerLatent               import LoggerLatent
-from TrainerVAE                 import TrainerVAE
-from TrainerLatent              import TrainerLatent
-from ModVAE                     import ModVAE
+from trainers.TrainerVAE import TrainerVAE
+from trainers.TrainerLatent import TrainerLatent
+from models.ModVAE import ModVAE
 from auxiliary_functions        import PlottingFunctions
 from ScatterCoordinateDataset   import import_data_sets_pics
 from global_const               import encoder_type_e

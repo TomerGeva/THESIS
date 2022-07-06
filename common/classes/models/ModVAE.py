@@ -1,6 +1,6 @@
 import torch.nn         as nn
-from EncoderVAE         import EncoderVAE
-from DecoderVAE         import DecoderVAE
+from models.EncoderVAE import EncoderVAE
+from models.DecoderVAE import DecoderVAE
 from global_const       import encoder_type_e, mode_e, model_output_e
 
 
