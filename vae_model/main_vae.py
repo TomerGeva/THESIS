@@ -9,7 +9,7 @@ from LoggerLatent               import LoggerLatent
 from trainers.TrainerVAE import TrainerVAE
 from trainers.TrainerLatent import TrainerLatent
 from models.ModVAE import ModVAE
-from auxiliary_functions        import PlottingFunctions
+from auxiliary_functions        import PlottingFunctions, _init_
 from ScatterCoordinateDataset   import import_data_sets_pics
 from global_const               import encoder_type_e
 from database_functions         import ModelManipulationFunctions, PathFindingFunctions
@@ -28,7 +28,8 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
     # ================================================================================
     # Setting the logger
     # ================================================================================
-    logger = LoggerVAE(logdir=PATH_LOGS)
+    logdir = _init_(PATH_LOGS)
+    logger = LoggerVAE(logdir=logdir)
 
     # ================================================================================
     # Allocating device of computation: CPU or GPU

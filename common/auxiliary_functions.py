@@ -1,10 +1,13 @@
 from ConfigVAE import SENS_STD, SENS_MEAN, FIG_DIR, PP_DATA
+import torch
 from torch import clamp
 import scipy.stats as sp
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 import os
+import datetime
+
 
 
 # ==================================================================================================================
@@ -318,3 +321,71 @@ class PlottingFunctions:
             # Saving
             # ------------------------------------------------------------------------------------------------------
             modified_det.savefig(os.path.join(path, FIG_DIR, filename))
+
+
+# ==================================================================================================================
+# Weighted MSE function
+# ==================================================================================================================
+def weighted_mse(targets, outputs, weights=None, thresholds=None):
+    """
+    :param targets: model targets
+    :param outputs: model outputs
+    :param weights: weights of the mse according to the groups
+    :param thresholds: the thresholds between the different groups
+    :return:
+    """
+    # ==================================================================================================================
+    # Getting the weight vector
+    # ==================================================================================================================
+    if (weights is None) or (thresholds is None):
+        weight_vec = torch.ones_like(targets)
+    else:
+        weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
+        for ii in range(1, len(thresholds)):
+            weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
+        weight_vec += (targets >= thresholds[-1]) * weights[-1]
+    # ==================================================================================================================
+    # Computing weighted MSE as a sum, not mean
+    # ==================================================================================================================
+    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
+
+# ==================================================================================================================
+# DGCNN functions
+# ==================================================================================================================
+class IOStream:
+    def __init__(self, path):
+        self.f = open(path, 'a')
+
+    def cprint(self, text):
+        print(text)
+        self.f.write(text+'\n')
+        self.f.flush()
+
+    def close(self):
+        self.f.close()
+
+
+# ==================================================================================================================
+# Init the files and folders
+# ==================================================================================================================
+def _init_(path):
+    # --------------------------------------------------
+    # Creating new folder name
+    # --------------------------------------------------
+    time_data = datetime.datetime.now()
+    time_list = [time_data.day, time_data.month, time_data.year, time_data.hour, time_data.minute]
+    time_string = '_'.join([str(ii) for ii in time_list])
+    del time_data, time_list
+    logdir = os.path.join(path, time_string)
+    # --------------------------------------------------
+    # Setting folders
+    # --------------------------------------------------
+    try:
+        os.makedirs(logdir)
+        print('{0:s} {1:s}'.format(' Created new directory ', logdir))
+    except OSError:
+        pass
+    if not os.path.exists(os.path.join(path, time_string, 'figures')):
+        os.makedirs(os.path.join(path, time_string, 'figures'))
+
+    return logdir
