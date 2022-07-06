@@ -27,6 +27,107 @@ class LoggerGeneric:
         return temp_str.format(self.verbose)
 
     # ==================================================================================================================
+    # Regular layer logging functions
+    # ==================================================================================================================
+    def _get_conv_layer_string(self, in_ch, out_ch, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Out channels:{1:^' + str(self.desc_space) + \
+                   'd} Kernel:      {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {5:^' + str(self.desc_space) + \
+                   's} drop_rate:   {6:^' + str(self.desc_space) + \
+                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   's} Output size: {8:^' + str(self.desc_space) + '}X{9:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
+
+    def _get_residual_conv_layer_string(self, in_ch, out_ch, layers, ktilde, stride, pad, bnorm, drate, active,
+                                        x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Out channels:{1:^' + str(self.desc_space) + \
+                   'd} Layers:      {2:^' + str(self.desc_space) + \
+                   'd} Kernel:      {3:^' + str(self.desc_space) + \
+                   'd} Stride:      {4:^' + str(self.desc_space) + \
+                   'd} Padding:     {5:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, layers, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim,
+                               y_dim)
+
+    def _get_conv_transpose_layer_string(self, in_ch, out_ch, ktilde, stride, pad, out_pad, bnorm, drate, active,
+                                         x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Out channels:{1:^' + str(self.desc_space) + \
+                   'd} Kernel:      {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
+                   'd} Out Padding: {5:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, out_ch, ktilde, stride, pad, out_pad, str(bnorm), drate, active.name, x_dim,
+                               y_dim)
+
+    def _get_pool_layer_string(self, ktilde, x_dim, y_dim):
+        temp_str = 'K^tilde: {0:1d} Output size: {1:^' + str(self.desc_space) + '}X{2:^' + str(
+            self.desc_space) + '}'
+        return temp_str.format(ktilde, x_dim, y_dim)
+
+    def _get_linear_layer_string(self, num_in, num_out, bnorm, drate, active):
+        temp_str = 'Input size:     {0:^' + str(self.desc_space) + \
+                   'd} Output size: {1:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {2:^' + str(self.desc_space) + \
+                   's} drop_rate:   {3:^' + str(self.desc_space) + \
+                   'd} activation:  {4:^' + str(self.desc_space) + 's}'
+        return temp_str.format(num_in, num_out, str(bnorm), drate, active.name)
+
+    def _get_residual_linear_layer_string(self, num_in, num_out, layers, bnorm, drate, active):
+            temp_str = 'Input size:     {0:^' + str(self.desc_space) + \
+                       'd} Output size: {1:^' + str(self.desc_space) + \
+                       'd} layers:      {2:^' + str(self.desc_space) + \
+                       'd} batch_norm:  {3:^' + str(self.desc_space) + \
+                       's} drop_rate:   {4:^' + str(self.desc_space) + \
+                       'd} activation:  {5:^' + str(self.desc_space) + 's}'
+            return temp_str.format(num_in, num_out, layers, str(bnorm), drate, active.name)
+
+    def _get_dense_layer_string(self, in_ch, depth, growth, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Depth:       {1:^' + str(self.desc_space) + \
+                   'd} Growth rate: {2:^' + str(self.desc_space) + \
+                   'd} Kernel:      {3:^' + str(self.desc_space) + \
+                   'd} Stride:      {4:^' + str(self.desc_space) + \
+                   'd} Padding:     {5:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {6:^' + str(self.desc_space) + \
+                   's} drop_rate:   {7:^' + str(self.desc_space) + \
+                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   's} Output size: {9:^' + str(self.desc_space) + \
+                   '}X{10:^' + str(self.desc_space) +\
+                   '}X{11:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, depth, growth, ktilde, stride, pad, str(bnorm), drate, active.name,
+                               in_ch+depth*growth, x_dim, y_dim)
+
+    def _get_transition_layer_string(self, in_ch, reduction, ktilde, stride, pad, bnorm, drate, active, pool_type,
+                                     pool_size, x_dim, y_dim):
+        temp_str = 'In channels:    {0:^' + str(self.desc_space) + \
+                   'd} Reduction:   {1:^' + str(self.desc_space) + \
+                   '.1f} Kernel:      {2:^' + str(self.desc_space) + \
+                   'd} Stride:      {3:^' + str(self.desc_space) + \
+                   'd} Padding:     {4:^' + str(self.desc_space) + \
+                   'd} batch_norm:  {5:^' + str(self.desc_space) + \
+                   's} drop_rate:   {6:^' + str(self.desc_space) + \
+                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   's} Pool type:   {8:^' + str(self.desc_space) + \
+                   's} Pool size:   {9:^' + str(self.desc_space) + \
+                   'd} Output size: {10:^' + str(self.desc_space) + \
+                   '}X{11:^' + str(self.desc_space) +\
+                   '}X{12:^' + str(self.desc_space) + '}'
+        return temp_str.format(in_ch, reduction, ktilde, stride, pad, str(bnorm), drate, active.name, pool_type.name,
+                               pool_size, math.floor(in_ch*reduction), x_dim, y_dim)
+
+    # ==================================================================================================================
     # Logging functions
     # ==================================================================================================================
     def start_log(self):
