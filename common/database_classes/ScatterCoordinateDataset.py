@@ -26,6 +26,7 @@ class ScattererCoordinateDataset(Dataset):
         :param transform: transformation flag of the data
         :param abs_sens: if true, doing abs on the sensitivity
         :param dilation: amount of dilation done for the cylinder locations
+        :param norm_sens: (mean, std) with which to normalize the sensitivity
         """
         dirname  = os.path.dirname(__file__)
         self.csv_data = []
@@ -113,11 +114,15 @@ class ScattererCoordinateDataset(Dataset):
 # ============================================================
 class ToTensorMap(object):
     """Convert ndarrays in sample to Tensors."""
-    def __init__(self):
+    def __init__(self, norm_sens=(0, 1), norm_grid=(0, 1), grid_channels=1):
         super(ToTensorMap, self).__init__()
+        self.norm_sens_mean = norm_sens[0]
+        self.norm_sens_std  = norm_sens[1]
+        self.norm_grid_mean = norm_grid[0]
+        self.norm_grid_std  = norm_grid[1]
         self.trans_grids = Compose([
             ToTensor(),
-            Normalize(mean=[GRID_MEAN]*IMG_CHANNELS, std=[GRID_STD]*IMG_CHANNELS)
+            Normalize(mean=[self.norm_grid_mean]*grid_channels, std=[self.norm_grid_st]*grid_channels)
         ])
         self.to_tensor = ToTensor()
 
@@ -130,7 +135,8 @@ class ToTensorMap(object):
         # in this case there is only one channel, C = 1, thus we use expand_dims instead of transpose
         grid_normalized = self.trans_grids(grid)
         sensitivity  = np.expand_dims(sensitivity, axis=0)
-        sensitivity  = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
+        if self.norm_sens_mean != 0 or self.norm_sens_std != 1:
+            sensitivity  = (abs(sensitivity) - SENS_MEAN) / SENS_STD if ABS_SENS else sensitivity / SENS_STD
         sensitivity  = torch.from_numpy(np.array(sensitivity))
         pixel_points = torch.from_numpy(np.reshape(pixel_points, -1))
         return {'grid_target': self.to_tensor(grid),
@@ -142,19 +148,24 @@ class ToTensorMap(object):
 # ======================================================================================================================
 # Defining functions which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets_pics(batch_size, abs_sens=True, dilation=0):
+def import_data_sets_pics(paths_train, paths_test, batch_size, abs_sens=True, dilation=0, norm_sens=(0, 1), norm_grid=(0, 1), num_workers=1):
     """
     This function imports the train and test database
+    :param paths_train:
+    :param paths_test:
     :param batch_size: size of each batch in the databases
     :param abs_sens: if true, doing absolute value over teh sensitivity
     :param dilation: amount of dilation done for the cylinder locations
+    :param norm_sens: (mean, std) with which to normalize the sensitivity
+    :param norm_grid:
+    :param num_workers:
     :return: two datasets, training and test
     """
     # --------------------------------------------------------------------------------------------------------------
     # Importing complete dataset and creating train dataloader
     # --------------------------------------------------------------------------------------------------------------
-    data_train = ScattererCoordinateDataset(csv_files=PATH_DATABASE_TRAIN,
-                                            transform=ToTensorMap(),
+    data_train = ScattererCoordinateDataset(csv_files=paths_train,
+                                            transform=ToTensorMap(norm_sens=norm_sens, norm_grid=norm_grid),
                                             abs_sens=abs_sens,
                                             dilation=dilation,)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
@@ -164,10 +175,10 @@ def import_data_sets_pics(batch_size, abs_sens=True, dilation=0):
     # --------------------------------------------------------------------------------------------------------------
     threshold_list  = []
     test_loaders    = {}
-    for ii, dataset in enumerate(PATH_DATABASE_TEST):
+    for ii, dataset in enumerate(paths_test):
         data_list = [dataset]
         temp_data = ScattererCoordinateDataset(csv_files=data_list,
-                                               transform=ToTensorMap(),
+                                               transform=ToTensorMap(norm_sens=norm_sens, norm_grid=norm_grid),
                                                abs_sens=abs_sens,
                                                dilation=dilation)
         # ******************************************************************************************************
@@ -177,18 +188,18 @@ def import_data_sets_pics(batch_size, abs_sens=True, dilation=0):
         if 'lt' in file_name_list:
             loader_key  = '0_to_' + file_name_list[-2]
         else:
-            loader_key  = file_name_list[-2] + '_to_' + get_next_threshold(PATH_DATABASE_TEST, ii)
+            loader_key  = file_name_list[-2] + '_to_' + get_next_threshold(paths_test, ii)
             threshold_list.append(eval(file_name_list[-2]))
         # ******************************************************************************************************
         # creating data-loader
         # ******************************************************************************************************
-        test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False,
-                                              num_workers=NUM_WORKERS, pin_memory=True)
+        test_loaders[loader_key] = DataLoader(temp_data, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     # --------------------------------------------------------------------------------------------------------------
     # normalizing thresholds
     # --------------------------------------------------------------------------------------------------------------
-    threshold_list = [(ii - SENS_MEAN) / SENS_STD for ii in threshold_list] if abs_sens else [ii / SENS_STD for ii in threshold_list]
+    if norm_sens[0] != 0 or norm_sens[1] != 1:
+        threshold_list = [(ii - norm_sens[0]) / norm_sens[1] for ii in threshold_list] if abs_sens else [ii / norm_sens[1] for ii in threshold_list]
 
     return train_loader, test_loaders, threshold_list
 

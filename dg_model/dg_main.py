@@ -1,6 +1,6 @@
 from ConfigDG import *
 from database_functions import ModelManipulationFunctions
-from LoggerVAE import LoggerVAE
+from LoggerDG import LoggerDG
 from ScatCoord_DG import import_data_sets_coord
 import os
 import torch
@@ -18,7 +18,7 @@ def main():
     # Setting the logger
     # ================================================================================
     logdir = _init_(PATH_LOGS)
-    logger = LoggerVAE(logdir=logdir)
+    logger = LoggerDG(logdir=logdir)
     # ================================================================================
     # Allocating device of computation: CPU or GPU
     # ================================================================================

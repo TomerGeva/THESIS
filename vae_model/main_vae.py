@@ -39,9 +39,16 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
     # ================================================================================
     # Importing the data
     # ================================================================================
-    train_loader, test_loaders, thresholds = import_data_sets_pics(BATCH_SIZE,
+    norm_grid = (GRID_MEAN, GRID_STD) if NORM_GRID else (0, 1)
+    norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+    train_loader, test_loaders, thresholds = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                                   PATH_DATABASE_TEST,
+                                                                   BATCH_SIZE,
                                                                    abs_sens=ABS_SENS,
-                                                                   dilation=DILATION)
+                                                                   dilation=DILATION,
+                                                                   norm_sens=norm_sens,
+                                                                   norm_grid=norm_grid,
+                                                                   num_workers=NUM_WORKERS)
     if load_model is None:
         # ============================================================================
         # Creating the net & trainer objects

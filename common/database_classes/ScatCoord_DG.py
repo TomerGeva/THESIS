@@ -95,8 +95,8 @@ class ToTensorCoord(object):
 
     def __call__(self, sample):
         sensitivity, points = sample['sensitivity'], sample['coordinate_target']
-        sensitivity  = torch.from_numpy(np.expand_dims(sensitivity, axis=0))
-        points = torch.from_numpy(np.reshape(points, -1))
+        sensitivity         = torch.from_numpy(np.expand_dims(sensitivity, axis=0))
+        points              = torch.from_numpy(np.reshape(points, -1))
         return {'sensitivity': sensitivity,
                 'coordinate_target': points}
 
