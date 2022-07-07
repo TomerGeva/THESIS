@@ -167,7 +167,7 @@ class TrainerVAE:
         # Begin of testing
         # ==========================================================================================
         with torch.no_grad():
-            test_sens_mse, test_dkl, test_grid_mse, test_loss, counter = self.run_single_epoch(self, model, loader)
+            test_sens_mse, test_dkl, test_grid_mse, test_loss, counter = self.run_single_epoch(model, loader)
         model.train()
         self.trainer_train()
         return test_sens_mse, test_grid_mse, counter, test_loss
@@ -209,12 +209,12 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             # Training a single epoch
             # ------------------------------------------------------------------------------
-            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _ = self.run_single_epoch(self, mod_vae, train_loader)
+            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _ = self.run_single_epoch(mod_vae, train_loader)
             # ------------------------------------------------------------------------------
             # Logging
             # ------------------------------------------------------------------------------
             logger.log_epoch(epoch, t)
-            logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_cost)
+            logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_loss)
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
             # ------------------------------------------------------------------------------
