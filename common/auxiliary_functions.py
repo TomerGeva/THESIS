@@ -347,7 +347,7 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # ==================================================================================================================
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
-    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
+    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / torch.abs(targets))
 
 
 # ==================================================================================================================
