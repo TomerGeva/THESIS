@@ -122,7 +122,7 @@ class ToTensorMap(object):
         self.norm_grid_std  = norm_grid[1]
         self.trans_grids = Compose([
             ToTensor(),
-            Normalize(mean=[self.norm_grid_mean]*grid_channels, std=[self.norm_grid_st]*grid_channels)
+            Normalize(mean=[self.norm_grid_mean]*grid_channels, std=[self.norm_grid_std]*grid_channels)
         ])
         self.to_tensor = ToTensor()
 
