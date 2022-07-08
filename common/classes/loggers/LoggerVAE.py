@@ -23,12 +23,15 @@ class LoggerVAE(LoggerGeneric):
                    'f} Total cost: {3:^' + str(self.result_space) + 'f}'
         return temp_str.format(sens_wmse_loss, d_kl, grid_mse_loss, cost)
 
-    def _get_result_string_test(self, sens_mse, grid_mse, weight):
+    def _get_result_string_test(self, sens_mse, grid_mse, weight=0, sens_mse_unweighted=None):
         temp_str = 'Sensitivity W_MSE: {0:^' + str(self.result_space) +\
                    'f} Sensitivity MSE {1:^' + str(self.result_space) + \
                    'f} Grid MSE: {2:^' + str(self.result_space) + \
                    'f} Group weight: {3:^' + str(self.result_space) + 'f}'
-        return temp_str.format(sens_mse*weight, sens_mse, grid_mse, weight)
+        if sens_mse_unweighted is None:
+            return temp_str.format(sens_mse*weight, sens_mse, grid_mse, weight)
+        else:
+            return temp_str.format(sens_mse, sens_mse_unweighted, grid_mse, weight)
 
     def _get_layer_log_string(self, x_dim_size, y_dim_size, channels, action):
         if 'convTrans' in action[0]:
@@ -124,8 +127,8 @@ class LoggerVAE(LoggerGeneric):
             full_path = os.path.join(self.logdir, self.filename)
             self.fileID = open(full_path, 'a')
 
-    def log_epoch_results_test(self, header, sens_mse, grid_mse, weight):
-        self.log_line(self.get_header(header) + self._get_result_string_test(sens_mse, grid_mse, weight))
+    def log_epoch_results_test(self, header, sens_mse, grid_mse, weight=0, sens_mse_unweighted=None):
+        self.log_line(self.get_header(header) + self._get_result_string_test(sens_mse, grid_mse, weight, sens_mse_unweighted))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)
