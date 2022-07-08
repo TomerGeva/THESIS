@@ -7,7 +7,7 @@ from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
 
-from ScatterCoordinateDataset import import_data_sets, import_data_set_test
+from ScatterCoordinateDataset import import_data_sets_pics, import_data_set_test
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
 from roc_det_functions import RocDetFunctions
@@ -100,9 +100,15 @@ class PostProcessing:
         # Sensitivity plot
         # ------------------------------------------------------------------------------------------------------
         sens_plt = plt.figure()
-        plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
-        for test_db in keys_list:
-            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+        if NORM_SENS:
+            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+            for test_db in keys_list:
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+        else:
+            plt.plot(epoch_list[0:epoch_len:spacing],
+                     [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+            for test_db in keys_list:
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         plt.xlabel('Epoch')
         plt.ylabel('RMS Loss')
         plt.title('RMS loss vs Epoch number')
@@ -134,9 +140,14 @@ class PostProcessing:
         # ------------------------------------------------------------------------------------------------------
         if plt_joined:
             _, ax = plt.subplots(3, 1)
-            ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
-            for test_db in keys_list:
-                ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            if NORM_SENS:
+                ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+                for test_db in keys_list:
+                    ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            else:
+                ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+                for test_db in keys_list:
+                    ax[0].plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
             ax[0].set_xlabel('Epoch')
             ax[0].set_ylabel('RMS Loss')
             ax[0].set_title('RMS loss vs Epoch number')
@@ -203,11 +214,11 @@ class PostProcessing:
         # ==============================================================================================================
         # Loading the needed models and data
         # ==============================================================================================================
-        _, test_loaders, _ = import_data_sets(BATCH_SIZE,
-                                              mixup_factor=MIXUP_FACTOR,
-                                              mixup_prob=MIXUP_PROB,
-                                              abs_sens=ABS_SENS,
-                                              dilation=DILATION)
+        _, test_loaders, _ = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                   PATH_DATABASE_TEST,
+                                                   BATCH_SIZE,
+                                                   abs_sens=ABS_SENS,
+                                                   dilation=DILATION)
         test_loader = test_loaders[key]
         # test_loader = test_loaders['3e+05_to_inf']
         # test_loader = test_loaders['2e+05_to_3e+05']
@@ -281,9 +292,12 @@ class PostProcessing:
         # ==============================================================================================================
         # Loading the needed models and data
         # ==============================================================================================================
-        train_loader, test_loaders, _ = import_data_sets(BATCH_SIZE, dilation=DILATION)
+        train_loader, test_loaders, _ = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                              PATH_DATABASE_TEST,
+                                                              BATCH_SIZE,
+                                                              abs_sens=ABS_SENS,
+                                                              dilation=DILATION)
         mod_vae, trainer = mff.load_state_train(chosen_file)
-
         # ==============================================================================================================
         # Extracting statistics
         # ==============================================================================================================
@@ -712,7 +726,7 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\5_7_2022_16_5'
+    c_path = '..\\results_vae\\7_7_2022_9_33'
 
     pp = PostProcessing()
 

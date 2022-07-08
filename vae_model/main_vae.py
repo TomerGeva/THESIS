@@ -111,7 +111,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                                  grad_clip=GRAD_CLIP,
                                  group_thresholds=thresholds,  # sens cost
                                  group_weights=MSE_GROUP_WEIGHT,  # sens cost
-                                 abs_sens=ABS_SENS,
+                                 abs_sens=ABS_SENS, norm_sens=norm_sens,
                                  xquantize=XQUANTIZE, yquantize=YQUANTIZE, n=N, coord2map_sigma=COORD2MAP_SIGMA)
         else:
             trainer = TrainerVAE(mod_vae,
@@ -124,7 +124,7 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
                                  grad_clip=GRAD_CLIP,
                                  group_thresholds=thresholds,  # sens cost
                                  group_weights=MSE_GROUP_WEIGHT,  # sens cost
-                                 abs_sens=ABS_SENS,
+                                 abs_sens=ABS_SENS, norm_sens=norm_sens,
                                  grid_pos_weight=GRID_POS_WEIGHT,
                                  xquantize=XQUANTIZE, yquantize=YQUANTIZE)
     else:

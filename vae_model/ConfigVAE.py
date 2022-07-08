@@ -89,7 +89,7 @@ PP_DATA = 'post_processing'
 # MODE             = mode_e.AUTOENCODER
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 160                 # number of dimensions in the latent space
+LATENT_SPACE_DIM = 150                 # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
 INIT_WEIGHT_STD  = 0.05                  # weight init std
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

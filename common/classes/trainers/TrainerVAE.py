@@ -18,7 +18,7 @@ class TrainerVAE:
                  beta_dkl=1, beta_grid=1,
                  sched_step=20, sched_gamma=0.5, grad_clip=5,
                  group_thresholds=None, group_weights=None,
-                 abs_sens=True,
+                 abs_sens=True, norm_sens=(0, 1),
                  training=True, optimize_time=False,
                  grid_pos_weight=1,
                  xquantize=2500, yquantize=2500, coord2map_sigma=1, n=1):
@@ -27,6 +27,7 @@ class TrainerVAE:
         # cost function
         # -------------------------------------
         self.abs_sens            = abs_sens
+        self.norm_sens           = norm_sens
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
         if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
@@ -74,11 +75,9 @@ class TrainerVAE:
         self.training        = training
 
     def compute_loss(self, sens_targets, sens_outputs, mu, logvar, grid_targets=0, grid_outputs=0, model_out=model_output_e.BOTH):
-        if self.training:
-            sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs, self.group_weights, self.group_th)
-        else:
-            sens_mse_loss = self.sensitivity_loss(sens_targets, sens_outputs)
-        kl_div          = self.d_kl(mu, logvar)
+        sens_mse_loss            = self.sensitivity_loss(sens_targets, sens_outputs, self.group_weights, self.group_th)
+        sens_mse_loss_unweighted = self.sensitivity_loss(sens_targets, sens_outputs) if not self.training else None
+        kl_div                   = self.d_kl(mu, logvar)
         if model_out is model_output_e.SENS:
             grid_mse_loss = torch.zeros(1).to(kl_div.device)
         else:
@@ -87,8 +86,7 @@ class TrainerVAE:
             #     grid_mse_loss = self.reconstruction_loss(grid_targets, grid_outputs, self.n, self.coord2map_sigma, self.xquantize, self.yquantize)
             # else:
             #     grid_mse_loss = self.reconstruction_loss(grid_outputs, grid_targets)
-
-        return sens_mse_loss, kl_div, grid_mse_loss
+        return sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss_unweighted
 
     def run_single_epoch(self, model, loader):
         # ==========================================================================================
@@ -98,7 +96,8 @@ class TrainerVAE:
         loss_sens = 0.0
         loss_dkl  = 0.0
         loss_grid = 0.0
-        counter = 0
+        counter   = 0
+        loss_sens_unweighted = 0.0
         loader_iter = iter(loader)
         for _ in range(len(loader)):
             # ------------------------------------------------------------------------------
@@ -126,8 +125,10 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             # Cost computations
             # ------------------------------------------------------------------------------
-            sens_mse_loss, kl_div, grid_mse_loss = self.compute_loss(sensitivities, sens_out, mu, logvar, grid_targets,
-                                                                     grid_out, model_out=model.model_out)
+            sens_mse_loss, kl_div, grid_mse_loss, sens_mse_loss_unweighted = self.compute_loss(sensitivities, sens_out,
+                                                                                               mu, logvar,
+                                                                                               grid_targets, grid_out,
+                                                                                               model_out=model.model_out)
             loss_batch = sens_mse_loss + (self.beta_dkl * kl_div) + (self.beta_grid * grid_mse_loss)
 
             loss_sens += sens_mse_loss.item()
@@ -135,6 +136,8 @@ class TrainerVAE:
             loss_grid += grid_mse_loss.item()
             loss      += loss_batch.item()
             counter   += sensitivities.size(0)
+            if sens_mse_loss_unweighted is not None:
+                loss_sens_unweighted += sens_mse_loss_unweighted.item()
             # ------------------------------------------------------------------------------
             # Back propagation
             # ------------------------------------------------------------------------------
@@ -150,11 +153,14 @@ class TrainerVAE:
                     loss_batch.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), self.grad_clip)
                 self.optimizer.step()
-        return loss_sens / counter, loss_dkl / counter, loss_grid / counter, loss / counter, counter
+        if self.training:
+            return loss_sens / counter, loss_dkl / counter, loss_grid / counter, loss / counter, counter, None
+        else:
+            return loss_sens / counter, loss_dkl / counter, loss_grid / counter, loss / counter, counter, loss_sens_unweighted / counter
 
     def test_model(self, model, loader):
         """
-        :param mod_vae: VAE we want to test
+        :param model: VAE we want to test
         :param loader: lodaer with the test database
         :return: test parameters
         """
@@ -167,10 +173,10 @@ class TrainerVAE:
         # Begin of testing
         # ==========================================================================================
         with torch.no_grad():
-            test_sens_mse, test_dkl, test_grid_mse, test_loss, counter = self.run_single_epoch(model, loader)
+            test_sens_mse, test_dkl, test_grid_mse, test_loss, counter, test_sens_mse_unweighted = self.run_single_epoch(model, loader)
         model.train()
         self.trainer_train()
-        return test_sens_mse, test_grid_mse, counter, test_loss
+        return test_sens_mse, test_grid_mse, counter, test_loss, test_sens_mse_unweighted
 
     def train(self, mod_vae, train_loader, test_loaders, logger, save_per_epochs=1):
         """
@@ -209,7 +215,7 @@ class TrainerVAE:
             # ------------------------------------------------------------------------------
             # Training a single epoch
             # ------------------------------------------------------------------------------
-            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _ = self.run_single_epoch(mod_vae, train_loader)
+            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _, _ = self.run_single_epoch(mod_vae, train_loader)
             # ------------------------------------------------------------------------------
             # Logging
             # ------------------------------------------------------------------------------
@@ -219,6 +225,7 @@ class TrainerVAE:
             # Testing accuracy at the end of the epoch, and logging with LoggerVAE
             # ------------------------------------------------------------------------------
             test_sens_mse_vec = []
+            test_sens_mse_vec_unweighted = []
             test_grid_mse_vec = []
             test_counters_vec = []
             test_costs_vec    = []
@@ -230,31 +237,35 @@ class TrainerVAE:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Testing the results of the current group
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                test_sens_mse, test_grid_mse, test_counter, test_cost = self.test_model(mod_vae, test_loaders[key])
+                test_sens_mse, test_grid_mse, test_counter, test_cost, test_sens_mse_unweighted = self.test_model(mod_vae, test_loaders[key])
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # Logging
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                logger.log_epoch_results_test(key, test_sens_mse, test_grid_mse, test_mse_weight)
+                logger.log_epoch_results_test(key, test_sens_mse, test_grid_mse, test_mse_weight, test_sens_mse_unweighted)
                 test_sens_mse_vec.append(test_sens_mse)
                 test_grid_mse_vec.append(test_grid_mse)
                 test_counters_vec.append(test_counter)
                 test_costs_vec.append(test_cost)
+                test_sens_mse_vec_unweighted.append(test_sens_mse_unweighted)
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             # Computing total cost for all test loaders and logging with LoggerVAE
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             test_sens_mse   = 0.0
+            test_sens_mse_unweighted = 0.0
             test_grid_mse   = 0.0
             test_counter    = 0
             test_loss       = 0.0
-            for sens_mse, grid_mse, count, loss in zip(test_sens_mse_vec, test_grid_mse_vec, test_counters_vec, test_costs_vec):
+            for sens_mse, grid_mse, count, loss, sens_mse_unweighted in zip(test_sens_mse_vec, test_grid_mse_vec, test_counters_vec, test_costs_vec, test_sens_mse_vec_unweighted):
                 test_sens_mse += (sens_mse * count)
+                test_sens_mse_unweighted += (sens_mse_unweighted * count)
                 test_grid_mse += (grid_mse * count)
                 test_loss     += (loss * count)
                 test_counter  += count
             test_sens_mse   = test_sens_mse / test_counter
+            test_sens_mse_unweighted = test_sens_mse_unweighted / test_counter
             test_grid_mse   = test_grid_mse / test_counter
             test_loss       = test_loss / test_counter
-            logger.log_epoch_results_test('test_total', test_sens_mse, test_grid_mse, 0)
+            logger.log_epoch_results_test('test_total', test_sens_mse, test_grid_mse, 0, test_sens_mse_unweighted)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
@@ -310,7 +321,8 @@ class TrainerVAE:
 
     def get_test_group_weight(self, test_group):
         low_threshold = eval(test_group.split('_')[0])
-        low_threshold = (abs(low_threshold) - SENS_MEAN) / SENS_STD if self.abs_sens else low_threshold / SENS_STD
+        if self.norm_sens != (0, 1):
+            low_threshold = (abs(low_threshold) - self.norm_sens[0]) / self.norm_sens[1] if self.abs_sens else low_threshold / self.norm_sens[1]
         for ii, th in enumerate(self.group_th):
             if low_threshold < th:
                 return self.group_weights[ii]
