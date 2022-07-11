@@ -6,15 +6,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from neural_network_block_classes import ConvBlock1D, FullyConnectedBlock, PadPool1D
+from neural_network_block_classes import ConvBlock1D, FullyConnectedBlock, PadPool1D, AdaPadPool1D
 
 
 class ModPointNet(nn.Module):
     def __init__(self, device, topology):
         super(ModPointNet, self).__init__()
-        self.device = device
+        self.device   = device
         self.topology = topology
-        self.layers = nn.ModuleList()
+        self.layers   = nn.ModuleList()
         # ---------------------------------------------------------
         # Creating the Blocks according to the description
         # ---------------------------------------------------------
@@ -25,16 +25,19 @@ class ModPointNet(nn.Module):
             if 'conv1d' in action[0]:
                 conv_len += 1
                 self.layers.append(ConvBlock1D(action[1]))
+            elif 'adapool1d' in action[0]:
+                conv_len += 1
+                self.layers.append(AdaPadPool1D(action[1]))
             elif 'pool1d' in action[0]:
                 conv_len += 1
                 self.layers.append(PadPool1D(action[1]))
             elif 'linear' in action[0]:
                 linear_len += 1
-            self.layers.append(FullyConnectedBlock(action[1]))
+                self.layers.append(FullyConnectedBlock(action[1]))
 
-        self.flatten = conv_len > 0
+        self.squeeze  = conv_len > 0
         self.conv_len = conv_len
-        self.fc_len = linear_len
+        self.fc_len   = linear_len
 
     def forward(self, x):
         # ---------------------------------------------------------
@@ -46,7 +49,7 @@ class ModPointNet(nn.Module):
         # ---------------------------------------------------------
         # flattening for the FC layers
         # ---------------------------------------------------------
-        if self.flatten:
+        if self.squeeze:
             x = x.squeeze()
         # ---------------------------------------------------------
         # passing through the fully connected blocks

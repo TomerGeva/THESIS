@@ -120,7 +120,7 @@ class ModelManipulationFunctions:
         return decoder, latent_dim
 
     @staticmethod
-    def initialize_weights(net, mean=0.0, std=0.02, method='guassian'):
+    def initialize_weights(net, mean=0.0, std=0.02, method='gaussian'):
         """
         :param net: the model which is being normalized
         :param mean: the target mean of the weights

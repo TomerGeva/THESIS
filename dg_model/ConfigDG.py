@@ -3,7 +3,7 @@
 # **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
-from global_struct import ConvBlockData, PadPoolData, FCBlockData
+from global_struct import ConvBlockData, AdaPadPoolData, PadPoolData, FCBlockData
 
 # ==================================================================================================================
 # Database Variables
@@ -91,9 +91,9 @@ POINTNET_TOPOLOGY = [
     ['conv1d', ConvBlockData(64, 64, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['conv1d', ConvBlockData(64, 128, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['conv1d', ConvBlockData(128, 1024, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['pool1d', PadPoolData(pool_e.MAX, pad=0, kernel=1024)],
+    ['adapool1d', AdaPadPoolData(pool_e.AVG, pad=0, out_size=1)],
     ['linear', FCBlockData(512, in_neurons=1024, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
+    ['linear', FCBlockData(1,   in_neurons=512, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 # DGCNN_TOPOLOGY = [
 #     ['conv2d', ConvBlockData(2, 64, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],

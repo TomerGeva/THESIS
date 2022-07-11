@@ -147,6 +147,13 @@ class PadPoolData:
         self.kernel    = kernel     # pooling kernel size
 
 
+class AdaPadPoolData:
+    def __init__(self, pool_type, pad=0, out_size=1):
+        self.pool_type = pool_type  # MAX or AVG
+        self.pad       = pad        # padding, can be either an index or a tuple with size of 4
+        self.out_size  = out_size   # pooling output size
+
+
 class SelfAttentionData:
     def __init__(self, patch_size_x, patch_size_y, embed_size):
         self.patch_size_x = patch_size_x

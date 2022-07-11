@@ -16,7 +16,7 @@ class LoggerGeneric:
         self.write_to_file  = write_to_file
         self.verbose        = 'INFO'
         self.header_space   = 16
-        self.result_space   = 15.6
+        self.result_space   = 15.2
         self.desc_space     = 6
         self.fileID         = None
 
@@ -76,6 +76,10 @@ class LoggerGeneric:
         temp_str = 'K^tilde: {0:1d} Output size: {1:^' + str(self.desc_space) + '}X{2:^' + str(
             self.desc_space) + '}'
         return temp_str.format(ktilde, x_dim, y_dim)
+
+    def _get_adapool_layer_string(self, out_size):
+        temp_str = 'Output size: {0:^' + str(self.desc_space) + '}'
+        return temp_str.format(out_size)
 
     def _get_linear_layer_string(self, num_in, num_out, bias, bnorm, drate, active):
         temp_str = 'Input size:     {0:^' + str(self.desc_space) + \

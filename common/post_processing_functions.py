@@ -6,7 +6,7 @@ import torch
 from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
-
+from global_const import encoder_type_e
 from ScatterCoordinateDataset import import_data_sets_pics, import_data_set_test
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
@@ -190,6 +190,59 @@ class PostProcessing:
             dkl_plt.savefig(os.path.join(path, FIG_DIR, filename_dkl))
             grid_plt.savefig(os.path.join(path, FIG_DIR, filename_grid))
         plt.show()
+
+    @staticmethod
+    def load_and_pass(path, epoch, key='4e+03_to_inf'):
+        pf = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        sigmoid = torch.nn.Sigmoid()
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(path, epoch)
+        # ==============================================================================================================
+        # Loading the needed models and data
+        # ==============================================================================================================
+        train_loader, test_loaders, _ = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                              PATH_DATABASE_TEST,
+                                                              BATCH_SIZE,
+                                                              abs_sens=ABS_SENS,
+                                                              dilation=DILATION)
+        mod_vae, trainer = mff.load_state_train(chosen_file)
+        # ==============================================================================================================
+        # Extracting statistics
+        # ==============================================================================================================
+        mod_vae.eval()
+        with torch.no_grad():
+            test_loader_iter = iter(test_loaders[key])
+            mu_means         = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+            std_means        = np.zeros((mod_vae.latent_dim, test_loader_iter.__len__()))
+            for ii in range(len(test_loaders[key])):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample_batched = next(test_loader_iter)
+                except StopIteration:
+                    break
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities, passing through the model
+                # ------------------------------------------------------------------------------
+                target_sens = sample_batched['sensitivity'].float().to(mod_vae.device)
+                if mod_vae.encoder_type == encoder_type_e.FULLY_CONNECTED:
+                    target_grids = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
+                    grids        = Variable(sample_batched['coordinate_target'].float()).to(mod_vae.device)
+                else:
+                    target_grids = sample_batched['grid_target'].float().to(mod_vae.device)
+                    grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
+
+                out_grid, out_sens, mu, logvar = mod_vae(grids)
+                # ------------------------------------------------------------------------------
+                # Logging mean mu and mean std values
+                # ------------------------------------------------------------------------------
+                mu_means[:, ii] = np.mean(mu.cpu().detach().numpy(), axis=0)
+                std_means[:, ii] = np.exp(np.mean(logvar.cpu().detach().numpy(), axis=0))
 
     @staticmethod
     def load_model_plot_roc_det(path, epoch, key='3e+05_to_inf'):
@@ -658,6 +711,105 @@ class PostProcessing:
         plt.show()
 
 
+class PostProcessingDG:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def log_to_plot(path, spacing=1, save_plt=True):
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        filename = os.path.join(path, 'logger_vae.txt')
+        fileID = open(filename, 'r')
+        lines = fileID.readlines()
+        fileID.close()
+
+        reached_start = False
+        epoch_list = []
+        keys_list = []
+        test_wmse = {}
+        test_mse  = {}
+
+        train_label = None
+        train_mse_loss = []
+        # ==============================================================================================================
+        # Going over lines, adding to log
+        # ==============================================================================================================
+        for line in lines:
+            # ------------------------------------------------------------------------------------------------------
+            # Getting to beginning of training
+            # ------------------------------------------------------------------------------------------------------
+            if not reached_start and 'Beginning Training' not in line:
+                continue
+            elif not reached_start:
+                reached_start = True
+                continue
+            # ------------------------------------------------------------------------------------------------------
+            # Reached beginning, going over cases
+            # ------------------------------------------------------------------------------------------------------
+            words = list(filter(None, line.split(sep=' ')))
+            if 'Epoch' in line:
+                try:
+                    epoch_list.append(int(words[4]))
+                except ValueError:
+                    epoch_list.append(int(words[4][:-1]))
+            elif 'train' in line.lower():
+                if train_label is None:
+                    train_label = words[3]
+                train_mse_loss.append(float(words[8]))
+            elif 'group' in line.lower():
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # one of the test databases
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                temp_key = words[3]
+                if temp_key not in keys_list:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # if key does not exist, creates a new list
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    keys_list.append(temp_key)
+                    test_wmse[temp_key] = []
+                    test_mse[temp_key]  = []
+                test_wmse[temp_key].append(float(words[8]))
+                test_mse[temp_key].append(float(words[11]))
+        # ==============================================================================================================
+        # Plotting the results
+        # ==============================================================================================================
+        epoch_len = len(epoch_list)
+        plt.rcParams["figure.figsize"] = (18, 9)
+        # ------------------------------------------------------------------------------------------------------
+        # Sensitivity plot
+        # ------------------------------------------------------------------------------------------------------
+        sens_plt = plt.figure()
+        plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+        for test_db in keys_list:
+            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db+'_unweighted')
+        plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_wmse['test_total'][0:epoch_len:spacing]], '-o', label=test_db)
+        plt.xlabel('Epoch')
+        plt.ylabel('RMS Loss')
+        plt.title('RMS loss vs Epoch number')
+        plt.legend()
+        plt.grid()
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename_sens = f'sensitivity_loss_training.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            sens_plt.savefig(os.path.join(path, FIG_DIR, filename_sens))
+        plt.show()
+
+
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
     # 24_8_2021_8_51   - with mixup 0.00 - 25k database
@@ -717,7 +869,7 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
-    c_epoch = 320
+    c_epoch = 240
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -726,14 +878,16 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\7_7_2022_9_33'
+    c_path = '..\\results_vae\\9_7_2022_22_38'
+    c_path2 = '..\\results_dg\\11_7_2022_13_52'
 
     pp = PostProcessing()
+    pp2 = PostProcessingDG()
 
     threshold_list = [0.1, 0.2, 0.5]
     # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
-    prefix_list    = ['3e+03_to_inf']
+    prefix_list    = ['4e+03_to_inf']
     # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
     # pp.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
@@ -741,6 +895,9 @@ if __name__ == '__main__':
     # pp.log_to_plot(c_path, spacing=10)
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
-    pp.log_to_plot(c_path)
 
+    # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
+    # pp.log_to_plot(c_path)
+
+    pp2.log_to_plot(c_path2)
 

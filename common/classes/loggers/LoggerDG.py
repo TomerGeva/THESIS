@@ -16,11 +16,14 @@ class LoggerDG(LoggerGeneric):
         temp_str = 'Sensitivity loss weighted: {0:^' + str(self.result_space) + 'f}'
         return temp_str.format(loss_sens)
 
-    def _get_result_string_test(self, loss_sens, weight):
+    def _get_result_string_test(self, loss_sens, weight, sens_mse_unweighted=None):
         temp_str = 'Sensitivity loss weighted: {0:^' + str(self.result_space) + \
                    'f} Sensitivity loss {1:^' + str(self.result_space) + \
                    'f} Group weight: {2:^' + str(self.result_space) + 'f}'
-        return temp_str.format(loss_sens * weight, loss_sens, weight)
+        if sens_mse_unweighted is None:
+            return temp_str.format(loss_sens * weight, loss_sens, weight)
+        else:
+            return temp_str.format(loss_sens, sens_mse_unweighted, weight)
 
     def _get_layer_log_string(self, action):
         if 'conv1d' in action[0]:
@@ -34,6 +37,8 @@ class LoggerDG(LoggerGeneric):
                                                                                    action[1].act,
                                                                                    0,
                                                                                    0))
+        elif 'adapool1d' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_adapool_layer_string(action[1].out_size))
         elif 'pool1d' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_pool_layer_string(action[1].kernel,  # kernel
                                                                                    0,
@@ -41,6 +46,7 @@ class LoggerDG(LoggerGeneric):
         elif 'linear' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_linear_layer_string(action[1].in_neurons,
                                                                                      action[1].out_neurons,
+                                                                                     action[1].bias,
                                                                                      action[1].bnorm,
                                                                                      action[1].drate,
                                                                                      action[1].act))
@@ -55,8 +61,8 @@ class LoggerDG(LoggerGeneric):
             full_path = os.path.join(self.logdir, self.filename)
             self.fileID = open(full_path, 'a')
 
-    def log_epoch_results_test(self, header, loss_sens, weight):
-        self.log_line(self.get_header(header) + self._get_result_string_test(loss_sens, weight))
+    def log_epoch_results_test(self, header, loss_sens, weight, sens_mse_unweighted=None):
+        self.log_line(self.get_header(header) + self._get_result_string_test(loss_sens, weight, sens_mse_unweighted))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)

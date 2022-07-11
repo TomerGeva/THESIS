@@ -2,15 +2,11 @@ from ConfigDG import *
 from database_functions import ModelManipulationFunctions
 from LoggerDG import LoggerDG
 from ScatCoord_DG import import_data_sets_coord
-import os
+from TrainerDG import TrainerDG
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from PointNet import ModPointNet
-import numpy as np
-from auxiliary_functions import weighted_mse, _init_
-import sklearn.metrics as metrics
+from auxiliary_functions import _init_
+
 
 def main():
     mmf = ModelManipulationFunctions()
@@ -36,12 +32,22 @@ def main():
     # Creating the model
     # ================================================================================
     mod_pnet = ModPointNet(device, POINTNET_TOPOLOGY)
-    mmf.initialize_weights(mod_pnet, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD)
+    mmf.initialize_weights(mod_pnet, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
     mod_pnet.to(device)
     # ================================================================================
     # Creating the trainer
     # ================================================================================
+    trainer = TrainerDG(mod_pnet, lr=LR, mom=MOM, sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
+                        grad_clip=GRAD_CLIP, group_thresholds=thresholds, group_weights=MSE_GROUP_WEIGHT,
+                        abs_sens=ABS_SENS)
+    # ================================================================================
+    # Training
+    # ================================================================================
+    trainer.train(mod_pnet, train_loader, test_loaders, logger, epochs=EPOCH_NUM, save_per_epochs=20)
 
+
+if __name__ == '__main__':
+    main()
 
 
 
