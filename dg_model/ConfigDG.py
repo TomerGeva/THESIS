@@ -3,7 +3,7 @@
 # **********************************************************************************************************************
 import numpy as np
 from global_const import activation_type_e, pool_e, mode_e, model_output_e
-from global_struct import ConvBlockData, AdaPadPoolData, PadPoolData, FCBlockData
+from global_struct import ConvBlockData, AdaPadPoolData, PadPoolData, FCBlockData, EdgeConvData
 
 # ==================================================================================================================
 # Database Variables
@@ -62,7 +62,9 @@ PP_DATA = 'post_processing'
 # --------------------------------------------------------------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------------------------------------------------------------
-EMBED_DIM = 1024
+EMBED_DIM       = 1024
+CONCAT_EDGECONV = True  # booleab stating if we want to concatenate all the edgeconv results at the end
+FLATTEN_TYPE    = 'both'  # max, avg, both
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Model configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -91,9 +93,21 @@ POINTNET_TOPOLOGY = [
     ['conv1d', ConvBlockData(64, 64, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['conv1d', ConvBlockData(64, 128, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['conv1d', ConvBlockData(128, 1024, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['conv1d', ConvBlockData(1024, 1024, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['adapool1d', AdaPadPoolData(pool_e.AVG, pad=0, out_size=1)],
     ['linear', FCBlockData(512, in_neurons=1024, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(1,   in_neurons=512, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
+    ['linear', FCBlockData(128, in_neurons=512, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear', FCBlockData(1,   in_neurons=128, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
+]
+DGCNN_TOPOLOGY = [
+    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=2,     out_channels=64,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2,  out_channels=64,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2,  out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=128*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['conv1d', ConvBlockData(in_channels=512, out_channels=EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(512, in_neurons=EMBED_DIM*2, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(256, in_neurons=512, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(1,   in_neurons=256, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)]
 ]
 # DGCNN_TOPOLOGY = [
 #     ['conv2d', ConvBlockData(2, 64, 1, 1, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.ReLU)],

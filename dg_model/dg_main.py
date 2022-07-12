@@ -5,6 +5,7 @@ from ScatCoord_DG import import_data_sets_coord
 from TrainerDG import TrainerDG
 import torch
 from PointNet import ModPointNet
+from DGcnn import ModDGCNN
 from auxiliary_functions import _init_
 
 
@@ -31,19 +32,20 @@ def main():
     # ================================================================================
     # Creating the model
     # ================================================================================
-    mod_pnet = ModPointNet(device, POINTNET_TOPOLOGY)
-    mmf.initialize_weights(mod_pnet, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
-    mod_pnet.to(device)
+    # model = ModPointNet(device, POINTNET_TOPOLOGY)
+    model = ModDGCNN(device, DGCNN_TOPOLOGY, CONCAT_EDGECONV, FLATTEN_TYPE)
+    mmf.initialize_weights(model, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
+    model.to(device)
     # ================================================================================
     # Creating the trainer
     # ================================================================================
-    trainer = TrainerDG(mod_pnet, lr=LR, mom=MOM, sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
+    trainer = TrainerDG(model, lr=LR, mom=MOM, sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
                         grad_clip=GRAD_CLIP, group_thresholds=thresholds, group_weights=MSE_GROUP_WEIGHT,
                         abs_sens=ABS_SENS)
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.train(mod_pnet, train_loader, test_loaders, logger, epochs=EPOCH_NUM, save_per_epochs=20)
+    trainer.train(model, train_loader, test_loaders, logger, epochs=EPOCH_NUM, save_per_epochs=20)
 
 
 if __name__ == '__main__':

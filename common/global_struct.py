@@ -160,3 +160,10 @@ class SelfAttentionData:
         self.patch_size_y = patch_size_y
         self.embed_size   = embed_size
         self.out_neurons  = embed_size
+
+
+class EdgeConvData:
+    def __init__(self, k, conv_data, aggregation):
+        self.k           = k
+        self.conv_data   = conv_data
+        self.aggregation = aggregation
