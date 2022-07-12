@@ -26,7 +26,14 @@ class LoggerDG(LoggerGeneric):
             return temp_str.format(loss_sens, sens_mse_unweighted, weight)
 
     def _get_layer_log_string(self, action):
-        if 'conv1d' in action[0]:
+        if 'edgeconv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_edgeconv_layer_string(action[1].k,
+                                                                                       action[1].conv_data.bias,
+                                                                                       action[1].conv_data.bnorm,
+                                                                                       action[1].conv_data.drate,
+                                                                                       action[1].conv_data.act,
+                                                                                       action[1].aggregation))
+        elif 'conv1d' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_conv_layer_string(action[1].in_channels,
                                                                                    action[1].out_channels,
                                                                                    action[1].kernel,
@@ -75,6 +82,11 @@ class LoggerDG(LoggerGeneric):
         # ----------------------------------------------------------------------------------------------------------====
         self.log_title('Model architecture')
         self.log_line('Number of parameters: ' + str(mmf.get_nof_params(model)))
+        try:
+            self.log_line('Concatenating the edgeconv outputs: ' + str(model.concat_edge))
+            self.log_line('Adaptive pooling avg/max: ' + str(model.flatten_type))
+        except:
+            pass
         # ----------------------------------------------------------------------------------------------------------
         # Logging layers
         # ----------------------------------------------------------------------------------------------------------====

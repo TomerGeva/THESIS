@@ -38,7 +38,7 @@ class LoggerGeneric:
                    'd} Padding:     {4:^' + str(self.desc_space) + \
                    'd} batch_norm:  {5:^' + str(self.desc_space) + \
                    's} drop_rate:   {6:^' + str(self.desc_space) + \
-                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   '.2f} activation:  {7:^' + str(self.desc_space) + \
                    's} Output size: {8:^' + str(self.desc_space) + '}X{9:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim, y_dim)
 
@@ -138,6 +138,15 @@ class LoggerGeneric:
                    '} patch_size_y: {1:^' + str(self.desc_space) + \
                    '} embed_size: {2:^' + str(self.desc_space) + '}'
         return temp_str.format(patch_size_x, patch_size_y, embed_size)
+
+    def _get_edgeconv_layer_string(self, k, bias, bnorm, drop_rate, active, aggregation):
+        temp_str = 'k: {0:^' + str(self.desc_space) + \
+                   'd} bias: {1:^' + str(self.desc_space) + \
+                   's} batch_norm: {2:^' + str(self.desc_space) + \
+                   's} drop_rate: {3:^' + str(self.desc_space) + \
+                   '.2f} activation: {4:^' + str(self.desc_space) + \
+                   's} aggregation: {5:^' + str(self.desc_space) + 's}'
+        return temp_str.format(k, str(bias), str(bnorm), drop_rate, active.name, aggregation)
 
     # ==================================================================================================================
     # Logging functions

@@ -131,7 +131,10 @@ class ModelManipulationFunctions:
         for module in net.modules():
             if isinstance(module, (nn.Conv1d, nn.Conv2d, nn.BatchNorm2d, nn.Linear, nn.ConvTranspose2d)):
                 if method == 'xavier':
-                    nn.init.xavier_normal_(module.weight.data)
+                    if not isinstance(module, nn.BatchNorm2d):
+                        nn.init.xavier_normal_(module.weight.data)
+                    else:
+                        nn.init.normal_(module.weight.data, mean, std)
                 elif method == 'gaussian':
                     nn.init.normal_(module.weight.data, mean, std)
                 else:

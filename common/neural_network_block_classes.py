@@ -171,7 +171,7 @@ class ConvBlock2D(nn.Module):
                               bias=conv_data.bias
                               )
         self.drop = nn.Dropout(conv_data.drate) if conv_data.drate > 0 else None
-        self.bnorm = nn.BatchNorm1d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
+        self.bnorm = nn.BatchNorm2d(num_features=conv_data.out_channels) if conv_data.bnorm is True else None
         self.act = Activator(act_type=conv_data.act, alpha=conv_data.alpha)
 
     def forward(self, x):
@@ -604,19 +604,25 @@ class EdgeConv(nn.Module):
         if idx is None:
             idx  = self.knn(x)  # (batch_size, num_points, k)
         idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
+        # ----------------------------------------------------------------------------------------------------------
+        # Rebasing by offestting according to the number of points
+        # ----------------------------------------------------------------------------------------------------------
         idx      = idx + idx_base
         idx      = idx.view(-1)
         # ==============================================================================================================
-        # Creating the feature vector for the channel-wise convolution simulating matrix FC  --> TO BE DEBUGGED!!!!
+        # Creating the feature vector for the channel-wise convolution simulating matrix FC
         # ==============================================================================================================
         _, num_dims, _ = x.size()
-
-        # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) #   batch_size * num_points * k + range(0, batch_size*num_points)
+        # ----------------------------------------------------------------------------------------------------------
+        # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims), picking the relevant rows
+        # ----------------------------------------------------------------------------------------------------------
         x = x.transpose(2, 1).contiguous()
         feature = x.view(batch_size * num_points, -1)[idx, :]
         feature = feature.view(batch_size, num_points, self.k, num_dims)
         x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, self.k, 1)
-
+        # ----------------------------------------------------------------------------------------------------------
+        # Creating the features (xj - xi, xi)
+        # ----------------------------------------------------------------------------------------------------------
         feature = torch.cat((feature - x, x), dim=3).permute(0, 3, 1, 2).contiguous()
 
         return feature
