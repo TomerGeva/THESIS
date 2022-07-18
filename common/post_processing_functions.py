@@ -879,7 +879,7 @@ if __name__ == '__main__':
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
     c_path = '..\\results_vae\\9_7_2022_22_38'
-    c_path2 = '..\\results_dg\\11_7_2022_13_52'
+    c_path2 = '..\\results_dg\\12_7_2022_14_46'
 
     pp = PostProcessing()
     pp2 = PostProcessingDG()

@@ -67,11 +67,14 @@ class ScatCoordDG(Dataset):
         # print('file_idx ' + str(file_idx) + ' , row_idx ' + str(row_idx))
         sensitivity = abs(self.csv_data[file_idx].iloc[row_idx, 0]) if self.abs_sens else self.csv_data[file_idx].iloc[row_idx, 0]
         # ----------------------------------------------------------------------------------------------------------
-        # extracting the points
+        # extracting the points, shuffling
         # ----------------------------------------------------------------------------------------------------------
         points = self.csv_data[file_idx].iloc[row_idx, 1:]
-        points = np.array([points])
-        points = points.astype('float').reshape(2, -1)
+        # points = np.array([points])
+        # points = points.astype('float').reshape(2, -1)
+        points    = torch.tensor([points]).view(2, -1)
+        col_order = torch.randperm(points.size()[-1])
+        points    = points[:, col_order]
         # ----------------------------------------------------------------------------------------------------------
         # Creating the sample dict
         # ----------------------------------------------------------------------------------------------------------

@@ -601,8 +601,14 @@ class EdgeConv(nn.Module):
         # ==============================================================================================================
         # Getting the nearest neighbors of each point
         # ==============================================================================================================
-        if idx is None:
-            idx  = self.knn(x)  # (batch_size, num_points, k)
+        if self.k == 'all':
+            k = num_points
+            idx = torch.arange(0, num_points, device=device).view(1, 1, -1)
+            idx = idx.repeat(batch_size, num_points, 1)  # (batch_size, num_points, k=num_points)
+        else:
+            k = self.k
+            if idx is None:
+                idx  = self.knn(x)  # (batch_size, num_points, k)
         idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
         # ----------------------------------------------------------------------------------------------------------
         # Rebasing by offestting according to the number of points
@@ -618,8 +624,11 @@ class EdgeConv(nn.Module):
         # ----------------------------------------------------------------------------------------------------------
         x = x.transpose(2, 1).contiguous()
         feature = x.view(batch_size * num_points, -1)[idx, :]
-        feature = feature.view(batch_size, num_points, self.k, num_dims)
-        x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, self.k, 1)
+        del idx_base, idx
+        torch.cuda.empty_cache()
+
+        feature = feature.view(batch_size, num_points, k, num_dims)
+        x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
         # ----------------------------------------------------------------------------------------------------------
         # Creating the features (xj - xi, xi)
         # ----------------------------------------------------------------------------------------------------------
@@ -628,10 +637,38 @@ class EdgeConv(nn.Module):
         return feature
 
     def forward(self, x):
-        x = self.get_graph_feature(x)
+        if self.k != 'all':
+            x = self.get_graph_feature(x)
+        else:
+            x = self.get_graph_feature(x, idx='all')
         x = self.conv_block_2d(x)
         if self.aggregation == 'max':
             x = x.max(dim=-1, keepdim=False)
         elif self.aggregation == 'sum':
             x = x.sum(dim=-1, keepdim=False)
         return x
+
+
+class ModEdgeConv(nn.Module):
+    def __init__(self, edgeconv_data):
+        super(ModEdgeConv, self).__init__()
+        self.data        = edgeconv_data
+        self.conv_data   = edgeconv_data.conv_data
+        self.k           = edgeconv_data.k
+        self.aggregation = edgeconv_data.aggregation  # max or sum
+
+        self.conv_block_1d = ConvBlock2D(edgeconv_data.conv_data)
+
+    def get_graph_feature(self, x):
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        batch_size = x.size(0)
+        num_points = x.size(2)
+        # ==============================================================================================================
+        # Getting x into 3D tensor if not already ordered as such
+        # ==============================================================================================================
+        x = x.view(batch_size, -1, num_points)
+        # ==============================================================================================================
+        # Creating the feature vectors (xj - xi) to all xi. This means that a vector of coordinates
+        # ==============================================================================================================

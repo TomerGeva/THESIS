@@ -140,13 +140,22 @@ class LoggerGeneric:
         return temp_str.format(patch_size_x, patch_size_y, embed_size)
 
     def _get_edgeconv_layer_string(self, k, bias, bnorm, drop_rate, active, aggregation):
-        temp_str = 'k: {0:^' + str(self.desc_space) + \
-                   'd} bias: {1:^' + str(self.desc_space) + \
-                   's} batch_norm: {2:^' + str(self.desc_space) + \
-                   's} drop_rate: {3:^' + str(self.desc_space) + \
-                   '.2f} activation: {4:^' + str(self.desc_space) + \
-                   's} aggregation: {5:^' + str(self.desc_space) + 's}'
-        return temp_str.format(k, str(bias), str(bnorm), drop_rate, active.name, aggregation)
+        try:
+            temp_str = 'k: {0:^' + str(self.desc_space) + \
+                       'd} bias: {1:^' + str(self.desc_space) + \
+                       's} batch_norm: {2:^' + str(self.desc_space) + \
+                       's} drop_rate: {3:^' + str(self.desc_space) + \
+                       '.2f} activation: {4:^' + str(self.desc_space) + \
+                       's} aggregation: {5:^' + str(self.desc_space) + 's}'
+            return temp_str.format(k, str(bias), str(bnorm), drop_rate, active.name, aggregation)
+        except ValueError:
+            temp_str = 'k: {0:^' + str(self.desc_space) + \
+                       's} bias: {1:^' + str(self.desc_space) + \
+                       's} batch_norm: {2:^' + str(self.desc_space) + \
+                       's} drop_rate: {3:^' + str(self.desc_space) + \
+                       '.2f} activation: {4:^' + str(self.desc_space) + \
+                       's} aggregation: {5:^' + str(self.desc_space) + 's}'
+            return temp_str.format(k, str(bias), str(bnorm), drop_rate, active.name, aggregation)
 
     # ==================================================================================================================
     # Logging functions
