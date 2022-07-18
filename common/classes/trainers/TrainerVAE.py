@@ -6,7 +6,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from auxiliary_functions import weighted_mse
+from auxiliary_functions import weighted_mse, grid_mse, hausdorf_distance
 from GPUtil import showUtilization as gpu_usage  # for debug only
 
 
@@ -33,6 +33,7 @@ class TrainerVAE:
         if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
             # self.reconstruction_loss = coord_reconstruction_loss
             self.reconstruction_loss = grid_mse
+            self.reconstruction_loss = hausdorf_distance
         else:
             self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([xquantize, yquantize], device=device) * grid_pos_weight)
         self.encoder_type    = net.encoder_type
@@ -391,8 +392,4 @@ def coord2map(coordinates_vec, n, sigma, xquantize, yquantize):
         xgrid, ygrid = torch.tensor(xgrid).type(torch.LongTensor).to(coordinates_vec.device), torch.Tensor(ygrid).type(torch.LongTensor).to(coordinates_vec.device)
         grid[ygrid, xgrid] += torch.exp(-1*((xgrid - coordinates_vec[2*ii])**(2*n) + (ygrid - coordinates_vec[2*ii+1])**(2*n)) / (2*sigma**2))
     return grid
-
-
-def grid_mse(targets, outputs):
-    return 0.5 * torch.sum(torch.pow(targets - outputs, 2.0))
 

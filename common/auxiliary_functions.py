@@ -9,28 +9,8 @@ import os
 import datetime
 
 
-
 # ==================================================================================================================
-# Truncated ReLU activation function
-# ==================================================================================================================
-def truncated_relu(x):
-    return clamp(x, min=0, max=1)
-
-
-# ==================================================================================================================
-# Function used to create a circular kernel
-# ==================================================================================================================
-def create_circle_kernel(radius=1):
-    kernel = np.zeros((2*radius+1, 2*radius+1))
-    xx, yy = np.meshgrid(np.arange(2*radius+1), np.arange(2*radius+1))
-    r = np.sqrt((xx - radius)**2 + (yy - radius)**2)
-    kernel[r <= radius] = 1
-    # kernel = torch.unsqueeze(torch.unsqueeze(kernel, dim=0), dim=0)
-    return kernel.astype(np.uint8)
-
-
-# ==================================================================================================================
-# Function used to computed the dimensions between each layer
+# Functions used by the networks
 # ==================================================================================================================
 def compute_output_dim(x_dim, y_dim, ch_num, action):
     """
@@ -86,6 +66,76 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
     else:
         raise ValueError('Invalid layer description')
     return x_dim_size, y_dim_size, channels
+
+
+def truncated_relu(x):
+    return clamp(x, min=0, max=1)
+
+
+# ==================================================================================================================
+# Functions used by the trainers
+# ==================================================================================================================
+def weighted_mse(targets, outputs, weights=None, thresholds=None):
+    """
+    :param targets: model targets
+    :param outputs: model outputs
+    :param weights: weights of the mse according to the groups
+    :param thresholds: the thresholds between the different groups
+    :return:
+    """
+    # ==================================================================================================================
+    # Getting the weight vector
+    # ==================================================================================================================
+    if (weights is None) or (thresholds is None):
+        weight_vec = torch.ones_like(targets)
+    else:
+        weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
+        for ii in range(1, len(thresholds)):
+            weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
+        weight_vec += (targets >= thresholds[-1]) * weights[-1]
+    # ==================================================================================================================
+    # Computing weighted MSE as a sum, not mean
+    # ==================================================================================================================
+    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / torch.abs(targets))
+
+
+def grid_mse(targets, outputs):
+    return 0.5 * torch.sum(torch.pow(targets - outputs, 2.0))
+
+
+def hausdorf_distance(X, Y, reduction='sum'):
+    """
+    :param X: B X N X 2 tensor or B X 2N tensor
+    :param Y: B X N X 2 tensor or B X 2N tensor
+    :return: Function computes the Hausdorf distance between set X and set Y
+    """
+    if len(X.size()) == 2:
+        X = X.view(X.size()[0], -1, 2)
+    if len(Y.size()) == 2:
+        Y = Y.view(Y.size()[0], -1, 2)
+    dx = (X[:, :, 0][:, :, None] - Y[:, :, 0].view(64, 1, -1).contiguous()) ** 2
+    dy = (X[:, :, 1][:, :, None] - Y[:, :, 1].view(64, 1, -1).contiguous()) ** 2
+    distance = dx + dy
+    dxy      = torch.min(distance, dim=1, keepdim=False).values
+    dyx      = torch.min(distance, dim=2, keepdim=False).values
+    hausdorf = torch.max(torch.cat((dxy, dyx), 1), 1).values
+    if reduction == 'sum':
+        return torch.sum(hausdorf)
+    elif reduction == 'mean':
+        return torch.mean(hausdorf)
+
+
+
+# ==================================================================================================================
+# Function used to create a circular kernel
+# ==================================================================================================================
+def create_circle_kernel(radius=1):
+    kernel = np.zeros((2*radius+1, 2*radius+1))
+    xx, yy = np.meshgrid(np.arange(2*radius+1), np.arange(2*radius+1))
+    r = np.sqrt((xx - radius)**2 + (yy - radius)**2)
+    kernel[r <= radius] = 1
+    # kernel = torch.unsqueeze(torch.unsqueeze(kernel, dim=0), dim=0)
+    return kernel.astype(np.uint8)
 
 
 # ==================================================================================================================
@@ -321,33 +371,6 @@ class PlottingFunctions:
             # Saving
             # ------------------------------------------------------------------------------------------------------
             modified_det.savefig(os.path.join(path, FIG_DIR, filename))
-
-
-# ==================================================================================================================
-# Weighted MSE function
-# ==================================================================================================================
-def weighted_mse(targets, outputs, weights=None, thresholds=None):
-    """
-    :param targets: model targets
-    :param outputs: model outputs
-    :param weights: weights of the mse according to the groups
-    :param thresholds: the thresholds between the different groups
-    :return:
-    """
-    # ==================================================================================================================
-    # Getting the weight vector
-    # ==================================================================================================================
-    if (weights is None) or (thresholds is None):
-        weight_vec = torch.ones_like(targets)
-    else:
-        weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
-        for ii in range(1, len(thresholds)):
-            weight_vec += torch.logical_and(thresholds[ii - 1] <= targets, targets < thresholds[ii]) * weights[ii]
-        weight_vec += (targets >= thresholds[-1]) * weights[-1]
-    # ==================================================================================================================
-    # Computing weighted MSE as a sum, not mean
-    # ==================================================================================================================
-    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / torch.abs(targets))
 
 
 # ==================================================================================================================
