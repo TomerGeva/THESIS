@@ -95,7 +95,7 @@ class PostProcessing:
         # Plotting the results
         # ==============================================================================================================
         epoch_len = len(epoch_list)
-        plt.rcParams["figure.figsize"] = (20, 10)
+        plt.rcParams["figure.figsize"] = (18, 9)
         # ------------------------------------------------------------------------------------------------------
         # Sensitivity plot
         # ------------------------------------------------------------------------------------------------------
@@ -105,8 +105,7 @@ class PostProcessing:
             for test_db in keys_list:
                 plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         else:
-            plt.plot(epoch_list[0:epoch_len:spacing],
-                     [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
             for test_db in keys_list:
                 plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         plt.xlabel('Epoch')
@@ -603,8 +602,6 @@ class PostProcessing:
         # Loading the needed models and data
         # ==============================================================================================================
         test_loaders = import_data_set_test([PATH_DATABASE_TEST[-2]], batch_size=1,
-                                            mixup_factor=MIXUP_FACTOR,
-                                            mixup_prob=MIXUP_PROB,
                                             abs_sens=ABS_SENS,
                                             dilation=DILATION,
                                             shuffle=True)
@@ -869,7 +866,7 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
-    c_epoch = 240
+    c_epoch = 600
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -878,8 +875,8 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\9_7_2022_22_38'
-    c_path2 = '..\\results_dg\\12_7_2022_14_46'
+    c_path = '..\\results_vae\\22_7_2022_9_31'
+    c_path2 = '..\\results_dg\\23_7_2022_8_49'
 
     pp = PostProcessing()
     pp2 = PostProcessingDG()

@@ -306,11 +306,11 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        load_path   = None
+        load_path   = '..\\results_vae\\22_7_2022_9_31'
         # load_path = '..\\results\\9_4_2022_18_43'
         # load_path  = '..\\results\\11_4_2022_8_10'
         # load_path  = '..\\results\\9_6_2022_8_28'
-        load_epoch  = 400
+        load_epoch  = 160
         copy_path   = None
         # copy_path   = '..\\results\\15_12_2021_23_46'
         copy_epoch  = 320

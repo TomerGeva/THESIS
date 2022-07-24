@@ -16,7 +16,7 @@ class LoggerGeneric:
         self.write_to_file  = write_to_file
         self.verbose        = 'INFO'
         self.header_space   = 16
-        self.result_space   = 15.2
+        self.result_space   = 15.6
         self.desc_space     = 6
         self.fileID         = None
 

@@ -611,7 +611,7 @@ class EdgeConv(nn.Module):
                 idx  = self.knn(x)  # (batch_size, num_points, k)
         idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
         # ----------------------------------------------------------------------------------------------------------
-        # Rebasing by offestting according to the number of points
+        # Rebasing by offsetting according to the number of points
         # ----------------------------------------------------------------------------------------------------------
         idx      = idx + idx_base
         idx      = idx.view(-1)
@@ -657,14 +657,24 @@ class ModEdgeConv(nn.Module):
         self.k           = edgeconv_data.k
         self.aggregation = edgeconv_data.aggregation  # max or sum
 
-        self.conv_block_1d = ConvBlock2D(edgeconv_data.conv_data)
+        self.conv_block_2d = ConvBlock2D(edgeconv_data.conv_data)
 
-    def get_graph_feature(self, x):
+    def knn(self, x):
+        inner = -2 * torch.matmul(x.transpose(2, 1), x)
+        xx = torch.sum(x ** 2, dim=1, keepdim=True)
+        pairwise_distance = -xx - inner - xx.transpose(2, 1)
+
+        idx = pairwise_distance.topk(k=self.k, dim=-1)[1]  # (batch_size, num_points, k)
+        return idx
+
+    def get_graph_feature(self, x, idx=None, device=None):
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
         batch_size = x.size(0)
         num_points = x.size(2)
+        if device is None:
+            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # ==============================================================================================================
         # Getting x into 3D tensor if not already ordered as such
         # ==============================================================================================================
@@ -672,3 +682,35 @@ class ModEdgeConv(nn.Module):
         # ==============================================================================================================
         # Creating the feature vectors (xj - xi) to all xi. This means that a vector of coordinates
         # ==============================================================================================================
+        if self.k == 'all':
+            k = num_points
+            idx = torch.arange(0, num_points, device=device).view(1, 1, -1)
+            idx = idx.repeat(batch_size, num_points, 1)  # (batch_size, num_points, k=num_points)
+        else:
+            k = self.k
+            if idx is None:
+                idx  = self.knn(x)  # (batch_size, num_points, k)
+        idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
+        # ----------------------------------------------------------------------------------------------------------
+        # Rebasing by offsetting according to the number of points
+        # ----------------------------------------------------------------------------------------------------------
+        idx = idx + idx_base
+        idx = idx.view(-1)
+        # ==============================================================================================================
+        # Creating the feature vector for the channel-wise convolution simulating matrix FC
+        # ==============================================================================================================
+        _, num_dims, _ = x.size()
+        # ----------------------------------------------------------------------------------------------------------
+        # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims), picking the relevant rows
+        # ----------------------------------------------------------------------------------------------------------
+        x = x.transpose(2, 1).contiguous()
+        feature = x.view(batch_size * num_points, -1)[idx, :]
+        del idx_base, idx
+        torch.cuda.empty_cache()
+
+        feature = feature.view(batch_size, num_points, k, num_dims)
+        x = x.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
+        # ----------------------------------------------------------------------------------------------------------
+        # Creating the features (xj - xi, xi)
+        # ----------------------------------------------------------------------------------------------------------
+        feature = torch.cat((feature - x, x), dim=3).permute(0, 3, 1, 2).contiguous()

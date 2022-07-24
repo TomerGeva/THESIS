@@ -97,6 +97,7 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
     return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / torch.abs(targets))
+    # return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 
 
 def grid_mse(targets, outputs):
@@ -110,20 +111,20 @@ def hausdorf_distance(X, Y, reduction='sum'):
     :return: Function computes the Hausdorf distance between set X and set Y
     """
     if len(X.size()) == 2:
-        X = X.view(X.size()[0], -1, 2)
+        X = X.view(X.size()[0], -1, 2).contiguous()
     if len(Y.size()) == 2:
-        Y = Y.view(Y.size()[0], -1, 2)
-    dx = (X[:, :, 0][:, :, None] - Y[:, :, 0].view(64, 1, -1).contiguous()) ** 2
-    dy = (X[:, :, 1][:, :, None] - Y[:, :, 1].view(64, 1, -1).contiguous()) ** 2
-    distance = dx + dy
+        Y = Y.view(Y.size()[0], -1, 2).contiguous()
+    dx = (X[:, :, 0][:, :, None] - Y[:, :, 0].view(Y.size()[0], 1, -1).contiguous()) ** 2
+    dy = (X[:, :, 1][:, :, None] - Y[:, :, 1].view(Y.size()[0], 1, -1).contiguous()) ** 2
+    distance = torch.sqrt(dx + dy)
     dxy      = torch.min(distance, dim=1, keepdim=False).values
     dyx      = torch.min(distance, dim=2, keepdim=False).values
-    hausdorf = torch.max(torch.cat((dxy, dyx), 1), 1).values
+    # hausdorf = torch.max(torch.cat((dxy, dyx), 1), 1).values
+    hausdorf = torch.cat((dxy, dyx), 1)
     if reduction == 'sum':
         return torch.sum(hausdorf)
     elif reduction == 'mean':
         return torch.mean(hausdorf)
-
 
 
 # ==================================================================================================================
@@ -371,6 +372,24 @@ class PlottingFunctions:
             # Saving
             # ------------------------------------------------------------------------------------------------------
             modified_det.savefig(os.path.join(path, FIG_DIR, filename))
+
+    @staticmethod
+    def scat_coord(target, output):
+        """
+        :param target:
+        :param output: Function receives a target coordinate vector and output coordinate vactor, scatters them both on
+                       the same plot
+        :return:
+        """
+        target_re = np.reshape(target.cpu().detach().numpy(), [-1, 2])
+        output_re = np.reshape(output.cpu().detach().numpy(), [-1, 2])
+        plt.figure()
+        plt.scatter(target_re[:, 0], target_re[:, 1], label='Target Grid')
+        plt.scatter(output_re[:, 0], output_re[:, 1], label='Output Grid')
+        plt.title('Coordinate scatter results')
+        plt.legend()
+        plt.grid()
+        plt.show()
 
 
 # ==================================================================================================================

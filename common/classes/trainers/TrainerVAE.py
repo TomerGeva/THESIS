@@ -33,7 +33,7 @@ class TrainerVAE:
         if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
             # self.reconstruction_loss = coord_reconstruction_loss
             self.reconstruction_loss = grid_mse
-            self.reconstruction_loss = hausdorf_distance
+            # self.reconstruction_loss = hausdorf_distance
         else:
             self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([xquantize, yquantize], device=device) * grid_pos_weight)
         self.encoder_type    = net.encoder_type
@@ -275,7 +275,7 @@ class TrainerVAE:
             # Saving the training state
             # save every x epochs and on the last epoch
             # ------------------------------------------------------------------------------
-            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1 or test_sens_mse_vec[-1] < mse_last_group:
+            if epoch % save_per_epochs == 0 or epoch == EPOCH_NUM-1:
                 self.save_state_train(logger.logdir, mod_vae, epoch, self.learning_rate, self.mom, self.beta_dkl, self.beta_grid, SENS_STD)
                 if test_sens_mse_vec[-1] < mse_last_group:
                     mse_last_group = test_sens_mse_vec[-1]

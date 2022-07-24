@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from neural_network_block_classes import EdgeConv, ConvBlock1D, FullyConnectedBlock, PadPool1D, AdaPadPool1D
+from neural_network_block_classes import EdgeConv, ConvBlock1D, FullyConnectedBlock, FullyConnectedResidualBlock, PadPool1D, AdaPadPool1D
 
 
 class ModDGCNN(nn.Module):
@@ -37,6 +37,9 @@ class ModDGCNN(nn.Module):
             elif 'pool1d' in action[0]:
                 conv_len += 1
                 self.layers.append(PadPool1D(action[1]))
+            elif 'res-linear' in action[0]:
+                linear_len += 1
+                self.layers.append(FullyConnectedResidualBlock(action[1]))
             elif 'linear' in action[0]:
                 linear_len += 1
                 self.layers.append(FullyConnectedBlock(action[1]))
