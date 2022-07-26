@@ -167,3 +167,15 @@ class EdgeConvData:
         self.k           = k
         self.conv_data   = conv_data
         self.aggregation = aggregation
+
+
+class SetAbstractionData:
+    def __init__(self, ntag, radius, k, in_channel, out_channels, group_all=False, pnet_kernel=1, residual=True):
+        self.ntag_points  = int(math.ceil(ntag))
+        self.radius       = radius
+        self.k            = k
+        self.in_channel   = in_channel
+        self.out_channels = out_channels
+        self.group_all    = group_all
+        self.pnet_kernel  = pnet_kernel
+        self.residual     = residual

@@ -6,7 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from neural_network_block_classes import EdgeConv, ConvBlock1D, FullyConnectedBlock, FullyConnectedResidualBlock, PadPool1D, AdaPadPool1D
+from neural_network_block_classes import ConvBlock1D, FullyConnectedBlock, FullyConnectedResidualBlock, PadPool1D, AdaPadPool1D
+from neural_network_block_classes import EdgeConv, ModEdgeConv, PointNetSetAbstraction
 
 
 class ModDGCNN(nn.Module):
@@ -87,5 +88,93 @@ class ModDGCNN(nn.Module):
         # ---------------------------------------------------------
         for ii in range(self.fc_len):
             layer = self.layers[ii + self.conv_len + self.edgeconv_len]
+            x = layer(x)
+        return x
+
+
+class ModDGCNN2(nn.Module):
+    def __init__(self, device, topology, flatten_type):
+        super(ModDGCNN, self).__init__()
+        self.device          = device
+        self.topology        = topology
+        self.edgeconv_layers = nn.ModuleList()
+        self.conv_layers     = nn.ModuleList()
+        self.fc_layers       = nn.ModuleList()
+        # self.layers        = nn.ModuleList()
+        self.flatten_type = flatten_type
+        # ---------------------------------------------------------
+        # Creating the Blocks according to the description
+        # ---------------------------------------------------------
+        edgeconv_len = 0
+        conv_len = 0
+        linear_len = 0
+        for ii in range(len(self.topology)):
+            action = self.topology[ii]
+            if 'modedgeconv' in action[0]:
+                edgeconv_len += 1
+                self.edgeconv_layers.append(ModEdgeConv(action[1]))
+            if 'edgeconv' in action[0]:
+                edgeconv_len += 1
+                self.edgeconv_layers.append(EdgeConv(action[1]))
+            elif 'sg_pointnet' in action[0]:
+                edgeconv_len += 1
+                self.edgeconv_layers.append(PointNetSetAbstraction(action[1]))
+            elif 'conv1d' in action[0]:
+                conv_len += 1
+                self.conv_layers.append(ConvBlock1D(action[1]))
+            elif 'adapool1d' in action[0]:
+                conv_len += 1
+                self.conv_layers.append(AdaPadPool1D(action[1]))
+            elif 'pool1d' in action[0]:
+                conv_len += 1
+                self.conv_layers.append(PadPool1D(action[1]))
+            elif 'res-linear' in action[0]:
+                linear_len += 1
+                self.fc_layers.append(FullyConnectedResidualBlock(action[1]))
+            elif 'linear' in action[0]:
+                linear_len += 1
+                self.fc_layers.append(FullyConnectedBlock(action[1]))
+        self.squeeze = (conv_len > 0) or (edgeconv_len > 0)
+        self.edgeconv_len = edgeconv_len
+        self.conv_len = conv_len
+        self.fc_len = linear_len
+
+    def forward(self, x, points):
+        """
+        :param x: data per point
+        :param points: coordinates
+        :return:
+        """
+        batch_size    = x.size(0)
+        # ---------------------------------------------------------
+        # passing through the edge - convolution blocks
+        # ---------------------------------------------------------
+        for layer in self.edgeconv_layers:
+            x = layer(points, x)
+        # ---------------------------------------------------------
+        # passing through the convolution blocks
+        # ---------------------------------------------------------
+        for layer in self.conv_layers:
+            x = layer(x)
+        # ---------------------------------------------------------
+        # flattening
+        # ---------------------------------------------------------
+        if self.flatten_type == 'max':
+            x = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
+        elif self.flatten_type == 'avg':
+            x = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
+        elif self.flatten_type == 'both':
+            x1 = F.adaptive_max_pool1d(x, 1).view(batch_size, -1)
+            x2 = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
+            x = torch.cat((x1, x2), 1)
+        # ---------------------------------------------------------
+        # squeezing for the FC layers
+        # ---------------------------------------------------------
+        if self.squeeze:
+            x = x.squeeze()
+        # ---------------------------------------------------------
+        # passing through the fully connected blocks
+        # ---------------------------------------------------------
+        for layer in self.fc_layers:
             x = layer(x)
         return x

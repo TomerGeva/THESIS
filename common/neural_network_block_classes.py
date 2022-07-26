@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
+from graph_functions import knn
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
 
@@ -578,14 +579,6 @@ class EdgeConv(nn.Module):
 
         self.conv_block_2d = ConvBlock2D(edgeconv_data.conv_data)
 
-    def knn(self, x):
-        inner = -2 * torch.matmul(x.transpose(2, 1), x)
-        xx = torch.sum(x ** 2, dim=1, keepdim=True)
-        pairwise_distance = -xx - inner - xx.transpose(2, 1)
-
-        idx = pairwise_distance.topk(k=self.k, dim=-1)[1]  # (batch_size, num_points, k)
-        return idx
-
     def get_graph_feature(self, x, idx=None, device=None):
         # ==============================================================================================================
         # Local variables
@@ -608,7 +601,7 @@ class EdgeConv(nn.Module):
         else:
             k = self.k
             if idx is None:
-                idx  = self.knn(x)  # (batch_size, num_points, k)
+                idx  = knn(x, k)  # (batch_size, num_points, k)
         idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
         # ----------------------------------------------------------------------------------------------------------
         # Rebasing by offsetting according to the number of points
@@ -659,15 +652,15 @@ class ModEdgeConv(nn.Module):
 
         self.conv_block_2d = ConvBlock2D(edgeconv_data.conv_data)
 
-    def knn(self, x):
-        inner = -2 * torch.matmul(x.transpose(2, 1), x)
-        xx = torch.sum(x ** 2, dim=1, keepdim=True)
-        pairwise_distance = -xx - inner - xx.transpose(2, 1)
-
-        idx = pairwise_distance.topk(k=self.k, dim=-1)[1]  # (batch_size, num_points, k)
-        return idx
-
-    def get_graph_feature(self, x, idx=None, device=None):
+    def get_graph_feature(self, points, x, idx=None, device=None):
+        """
+        :param points: coordinates of the points, size is B X F X N
+        :param x: data of each point,             size is B X D X N
+        :param idx:
+        :param device:
+        :return:
+            feature: the grouped data after performing KNN and arranging the data. Size is B X 2D X K X N
+        """
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
@@ -689,7 +682,7 @@ class ModEdgeConv(nn.Module):
         else:
             k = self.k
             if idx is None:
-                idx  = self.knn(x)  # (batch_size, num_points, k)
+                idx  = knn(points, k)  # (batch_size, num_points, k)
         idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1) * num_points
         # ----------------------------------------------------------------------------------------------------------
         # Rebasing by offsetting according to the number of points
@@ -714,3 +707,86 @@ class ModEdgeConv(nn.Module):
         # Creating the features (xj - xi, xi)
         # ----------------------------------------------------------------------------------------------------------
         feature = torch.cat((feature - x, x), dim=3).permute(0, 3, 1, 2).contiguous()
+        return feature
+
+    def forward(self, points, x):
+        x = self.get_graph_feature(points, x)
+        x = self.conv_block_2d(x)
+        if self.aggregation == 'max':
+            x = x.max(dim=-1, keepdim=False)
+        elif self.aggregation == 'sum':
+            x = x.sum(dim=-1, keepdim=False)
+        return x
+
+
+class PointNetSetAbstraction(nn.Module):
+    def __init__(self, data):
+        # ntag_points, raidus, k, in_channel, out_channels
+        super(PointNetSetAbstraction, self).__init__()
+        self.data         = data
+        self.ntag_points  = data.ntag_points
+        self.radius       = data.radius
+        self.k            = data.k
+        self.in_channel   = data.in_channel
+        self.out_channels = data.out_channels
+        self.group_all    = data.group_all
+        self.residual     = data.residual
+
+        self.conv2d_layers = nn.ModuleList()
+        self.batch_norms   = nn.ModuleList()
+        if self.residual:
+            if type(self.out_channels) is int:
+                self.out_channels      = [self.out_channels]
+                self.residual_layer    = None
+                self.residual_layer_bn = None
+            elif self.out_channels[-1] == self.in_channel:
+                self.residual_layer    = None
+                self.residual_layer_bn = None
+            else:
+                self.residual_layer = nn.Conv2d(in_channels=self.in_channel, out_channels=self.out_channels[-1],
+                                                kernel_size=1, stride=1, padding=0, bias=False)
+                self.residual_layer_bn = nn.BatchNorm2d(self.out_channels[-1])
+        else:
+            self.residual_layer    = None
+            self.residual_layer_bn = None
+
+        in_channel = self.in_channel
+        for out_channel in self.out_channels:
+            self.conv2d_layers.append(nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1, padding=0, bias=False))
+            self.batch_norms.append(nn.BatchNorm2d(out_channel))
+            in_channel = out_channel
+
+    def forward(self, points, data):
+        """
+        :param points: input points data coordinates, size is B X F X N
+        :param data: matching data for each coordinate, size is B X D X N
+        :return:
+            centroids: coordinates of the sampled points, size is B X F X N'
+            new_data_total: concatenation of the coordinates and the new data, size is B X (F + D) X N'
+        """
+        # ==============================================================================================================
+        # Permuting the input, sampling and grouping
+        # ==============================================================================================================
+        points = points.permute(0, 2, 1)  # B X N X F
+        data   = data.permute(0, 2, 1)    # B X N X D
+        if self.group_all:
+            points_new, data_grouped_total = sample_group_all(points, data)
+        else:
+            points_new, data_grouped_total = sample_group(self.ntag_points, self.radius, self.k, points, data)
+        # ==============================================================================================================
+        # At this point:
+        # points_new         size is B X N' X F --> the centroids' coordinates
+        # data_grouped_total size is B X N' X K X (F + D) --> coordinates + data of each point, grouped
+        # Now, we are running PointNet for a method of aggregation for all K points in the group
+        # ==============================================================================================================
+        data_grouped_total = data_grouped_total.permute(0, 3, 2, 1)  # B X (F + D) X K X N'
+        if self.residual and self.residual_layer is not None:
+            res_out = F.relu(self.residual_layer_bn(self.residual_layer(data_grouped_total)))
+        for ii, (conv, bn) in zip(self.conv2d_layers, self.batch_norms):
+            data_grouped_total = F.relu(bn(conv(data_grouped_total)))
+        if self.residual:
+            out_total = res_out + data_grouped_total
+
+        out_total_aggregated = torch.mean(out_total, 2)[0]
+        points_new = points_new.permute(0, 2, 1)
+        return points_new, out_total_aggregated
