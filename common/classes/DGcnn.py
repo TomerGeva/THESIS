@@ -94,7 +94,7 @@ class ModDGCNN(nn.Module):
 
 class ModDGCNN2(nn.Module):
     def __init__(self, device, topology, flatten_type):
-        super(ModDGCNN, self).__init__()
+        super(ModDGCNN2, self).__init__()
         self.device          = device
         self.topology        = topology
         self.edgeconv_layers = nn.ModuleList()
@@ -113,7 +113,7 @@ class ModDGCNN2(nn.Module):
             if 'modedgeconv' in action[0]:
                 edgeconv_len += 1
                 self.edgeconv_layers.append(ModEdgeConv(action[1]))
-            if 'edgeconv' in action[0]:
+            elif 'edgeconv' in action[0]:
                 edgeconv_len += 1
                 self.edgeconv_layers.append(EdgeConv(action[1]))
             elif 'sg_pointnet' in action[0]:
@@ -139,18 +139,23 @@ class ModDGCNN2(nn.Module):
         self.conv_len = conv_len
         self.fc_len = linear_len
 
-    def forward(self, x, points):
+    def forward(self, x, points=None):
         """
-        :param x: data per point
-        :param points: coordinates
+        :param x: data per point. Size is B X D X N
+        :param points: coordinates. If None, copies the input. Size is B X F X N ; F = 2, 3 - spatial coordinates
         :return:
         """
         batch_size    = x.size(0)
+        if points is None:
+            points = x.contiguous()
         # ---------------------------------------------------------
         # passing through the edge - convolution blocks
         # ---------------------------------------------------------
         for layer in self.edgeconv_layers:
-            x = layer(points, x)
+            if type(layer) is PointNetSetAbstraction:
+                points, x = layer(points, x)
+            else:
+                x = layer(points, x)
         # ---------------------------------------------------------
         # passing through the convolution blocks
         # ---------------------------------------------------------

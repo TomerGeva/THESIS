@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from global_const import activation_type_e, pool_e
 from global_struct import ConvBlockData, PadPoolData
 from auxiliary_functions import truncated_relu
-from graph_functions import knn
+from graph_functions import knn, sample_group
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
 
@@ -715,7 +715,7 @@ class ModEdgeConv(nn.Module):
         if self.aggregation == 'max':
             x = x.max(dim=-1, keepdim=False)
         elif self.aggregation == 'sum':
-            x = x.sum(dim=-1, keepdim=False)
+            x = x.sum(dim=-1, keepdim=False) / self.k
         return x
 
 
@@ -762,7 +762,7 @@ class PointNetSetAbstraction(nn.Module):
         :param data: matching data for each coordinate, size is B X D X N
         :return:
             centroids: coordinates of the sampled points, size is B X F X N'
-            new_data_total: concatenation of the coordinates and the new data, size is B X (F + D) X N'
+            new_data_total: concatenation of the coordinates and the new data, size is B X D' X N'
         """
         # ==============================================================================================================
         # Permuting the input, sampling and grouping
@@ -770,7 +770,8 @@ class PointNetSetAbstraction(nn.Module):
         points = points.permute(0, 2, 1)  # B X N X F
         data   = data.permute(0, 2, 1)    # B X N X D
         if self.group_all:
-            points_new, data_grouped_total = sample_group_all(points, data)
+            pass
+            # points_new, data_grouped_total = sample_group_all(points, data)
         else:
             points_new, data_grouped_total = sample_group(self.ntag_points, self.radius, self.k, points, data)
         # ==============================================================================================================
@@ -782,11 +783,12 @@ class PointNetSetAbstraction(nn.Module):
         data_grouped_total = data_grouped_total.permute(0, 3, 2, 1)  # B X (F + D) X K X N'
         if self.residual and self.residual_layer is not None:
             res_out = F.relu(self.residual_layer_bn(self.residual_layer(data_grouped_total)))
-        for ii, (conv, bn) in zip(self.conv2d_layers, self.batch_norms):
+        for ii, conv in enumerate(self.conv2d_layers):
+            bn = self.batch_norms[ii]
             data_grouped_total = F.relu(bn(conv(data_grouped_total)))
         if self.residual:
             out_total = res_out + data_grouped_total
 
-        out_total_aggregated = torch.mean(out_total, 2)[0]
+        out_total_aggregated = torch.mean(out_total, 2)
         points_new = points_new.permute(0, 2, 1)
         return points_new, out_total_aggregated

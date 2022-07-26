@@ -11,6 +11,9 @@ from global_struct import ConvBlockData, AdaPadPoolData, PadPoolData, FCBlockDat
 XRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the x coordinate of the structure in micro-meters
 YRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the y coordinate of the structure in micro-meters
 
+COORD_MEAN  = (XRANGE[1] + XRANGE[0]) / 2
+COORD_SCALE = np.sqrt(2 * (XRANGE[1] - COORD_MEAN)**2)
+
 NUM_OF_POINTS = 500
 
 XQUANTIZE = 600  # 800  # 2500  # number of quantization points in the X coordinate
@@ -115,16 +118,16 @@ DGCNN_TOPOLOGY = [
 ]
 MODGCNN_TOPOLOGY = [
     ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=4, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/2, radius=0.2, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/2, radius=0.25, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
     ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS / 4, radius=0.2, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/4, radius=0.5, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
     ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS / 8, radius=0.2, k=None, in_channel=2+128, out_channels=[128, 128], pnet_kernel=1, residual=True)],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/8, radius=1.0, k=None, in_channel=2+128, out_channels=[128, 128], pnet_kernel=1, residual=True)],
     ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=128*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['conv1d', ConvBlockData(768, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['conv1d', ConvBlockData(256, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
     ['linear', FCBlockData(512, in_neurons=EMBED_DIM*2, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
-    ['linear', FCBlockData(256, in_neurons=512, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
-    ['res-linear', ResFCBlockData(1, in_neurons=256, layers=4, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
+    ['res-linear', ResFCBlockData(128, in_neurons=512, layers=3, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(1, in_neurons=128, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 # DGCNN_TOPOLOGY = [
 #     ['edgeconv', EdgeConvData(k='all', conv_data=ConvBlockData(in_channels=4,     out_channels=16, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],

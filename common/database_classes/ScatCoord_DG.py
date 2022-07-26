@@ -15,7 +15,7 @@ class ScatCoordDG(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, abs_sens=True, double_size=False):
+    def __init__(self, csv_files, transform=None, abs_sens=True, double_size=False, coord_mean=2.5, coord_scale=np.sqrt(12.5)):
         """
         Args:
         :param csv_files: logdir to the file with all the database
@@ -93,13 +93,16 @@ class ScatCoordDG(Dataset):
 # ============================================================
 class ToTensorCoord(object):
     """Convert ndarrays in sample to Tensors."""
-    def __init__(self):
+    def __init__(self, mean, scale):
         super(ToTensorCoord, self).__init__()
+        self.mean  = mean
+        self.scale = scale
 
     def __call__(self, sample):
         sensitivity, points = sample['sensitivity'], sample['coordinate_target']
         sensitivity         = torch.from_numpy(np.expand_dims(sensitivity, axis=0))
-        points              = torch.from_numpy(np.reshape(points, -1))
+        # points              = torch.from_numpy(np.reshape(points, -1))
+        points = (points - self.mean) / self.scale
         return {'sensitivity': sensitivity,
                 'coordinate_target': points}
 
@@ -107,13 +110,15 @@ class ToTensorCoord(object):
 # ======================================================================================================================
 # Defining functions which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens=True, num_workers=1):
+def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens=True, coord_mean=2.5, coord_scale=np.sqrt(12.5), num_workers=1):
     """
     This function imports the train and test database
     :param path_list_train: list of paths to be used in the train dataloader
     :param path_list_test: list of paths to be used in the test dataloader
     :param batch_size: size of each batch in the databases
     :param abs_sens: if true, doing absolute value over teh sensitivity
+    :param coord_mean: normalization translation for the coordinates
+    :param coord_scale: normalization scale for the coordinates
     :param num_workers: number of workers in the dataloader
     :return: two datasets, training and test
     """
@@ -121,7 +126,7 @@ def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens
     # Importing complete dataset and creating train dataloader
     # --------------------------------------------------------------------------------------------------------------
     data_train = ScatCoordDG(csv_files=path_list_train,
-                             transform=None,  # ToTensorCoord(),
+                             transform=ToTensorCoord(mean=coord_mean, scale=coord_scale),
                              abs_sens=abs_sens)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
     # --------------------------------------------------------------------------------------------------------------
@@ -132,7 +137,7 @@ def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens
     for ii, dataset in enumerate(path_list_test):
         data_list = [dataset]
         temp_data = ScatCoordDG(csv_files=data_list,
-                                transform=None,  # ToTensorCoord(),
+                                transform=ToTensorCoord(mean=coord_mean, scale=coord_scale),
                                 abs_sens=abs_sens,)
         # ******************************************************************************************************
         # extracting the data-loader key from the name

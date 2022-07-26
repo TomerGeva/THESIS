@@ -135,11 +135,13 @@ def _square_distance(points1, points2):
     :param points2: B X N' X F
     :return: B X N X N' per-point square distance
     """
+    device      = points1.device
+
     batch_size  = points1.shape[0]
     points1_per = points1.permute(0, 2, 1)
-    distance    = torch.zeros((batch_size, points2.shape[1], points1.shape[1]))
+    distance    = torch.zeros((batch_size, points2.shape[1], points1.shape[1]), device=device)
     for ii in range(points1.shape[2]):
-        distance += (points2[:, :, ii][:, :, None] - points1_per[:, ii, :]) ** 2
+        distance += (points2[:, :, ii][:, :, None] - points1_per[:, ii, :][:, None, :]) ** 2
     return distance
 
 

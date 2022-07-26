@@ -5,7 +5,7 @@ from ScatCoord_DG import import_data_sets_coord
 from TrainerDG import TrainerDG
 import torch
 from PointNet import ModPointNet
-from DGcnn import ModDGCNN
+from DGcnn import ModDGCNN, ModDGCNN2
 from auxiliary_functions import _init_
 
 
@@ -27,13 +27,16 @@ def main():
                                                                     PATH_DATABASE_TEST,
                                                                     BATCH_SIZE,
                                                                     abs_sens=ABS_SENS,
+                                                                    coord_mean=COORD_MEAN,
+                                                                    coord_scale=COORD_SCALE,
                                                                     num_workers=NUM_WORKERS
                                                                     )
     # ================================================================================
     # Creating the model
     # ================================================================================
     # model = ModPointNet(device, POINTNET_TOPOLOGY)
-    model = ModDGCNN(device, DGCNN_TOPOLOGY, CONCAT_EDGECONV, FLATTEN_TYPE)
+    # model = ModDGCNN(device, DGCNN_TOPOLOGY, CONCAT_EDGECONV, FLATTEN_TYPE)
+    model = ModDGCNN2(device, MODGCNN_TOPOLOGY, FLATTEN_TYPE)
     mmf.initialize_weights(model, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
     model.to(device)
     # ================================================================================
