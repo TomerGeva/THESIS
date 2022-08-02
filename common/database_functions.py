@@ -11,6 +11,8 @@ import numpy as np
 from models.ModVAE import ModVAE
 from trainers.TrainerVAE import TrainerVAE
 from models.DecoderVAE import DecoderVAE
+from classes.DGcnn import ModDGCNN2
+from classes.TrainerDG import TrainerDG
 
 
 class ModelManipulationFunctions:
@@ -72,6 +74,42 @@ class ModelManipulationFunctions:
 
         return mod_vae, trainer
 
+    @staticmethod
+    def load_state_train_pcloud(data_path, device=None, thresholds=None):
+        """
+                :param data_path: path to the saved data regarding the network
+                :param device: allocation to either cpu of cuda:0
+                :param thresholds: test group thresholds
+                :return: the function loads the data into and returns the saves network and trainer
+                """
+        if device is None:
+            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # -------------------------------------
+        # loading the dictionary
+        # -------------------------------------
+        checkpoint = torch.load(data_path, map_location=device)
+
+        # -------------------------------------
+        # arranging the data
+        # -------------------------------------
+        topology = checkpoint['topology']
+        model = ModDGCNN2(device, topology, flatten_type='both')
+        model.to(device)  # allocating the computation to the CPU or GPU
+        model.load_state_dict(checkpoint['vae_state_dict'])
+
+        trainer = TrainerDG(model,
+                            lr=checkpoint['lr'],
+                            mom=checkpoint['lr'],
+                            sched_step=SCHEDULER_STEP,
+                            sched_gamma=SCHEDULER_GAMMA,
+                            grad_clip=GRAD_CLIP,
+                            group_thresholds=thresholds,
+                            group_weights=MSE_GROUP_WEIGHT,
+                            abs_sens=ABS_SENS)
+        trainer.epoch = checkpoint['epoch']
+        trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return model, trainer
     @staticmethod
     def load_decoder(data_path=None, device=None):
         """

@@ -1,4 +1,5 @@
 from ConfigVAE import *
+from ConfigDG import *
 import os
 import json
 import math
@@ -8,6 +9,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from global_const import encoder_type_e
 from ScatterCoordinateDataset import import_data_sets_pics, import_data_set_test
+from ScatCoord_DG import import_data_sets_coord
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
 from roc_det_functions import RocDetFunctions
@@ -806,6 +808,53 @@ class PostProcessingDG:
             sens_plt.savefig(os.path.join(path, FIG_DIR, filename_sens))
         plt.show()
 
+    @staticmethod
+    def load_and_pass(path, epoch, key='4e+03_to_inf'):
+        pf = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        sigmoid = torch.nn.Sigmoid()
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(path, epoch)
+        # ==============================================================================================================
+        # Loading the needed models and data
+        # ==============================================================================================================
+        train_loader, test_loaders, _ = import_data_sets_coord(PATH_DATABASE_TRAIN,
+                                                               PATH_DATABASE_TEST,
+                                                               BATCH_SIZE,
+                                                               abs_sens=ABS_SENS,
+                                                               coord_mean=COORD_MEAN,
+                                                               coord_scale=COORD_SCALE,
+                                                               num_workers=NUM_WORKERS
+                                                               )
+        model, trainer = mff.load_state_train_pcloud(chosen_file)
+        # ==============================================================================================================
+        # Extracting statistics
+        # ==============================================================================================================
+        model.eval()
+        with torch.no_grad():
+            test_loader_iter = iter(test_loaders[key])
+            for ii in range(len(test_loaders[key])):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample_batched = next(test_loader_iter)
+                except StopIteration:
+                    break
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities, passing through the model
+                # ------------------------------------------------------------------------------
+                sens_targets = sample_batched['sensitivity'].float().to(model.device)
+                coordinates = sample_batched['coordinate_target'].float().to(model.device)
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                sens_outputs = model(coordinates)
+                print('hi')
+
 
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
@@ -876,7 +925,7 @@ if __name__ == '__main__':
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
     c_path = '..\\results_vae\\22_7_2022_9_31'
-    c_path2 = '..\\results_dg\\23_7_2022_8_49'
+    c_path2 = '..\\results_dg\\31_7_2022_17_42'
 
     pp = PostProcessing()
     pp2 = PostProcessingDG()
@@ -896,5 +945,6 @@ if __name__ == '__main__':
     # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
     # pp.log_to_plot(c_path)
 
-    pp2.log_to_plot(c_path2)
+    pp2.log_to_plot(c_path2, spacing=1)
+    # pp2.load_and_pass(c_path2, c_epoch)
 

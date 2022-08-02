@@ -222,6 +222,7 @@ class TrainerDG:
                         'lr':                   lr,
                         'mom':                  mom,
                         'topology':             model.topology,
+                        'flatten_type':         model.flatten_type
                         }
         torch.save(data_to_save, path)
 
@@ -241,5 +242,3 @@ class TrainerDG:
             if low_threshold < th:
                 return self.group_weights[ii]
         return self.group_weights[-1]
-
-

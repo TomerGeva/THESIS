@@ -67,7 +67,7 @@ PP_DATA = 'post_processing'
 # --------------------------------------------------------------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------------------------------------------------------------
-EMBED_DIM       = 2048
+EMBED_DIM       = 1024
 CONCAT_EDGECONV = True  # boolean stating if we want to concatenate all the edgeconv results at the end
 FLATTEN_TYPE    = 'both'  # max, avg, both
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -83,7 +83,7 @@ MSE_GROUP_WEIGHT = [1, 2, 2, 4]  # [1, 2, 2, 20]  # weighted MSE according to se
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 EPOCH_NUM        = 1001
-LR               = 3e-4  # learning rate
+LR               = 2e-4  # learning rate
 SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
@@ -117,14 +117,14 @@ DGCNN_TOPOLOGY = [
     # ['linear', FCBlockData(1,   in_neurons=256, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)]
 ]
 MODGCNN_TOPOLOGY = [
-    ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=4, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/2, radius=0.25, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
-    ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/4, radius=0.5, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
-    ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/8, radius=1.0, k=None, in_channel=2+128, out_channels=[128, 128], pnet_kernel=1, residual=True)],
-    ['modedgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=128*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['conv1d', ConvBlockData(256, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['modedgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=4, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/4, radius=0.25, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=64*2, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/8, radius=0.75, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=10, conv_data=ConvBlockData(in_channels=64*2, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/16, radius=1.25, k=None, in_channel=2+128, out_channels=[128, 128], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=10, conv_data=ConvBlockData(in_channels=128*2, out_channels=512, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['conv1d', ConvBlockData(512, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
     ['linear', FCBlockData(512, in_neurons=EMBED_DIM*2, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
     ['res-linear', ResFCBlockData(128, in_neurons=512, layers=3, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
     ['linear', FCBlockData(1, in_neurons=128, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
