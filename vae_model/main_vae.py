@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
 from LoggerLatent               import LoggerLatent
-from trainers.TrainerVAE import TrainerVAE
-from trainers.TrainerLatent import TrainerLatent
-from models.ModVAE import ModVAE
+from trainers.TrainerVAE        import TrainerVAE
+from TrainerDG                  import TrainerDG
+from trainers.TrainerLatent     import TrainerLatent
+from models.ModVAE              import ModVAE
 from auxiliary_functions        import PlottingFunctions, _init_
 from ScatterCoordinateDataset   import import_data_sets_pics
+from ScatCoord_DG               import import_data_sets_coord
 from global_const               import encoder_type_e
 from database_functions         import ModelManipulationFunctions, PathFindingFunctions
 from blob_detection_functions   import BlobDetectionFunctions
@@ -141,6 +143,63 @@ def main_vae(encoder_type=encoder_type_e.DENSE,
     # Training
     # ================================================================================
     trainer.train(mod_vae, train_loader, test_loaders, logger, save_per_epochs=20)
+
+
+def main_vae_pcloud(encoder_type=encoder_type_e.DENSE, load_model=None, start_epoch=0):
+    pf = PlottingFunctions()
+    pff = PathFindingFunctions()
+    mmf = ModelManipulationFunctions()
+    # ================================================================================
+    # Setting the logger
+    # ================================================================================
+    logdir = _init_(PATH_LOGS)
+    logger = LoggerVAE(logdir=logdir)
+    # ================================================================================
+    # Allocating device of computation: CPU or GPU
+    # ================================================================================
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # ================================================================================
+    # Importing the data
+    # ================================================================================
+    norm_coord = (COORD_MEAN, COORD_SCALE) if NORM_GRID else (0, 1)
+    norm_sens  = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+    train_loader, test_loaders, thresholds = import_data_sets_coord(PATH_DATABASE_TRAIN,
+                                                                    PATH_DATABASE_TEST,
+                                                                    BATCH_SIZE,
+                                                                    abs_sens=ABS_SENS,
+                                                                    coord_mean=norm_coord[0],
+                                                                    coord_scale=norm_coord[1],
+                                                                    num_workers=NUM_WORKERS
+                                                                    )
+    if load_model is None:
+        # ============================================================================
+        # Creating the net & trainer objects
+        # ============================================================================
+        if encoder_type == encoder_type_e.PCLOUD_GRAPH:
+            encoder_topology = MODGCNN_ENCODER_TOPOLOGY
+            decoder_topology = FC_DECODER_TOPOLOGY
+        else:
+            raise ValueError('Unknown encoder type inputted')
+        model = ModVAE(device=device,
+                       encoder_topology=encoder_topology,
+                       decoder_topology=decoder_topology,
+                       latent_space_dim=LATENT_SPACE_DIM,
+                       encoder_type=encoder_type,
+                       mode=MODE,
+                       model_out=MODEL_OUT)
+        mmf.initialize_weights(model, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
+        model.to(device)  # allocating the computation to the CPU or GPU
+        trainer = TrainerVAE(model, lr=LR, mom=MOM, beta_dkl=BETA_DKL, beta_grid=BETA_GRID,
+                             sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
+                             grad_clip=GRAD_CLIP,
+                             group_thresholds=thresholds,  # sens cost
+                             group_weights=MSE_GROUP_WEIGHT,  # sens cost
+                             abs_sens=ABS_SENS, norm_sens=norm_sens,
+                             xquantize=XQUANTIZE, yquantize=YQUANTIZE, n=N, coord2map_sigma=COORD2MAP_SIGMA)
+    # ================================================================================
+    # Training
+    # ================================================================================
+    trainer.train(model, train_loader, test_loaders, logger, save_per_epochs=40)
 
 
 def main_optim_input(path=None, epoch=None):
@@ -306,23 +365,22 @@ if __name__ == '__main__':
     # Training VAE on scatterer arrays and matching sensitivities
     # ================================================================================
     if phase == 1:
-        load_path   = '..\\results_vae\\22_7_2022_9_31'
-        # load_path = '..\\results\\9_4_2022_18_43'
-        # load_path  = '..\\results\\11_4_2022_8_10'
-        # load_path  = '..\\results\\9_6_2022_8_28'
-        load_epoch  = 160
-        copy_path   = None
-        # copy_path   = '..\\results\\15_12_2021_23_46'
-        copy_epoch  = 320
 
-        # enc_type = encoder_type_e.TANSFORMER
-        # enc_type = encoder_type_e.VGG
-        # enc_type = encoder_type_e.RES_VGG
-        # enc_type = encoder_type_e.SEPARABLE
-        enc_type = encoder_type_e.FULLY_CONNECTED
-        main_vae(enc_type,
-                 load_model=load_path, start_epoch=load_epoch,
-                 copy_weights=copy_path, copy_weights_epoch=copy_epoch)
+        load_path = None
+        copy_path   = None
+        load_epoch  = 160
+        copy_epoch  = 320
+        # load_path   = '..\\results_vae\\22_7_2022_9_31'
+        # load_path   = '..\\results\\9_4_2022_18_43'
+        # load_path   = '..\\results\\11_4_2022_8_10'
+        # load_path   = '..\\results\\9_6_2022_8_28'
+        # copy_path   = '..\\results\\15_12_2021_23_46'
+        if ENCODER_TYPE == encoder_type_e.PCLOUD_GRAPH:
+            main_vae_pcloud(ENCODER_TYPE, load_path)
+        else:
+            main_vae(ENCODER_TYPE,
+                     load_model=load_path, start_epoch=load_epoch,
+                     copy_weights=copy_path, copy_weights_epoch=copy_epoch)
     # ================================================================================
     # Using the decoder to maximize sensitivity prediction
     # ================================================================================

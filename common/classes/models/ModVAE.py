@@ -1,6 +1,7 @@
 import torch.nn         as nn
 from models.EncoderVAE import EncoderVAE
 from models.DecoderVAE import DecoderVAE
+from DGcnn import ModDGCNN2
 from global_const       import encoder_type_e, mode_e, model_output_e
 
 
@@ -8,14 +9,16 @@ class ModVAE(nn.Module):
     """
     This class holds the modified Variational auto-encoder
     """
-    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, encoder_type=encoder_type_e.DENSE, mode=mode_e.VAE, model_out=model_output_e.BOTH):
+    def __init__(self, device, encoder_topology, decoder_topology, latent_space_dim, encoder_type=encoder_type_e.DENSE, mode=mode_e.VAE, model_out=model_output_e.BOTH, flatten_type=None):
         super(ModVAE, self).__init__()
         self.device         = device
         self.encoder_type   = encoder_type
         self.mode           = mode
         self.model_out      = model_out
-
-        self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
+        if encoder_type == encoder_type_e.PCLOUD_GRAPH:
+            self.encoder = ModDGCNN2(device=device, topology=encoder_topology, flatten_type=flatten_type)
+        else:
+            self.encoder    = EncoderVAE(device=device, topology=encoder_topology)
         self.decoder    = DecoderVAE(device=device, topology=decoder_topology, latent_dim=latent_space_dim, model_out=model_out)
         self.latent_dim = latent_space_dim
 

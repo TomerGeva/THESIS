@@ -2,9 +2,9 @@
 # This file holds the values of the global variables, which are needed throughout the operation
 # **********************************************************************************************************************
 import numpy as np
-from global_const import activation_type_e, pool_e, mode_e, model_output_e
+from global_const import activation_type_e, pool_e, mode_e, model_output_e, encoder_type_e
 from global_struct import ConvBlockData, ResConvBlock2DData, DenseBlockData, TransBlockData, FCBlockData, ResFCBlockData,\
-    ConvTransposeBlock2DData, PadPoolData, SelfAttentionData
+    ConvTransposeBlock2DData, PadPoolData, SelfAttentionData, EdgeConvData, SetAbstractionData
 
 # ==================================================================================================================
 # Database Variables
@@ -14,6 +14,8 @@ YRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the y coordinate of t
 
 XQUANTIZE = 600  # 800  # 2500  # number of quantization points in the X coordinate
 YQUANTIZE = 600  # 800  # 2500  # number of quantization points in the Y coordinate
+
+NUM_OF_POINTS = 500
 
 DMIN = 0.1  # minimal allowed distance between cylinder centers, in micro-meters
 
@@ -28,8 +30,12 @@ SEED = 140993
 # --------------------------------------------------------------------------------------------------------------
 DILATION     = 4
 NORM_GRID    = True
+# Grid norm for 2D grids
 GRID_MEAN    = 0.000232
 GRID_STD     = 0.015229786
+# Coord norm for point clouds
+COORD_MEAN   = (XRANGE[1] + XRANGE[0]) / 2
+COORD_SCALE  = np.sqrt(2 * (XRANGE[1] - COORD_MEAN)**2)
 ABS_SENS     = True
 NORM_SENS    = False
 SENS_MEAN    = 1655  # 64458    # output normalization factor - mean sensitivity
@@ -83,11 +89,14 @@ PP_DATA = 'post_processing'
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # MODEL_OUT        = model_output_e.SENS
 # MODE             = mode_e.AUTOENCODER
+ENCODER_TYPE     = encoder_type_e.PCLOUD_GRAPH
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
 LATENT_SPACE_DIM = 200                   # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
-INIT_WEIGHT_STD  = 0.05                  # weight init std
+INIT_WEIGHT_STD  = 0.02                  # weight init std
+# Fields used for the point cloud configuration only
+EMBED_DIM        = 1024
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,7 +117,7 @@ GRAD_CLIP        = 5
 # --------------------------------------------------------------------------------------------------------------
 # Encoder topology
 # --------------------------------------------------------------------------------------------------------------
-DENSE_ENCODER_TOPOLOGY = [
+DENSE_ENCODER_TOPOLOGY     = [
     ['conv',       ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=0, pool_size=2)],
@@ -147,17 +156,30 @@ SEPARABLE_ENCODER_TOPOLOGY = [
 #         ['linear', FCBlockData(300,  bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
 #         ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 #     ]
-TRANS_ENCODER_TOPOLOGY = [
+TRANS_ENCODER_TOPOLOGY     = [
         ['transformer', SelfAttentionData(patch_size_x=50, patch_size_y=50, embed_size=1250)],
         ['linear',      FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
         ['res-linear',  ResFCBlockData(300, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
         ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
-FC_ENCODER_TOPOLOGY = [
+FC_ENCODER_TOPOLOGY        = [
     ['linear',      FCBlockData(1500, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(600, layers=4, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+]
+MODGCNN_ENCODER_TOPOLOGY   = [
+    ['modedgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=4, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/4, radius=0.25, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=64*2, out_channels=64, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/8, radius=0.75, k=None, in_channel=2+64, out_channels=[64, 64], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=10, conv_data=ConvBlockData(in_channels=64*2, out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['sg_pointnet', SetAbstractionData(ntag=NUM_OF_POINTS/16, radius=1.25, k=None, in_channel=2+128, out_channels=[128, 128], pnet_kernel=1, residual=True)],
+    ['modedgeconv', EdgeConvData(k=10, conv_data=ConvBlockData(in_channels=128*2, out_channels=512, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['conv1d', ConvBlockData(512, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(512, in_neurons=EMBED_DIM*2, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['res-linear', ResFCBlockData(2*LATENT_SPACE_DIM, in_neurons=512, layers=3, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['linear', FCBlockData(2*LATENT_SPACE_DIM, in_neurons=2*LATENT_SPACE_DIM, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 # VGG_DECODER_TOPOLOGY
 if XQUANTIZE == 2500:

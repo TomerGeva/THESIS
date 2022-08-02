@@ -46,6 +46,13 @@ class LoggerVAE(LoggerGeneric):
                                                                                              action[1].act,
                                                                                              x_dim_size,
                                                                                              y_dim_size))
+        elif 'modedgeconv' in action[0]:
+            self.log_line(self.get_header(action[0]) + self._get_edgeconv_layer_string(action[1].k,
+                                                                                       action[1].conv_data.bias,
+                                                                                       action[1].conv_data.bnorm,
+                                                                                       action[1].conv_data.drate,
+                                                                                       action[1].conv_data.act,
+                                                                                       action[1].aggregation))
         elif 'res-conv' in action[0]:
             self.log_line(self.get_header(action[0]) + self._get_residual_conv_layer_string(action[1].in_channels,
                                                                                             action[1].out_channels,

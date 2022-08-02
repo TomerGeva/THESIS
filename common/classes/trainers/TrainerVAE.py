@@ -113,7 +113,7 @@ class TrainerVAE:
             # Extracting the grids and sensitivities
             # ------------------------------------------------------------------------------
             sensitivities = sample['sensitivity'].float().to(model.device)
-            if self.encoder_type == encoder_type_e.FULLY_CONNECTED:
+            if self.encoder_type in [encoder_type_e.FULLY_CONNECTED, encoder_type_e.PCLOUD_GRAPH]:
                 grid_targets = Variable(sample['coordinate_target'].float()).to(model.device)
                 grids = Variable(sample['coordinate_target'].float()).to(model.device)
             else:

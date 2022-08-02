@@ -8,6 +8,7 @@ class encoder_type_e(Enum):
     SEPARABLE       = 3
     TANSFORMER      = 4
     RES_VGG         = 5
+    PCLOUD_GRAPH    = 6
 
 
 class activation_type_e(Enum):
@@ -29,6 +30,7 @@ class pool_e(Enum):
 class mode_e(Enum):
     AUTOENCODER = 0
     VAE         = 1
+    NEITHER     = 2
 
 
 class model_output_e(Enum):

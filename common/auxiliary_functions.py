@@ -25,6 +25,14 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         channels = action[1].out_channels
         x_dim_size = (x_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
         y_dim_size = (y_dim - 1) * action[1].stride - (2 * action[1].padding) + action[1].dilation * (action[1].kernel - 1) + action[1].output_padding + 1
+    elif 'modedgeconv' in action[0]:
+        x_dim_size = x_dim
+        y_dim_size = y_dim
+        channels = ch_num
+    elif 'sg_pointnet' in action[0]:
+        x_dim_size = x_dim
+        y_dim_size = y_dim
+        channels = ch_num
     elif 'pool' in action:
         if type(action[1].pad) is not tuple:
             x_dim_size = int((x_dim + 2 * action[1].pad) / action[1].kernel)
@@ -63,6 +71,7 @@ def compute_output_dim(x_dim, y_dim, ch_num, action):
         x_dim_size = 1
         y_dim_size = 1
         channels   = x_dim // action[1].patch_size_x * y_dim // action[1].patch_size_y
+
     else:
         raise ValueError('Invalid layer description')
     return x_dim_size, y_dim_size, channels
