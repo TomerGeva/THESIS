@@ -186,7 +186,7 @@ def main_vae_pcloud(encoder_type=encoder_type_e.DENSE, load_model=None, start_ep
                        latent_space_dim=LATENT_SPACE_DIM,
                        encoder_type=encoder_type,
                        mode=MODE,
-                       model_out=MODEL_OUT)
+                       model_out=MODEL_OUT, flatten_type=FLATTEN_TYPE)
         mmf.initialize_weights(model, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
         model.to(device)  # allocating the computation to the CPU or GPU
         trainer = TrainerVAE(model, lr=LR, mom=MOM, beta_dkl=BETA_DKL, beta_grid=BETA_GRID,

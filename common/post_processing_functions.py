@@ -4,6 +4,7 @@ import os
 import json
 import math
 import torch
+import torch.nn.functional as F
 from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
@@ -43,6 +44,7 @@ class PostProcessing:
         epoch_list     = []
         keys_list      = []
         test_wmse      = {}
+        test_mse       = {}
         test_grid      = {}
 
         train_label     = None
@@ -89,8 +91,10 @@ class PostProcessing:
                     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     keys_list.append(temp_key)
                     test_wmse[temp_key] = []
+                    test_mse[temp_key]  = []
                     test_grid[temp_key] = []
-                test_wmse[temp_key].append(float(words[10]))
+                test_wmse[temp_key].append(float(words[7]))
+                test_mse[temp_key].append(float(words[10]))
                 test_grid[temp_key].append(float(words[13]))
 
         # ==============================================================================================================
@@ -105,11 +109,11 @@ class PostProcessing:
         if NORM_SENS:
             plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
             for test_db in keys_list:
-                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         else:
             plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
             for test_db in keys_list:
-                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_wmse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
         plt.xlabel('Epoch')
         plt.ylabel('RMS Loss')
         plt.title('RMS loss vs Epoch number')
@@ -239,6 +243,18 @@ class PostProcessing:
                     grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
 
                 out_grid, out_sens, mu, logvar = mod_vae(grids)
+                # ------------------------------------------------------------------------------
+                # plotting sens
+                # ------------------------------------------------------------------------------
+                plt.figure()
+                plt.plot(target_sens.cpu().detach().numpy())
+                plt.plot(out_sens.cpu().detach().numpy())
+                _, ax = plt.subplots(1, 2)
+                ax[0].contourf(target_grids[0, 0].cpu().detach().numpy(), cmap='gray', vmax=1, vmin=0)
+                ax[0].grid()
+                ax[1].contourf(F.sigmoid(out_grid[0, 0]).cpu().detach().numpy(), cmap='gray', vmax=1, vmin=0)
+                ax[1].grid()
+                plt.show()
                 # ------------------------------------------------------------------------------
                 # Logging mean mu and mean std values
                 # ------------------------------------------------------------------------------
@@ -915,7 +931,7 @@ if __name__ == '__main__':
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
 
-    c_epoch = 600
+    c_epoch = 1000
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -924,8 +940,8 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\22_7_2022_9_31'
-    c_path2 = '..\\results_dg\\31_7_2022_17_42'
+    c_path = '..\\results_vae\\5_8_2022_8_41'
+    c_path2 = '..\\results_dg\\3_8_2022_8_32'
 
     pp = PostProcessing()
     pp2 = PostProcessingDG()
@@ -942,9 +958,9 @@ if __name__ == '__main__':
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
 
-    # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
-    # pp.log_to_plot(c_path)
+    pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
+    # pp.log_to_plot(c_path, spacing=10)
 
-    pp2.log_to_plot(c_path2, spacing=1)
+    # pp2.log_to_plot(c_path2, spacing=1)
     # pp2.load_and_pass(c_path2, c_epoch)
 

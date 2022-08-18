@@ -30,10 +30,10 @@ class TrainerVAE:
         self.norm_sens           = norm_sens
         self.sensitivity_loss    = weighted_mse
         self.d_kl                = d_kl
-        if net.encoder_type == encoder_type_e.FULLY_CONNECTED:
+        if net.encoder_type in [encoder_type_e.FULLY_CONNECTED, encoder_type_e.PCLOUD_GRAPH]:
             # self.reconstruction_loss = coord_reconstruction_loss
-            self.reconstruction_loss = grid_mse
-            # self.reconstruction_loss = hausdorf_distance
+            # self.reconstruction_loss = grid_mse
+            self.reconstruction_loss = hausdorf_distance
         else:
             self.reconstruction_loss = nn.BCEWithLogitsLoss(reduction='sum', pos_weight=torch.ones([xquantize, yquantize], device=device) * grid_pos_weight)
         self.encoder_type    = net.encoder_type

@@ -117,6 +117,7 @@ def hausdorf_distance(X, Y, reduction='sum'):
     """
     :param X: B X N X 2 tensor or B X 2N tensor
     :param Y: B X N X 2 tensor or B X 2N tensor
+    :param reduction: sum or mean over the batch
     :return: Function computes the Hausdorf distance between set X and set Y
     """
     if len(X.size()) == 2:
@@ -128,8 +129,8 @@ def hausdorf_distance(X, Y, reduction='sum'):
     distance = torch.sqrt(dx + dy)
     dxy      = torch.min(distance, dim=1, keepdim=False).values
     dyx      = torch.min(distance, dim=2, keepdim=False).values
-    # hausdorf = torch.max(torch.cat((dxy, dyx), 1), 1).values
-    hausdorf = torch.cat((dxy, dyx), 1)
+    hausdorf = torch.max(torch.cat((dxy, dyx), 1), 1).values
+    # hausdorf = torch.cat((dxy, dyx), 1)
     if reduction == 'sum':
         return torch.sum(hausdorf)
     elif reduction == 'mean':
