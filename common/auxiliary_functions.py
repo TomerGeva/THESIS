@@ -90,13 +90,15 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     :param outputs: model outputs
     :param weights: weights of the mse according to the groups
     :param thresholds: the thresholds between the different groups
-    :return:
+    :return: Function computes the SSE and returns it. NOTE that if the weights or thresholds are None, the SSE is
+             normalized by the target sensitivities!!!!!
     """
     # ==================================================================================================================
     # Getting the weight vector
     # ==================================================================================================================
     if (weights is None) or (thresholds is None):
-        weight_vec = torch.ones_like(targets)
+        return grid_mse(targets, outputs)
+        # weight_vec = torch.ones_like(targets)
     else:
         weight_vec = ((targets < thresholds[0]) * weights[0]).type(torch.float)
         for ii in range(1, len(thresholds)):
@@ -105,7 +107,7 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # ==================================================================================================================
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
-    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / torch.abs(targets))
+    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / targets**2)
     # return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 
 

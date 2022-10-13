@@ -52,7 +52,7 @@ class LoggerGeneric:
                    'd} Padding:     {5:^' + str(self.desc_space) + \
                    'd} batch_norm:  {6:^' + str(self.desc_space) + \
                    's} drop_rate:   {7:^' + str(self.desc_space) + \
-                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   '.2f} activation:  {8:^' + str(self.desc_space) + \
                    's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, layers, ktilde, stride, pad, str(bnorm), drate, active.name, x_dim,
                                y_dim)
@@ -67,7 +67,7 @@ class LoggerGeneric:
                    'd} Out Padding: {5:^' + str(self.desc_space) + \
                    'd} batch_norm:  {6:^' + str(self.desc_space) + \
                    's} drop_rate:   {7:^' + str(self.desc_space) + \
-                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   '.2f} activation:  {8:^' + str(self.desc_space) + \
                    's} Output size: {9:^' + str(self.desc_space) + '}X{10:^' + str(self.desc_space) + '}'
         return temp_str.format(in_ch, out_ch, ktilde, stride, pad, out_pad, str(bnorm), drate, active.name, x_dim,
                                y_dim)
@@ -87,7 +87,7 @@ class LoggerGeneric:
                    'd} bias:        {2:^' + str(self.desc_space) + \
                    'd} batch_norm:  {3:^' + str(self.desc_space) + \
                    's} drop_rate:   {4:^' + str(self.desc_space) + \
-                   'd} activation:  {5:^' + str(self.desc_space) + 's}'
+                   '.2f} activation:  {5:^' + str(self.desc_space) + 's}'
         return temp_str.format(num_in, num_out, bias, str(bnorm), drate, active.name)
 
     def _get_residual_linear_layer_string(self, num_in, num_out, layers, bnorm, drate, active):
@@ -96,7 +96,7 @@ class LoggerGeneric:
                        'd} layers:      {2:^' + str(self.desc_space) + \
                        'd} batch_norm:  {3:^' + str(self.desc_space) + \
                        's} drop_rate:   {4:^' + str(self.desc_space) + \
-                       'd} activation:  {5:^' + str(self.desc_space) + 's}'
+                       '.2f} activation:  {5:^' + str(self.desc_space) + 's}'
             return temp_str.format(num_in, num_out, layers, str(bnorm), drate, active.name)
 
     def _get_dense_layer_string(self, in_ch, depth, growth, ktilde, stride, pad, bnorm, drate, active, x_dim, y_dim):
@@ -108,7 +108,7 @@ class LoggerGeneric:
                    'd} Padding:     {5:^' + str(self.desc_space) + \
                    'd} batch_norm:  {6:^' + str(self.desc_space) + \
                    's} drop_rate:   {7:^' + str(self.desc_space) + \
-                   'd} activation:  {8:^' + str(self.desc_space) + \
+                   '.2f} activation:  {8:^' + str(self.desc_space) + \
                    's} Output size: {9:^' + str(self.desc_space) + \
                    '}X{10:^' + str(self.desc_space) +\
                    '}X{11:^' + str(self.desc_space) + '}'
@@ -124,7 +124,7 @@ class LoggerGeneric:
                    'd} Padding:     {4:^' + str(self.desc_space) + \
                    'd} batch_norm:  {5:^' + str(self.desc_space) + \
                    's} drop_rate:   {6:^' + str(self.desc_space) + \
-                   'd} activation:  {7:^' + str(self.desc_space) + \
+                   '.2f} activation:  {7:^' + str(self.desc_space) + \
                    's} Pool type:   {8:^' + str(self.desc_space) + \
                    's} Pool size:   {9:^' + str(self.desc_space) + \
                    'd} Output size: {10:^' + str(self.desc_space) + \

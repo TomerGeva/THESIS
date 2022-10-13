@@ -7,7 +7,6 @@ from ConfigVAE                  import *
 from LoggerVAE                  import LoggerVAE
 from LoggerLatent               import LoggerLatent
 from trainers.TrainerVAE        import TrainerVAE
-from TrainerDG                  import TrainerDG
 from trainers.TrainerLatent     import TrainerLatent
 from models.ModVAE              import ModVAE
 from auxiliary_functions        import PlottingFunctions, _init_
@@ -366,13 +365,14 @@ if __name__ == '__main__':
     # ================================================================================
     if phase == 1:
 
-        load_path = None
+        load_path   = None
         copy_path   = None
-        load_epoch  = 160
+        load_epoch  = 1000
         copy_epoch  = 320
-        # load_path   = '..\\results_vae\\22_7_2022_9_31'
+        # load_path   = '..\\results_vae\\5_8_2022_8_41'
         # load_path   = '..\\results\\9_4_2022_18_43'
-        # load_path   = '..\\results\\11_4_2022_8_10'
+        # load_path   = '..\\results_vae\\8_9_2022_14_38'
+        load_path   = '..\\results_vae\\20_9_2022_10_39'
         # load_path   = '..\\results\\9_6_2022_8_28'
         # copy_path   = '..\\results\\15_12_2021_23_46'
         if ENCODER_TYPE == encoder_type_e.PCLOUD_GRAPH:

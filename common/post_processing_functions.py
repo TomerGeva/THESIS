@@ -1,10 +1,9 @@
 from ConfigVAE import *
-from ConfigDG import *
+# from ConfigDG import *
 import os
 import json
 import math
 import torch
-import torch.nn.functional as F
 from torch.autograd import Variable
 
 import matplotlib.pyplot as plt
@@ -24,7 +23,7 @@ class PostProcessing:
         pass
 
     @staticmethod
-    def log_to_plot(path, spacing=1, save_plt=True, plt_joined=True):
+    def log_to_plot(path, spacing=1, save_plt=True, plt_joined=True, unwighted_plot=False):
         """
         :param path: path to a result folder
         :param spacing: epoch distance between plots
@@ -32,10 +31,30 @@ class PostProcessing:
         :param plt_joined:
         :return: the function reads the log and creates a plot of RMS loss, with all the test databases documented
         """
+        def mse_plot(epoch_vec, train_vec, test_dict, key_list, spacing, norm, weights):
+            epoch_len = len(epoch_vec)
+            fig = plt.figure()
+            if norm:
+                plt.plot(epoch_list[0:epoch_len:spacing],
+                         [math.sqrt(x) * SENS_STD for x in train_vec[0:epoch_len:spacing]], '-o',
+                         label=train_label)
+                for test_db in key_list:
+                    plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x / weights[test_db]) * SENS_STD for x in test_dict[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            else:
+                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_vec[0:epoch_len:spacing]], '-o', label=train_label)
+                for ii, test_db in enumerate(key_list):
+                    plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x / weights[test_db]) for x in test_dict[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            plt.xlabel('Epoch')
+            plt.ylabel('RMS Loss')
+            plt.title('RMS loss vs Epoch number')
+            plt.legend()
+            plt.grid()
+            return fig
         # ==============================================================================================================
         # Local variables
         # ==============================================================================================================
         filename    = os.path.join(path, 'logger_vae.txt')
+        # filename    = os.path.join(path, 'rework_log.txt')
         fileID      = open(filename, 'r')
         lines       = fileID.readlines()
         fileID.close()
@@ -43,12 +62,14 @@ class PostProcessing:
         reached_start  = False
         epoch_list     = []
         keys_list      = []
+        weights        = {}
         test_wmse      = {}
         test_mse       = {}
         test_grid      = {}
 
         train_label     = None
         train_mse_loss  = []
+        train_mse_loss_unweighted  = []
         train_dkl_loss  = []
         train_grid_loss = []
         train_tot_loss  = []
@@ -73,13 +94,15 @@ class PostProcessing:
                     epoch_list.append(int(words[4]))
                 except ValueError:
                     epoch_list.append(int(words[4][:-1]))
-            elif 'train' in line.lower():
+            elif 'train_weighted ' in line.lower():
                 if train_label is None:
                     train_label = words[3]
                 train_mse_loss.append(float(words[7]))
                 train_dkl_loss.append(float(words[9]))
                 train_grid_loss.append(float(words[13]))
                 train_tot_loss.append(float(words[16]))
+            elif 'train' in line.lower():
+                train_mse_loss_unweighted.append(float(words[7]))
             elif 'MSE' in line:
                 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 # one of the test databases
@@ -93,10 +116,10 @@ class PostProcessing:
                     test_wmse[temp_key] = []
                     test_mse[temp_key]  = []
                     test_grid[temp_key] = []
+                    weights[temp_key] = np.max([float(words[-2]), 1.0])
                 test_wmse[temp_key].append(float(words[7]))
                 test_mse[temp_key].append(float(words[10]))
                 test_grid[temp_key].append(float(words[13]))
-
         # ==============================================================================================================
         # Plotting the results
         # ==============================================================================================================
@@ -105,20 +128,24 @@ class PostProcessing:
         # ------------------------------------------------------------------------------------------------------
         # Sensitivity plot
         # ------------------------------------------------------------------------------------------------------
-        sens_plt = plt.figure()
-        if NORM_SENS:
-            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
-            for test_db in keys_list:
-                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
-        else:
-            plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
-            for test_db in keys_list:
-                plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
-        plt.xlabel('Epoch')
-        plt.ylabel('RMS Loss')
-        plt.title('RMS loss vs Epoch number')
-        plt.legend()
-        plt.grid()
+        # sens_plt = plt.figure()
+        # if NORM_SENS:
+        #     plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+        #     for test_db in keys_list:
+        #         plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) * SENS_STD for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+        # else:
+        #     plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in train_mse_loss[0:epoch_len:spacing]], '-o', label=train_label)
+        #     for ii, test_db in enumerate(keys_list):
+        #         plt.plot(epoch_list[0:epoch_len:spacing], [math.sqrt(x) for x in test_mse[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+        #
+        # plt.xlabel('Epoch')
+        # plt.ylabel('RMS Loss')
+        # plt.title('RMS loss vs Epoch number')
+        # plt.legend()
+        # plt.grid()
+        sens_plt = mse_plot(epoch_list, train_mse_loss, test_wmse, keys_list, spacing=spacing, norm=False, weights=weights)
+        if unwighted_plot:
+            sens_unweighted_plt = mse_plot(epoch_list, train_mse_loss_unweighted, test_mse, keys_list, spacing=spacing, norm=NORM_SENS, weights=weights)
         # ------------------------------------------------------------------------------------------------------
         # D_kl plot
         # ------------------------------------------------------------------------------------------------------
@@ -209,12 +236,17 @@ class PostProcessing:
         # ==============================================================================================================
         # Loading the needed models and data
         # ==============================================================================================================
-        train_loader, test_loaders, _ = import_data_sets_pics(PATH_DATABASE_TRAIN,
-                                                              PATH_DATABASE_TEST,
-                                                              BATCH_SIZE,
-                                                              abs_sens=ABS_SENS,
-                                                              dilation=DILATION)
-        mod_vae, trainer = mff.load_state_train(chosen_file)
+        norm_grid = (GRID_MEAN, GRID_STD) if NORM_GRID else (0, 1)
+        norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+        train_loader, test_loaders, thresholds = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                                       PATH_DATABASE_TEST,
+                                                                       BATCH_SIZE,
+                                                                       abs_sens=ABS_SENS,
+                                                                       dilation=DILATION,
+                                                                       norm_sens=norm_sens,
+                                                                       norm_grid=norm_grid,
+                                                                       num_workers=NUM_WORKERS)
+        mod_vae, trainer = mff.load_state_train(chosen_file, thresholds=thresholds)
         # ==============================================================================================================
         # Extracting statistics
         # ==============================================================================================================
@@ -243,16 +275,18 @@ class PostProcessing:
                     grids = Variable(sample_batched['grid_in'].float()).to(mod_vae.device)
 
                 out_grid, out_sens, mu, logvar = mod_vae(grids)
+                temp = trainer.compute_loss(target_sens, out_sens, mu, logvar, target_grids, out_grid)
+                print(f'SENS Normalized RMS over single batch --> {np.sqrt(temp[0].item() / BATCH_SIZE)}')
                 # ------------------------------------------------------------------------------
                 # plotting sens
                 # ------------------------------------------------------------------------------
                 plt.figure()
-                plt.plot(target_sens.cpu().detach().numpy())
-                plt.plot(out_sens.cpu().detach().numpy())
+                plt.plot(target_sens.cpu().detach().numpy()*SENS_STD)
+                plt.plot(out_sens.cpu().detach().numpy()*SENS_STD)
                 _, ax = plt.subplots(1, 2)
                 ax[0].contourf(target_grids[0, 0].cpu().detach().numpy(), cmap='gray', vmax=1, vmin=0)
                 ax[0].grid()
-                ax[1].contourf(F.sigmoid(out_grid[0, 0]).cpu().detach().numpy(), cmap='gray', vmax=1, vmin=0)
+                ax[1].contourf(sigmoid(out_grid[0, 0]).cpu().detach().numpy(), cmap='gray', vmax=1, vmin=0)
                 ax[1].grid()
                 plt.show()
                 # ------------------------------------------------------------------------------
@@ -725,6 +759,98 @@ class PostProcessing:
         print(f'Target sensitivity: {sens_target[0,0]} ; Predicted sensitivity: {(sens_out.item() * SENS_STD) + SENS_MEAN}')
         plt.show()
 
+    @staticmethod
+    def recompute_log(path):
+        from LoggerVAE import LoggerVAE
+        # pf = PlottingFunctions()
+        # pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        norm_grid = (GRID_MEAN, GRID_STD) if NORM_GRID else (0, 1)
+        norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+        train_loader, test_loaders, thresholds = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                                       PATH_DATABASE_TEST,
+                                                                       BATCH_SIZE,
+                                                                       abs_sens=ABS_SENS,
+                                                                       dilation=DILATION,
+                                                                       norm_sens=norm_sens,
+                                                                       norm_grid=norm_grid,
+                                                                       num_workers=NUM_WORKERS)
+        # ==============================================================================================================
+        # Setting the logger
+        # ==============================================================================================================
+        logdir = path
+        logger = LoggerVAE(logdir=logdir, filename='rework_log.txt')
+        logger.start_log()
+        # ==============================================================================================================
+        # Getting all the save files
+        # ==============================================================================================================
+        save_files = [os.path.join(path, d) for d in os.listdir(path) if "epoch" in d]
+        for chosen_file in save_files:
+            mod_vae, trainer = mff.load_state_train(chosen_file, thresholds=thresholds)
+            epoch = int(chosen_file.split('_')[-1][:-4])
+            # ==========================================================================================================
+            # Passing the train database
+            # ==========================================================================================================
+            t = time()
+            # ------------------------------------------------------------------------------------------------------
+            # Training a single epoch
+            # ------------------------------------------------------------------------------------------------------
+            train_sens_mse, train_kl_div, train_grid_mse, train_loss, _, _ = trainer.run_single_epoch(mod_vae, train_loader)
+            # ------------------------------------------------------------------------------------------------------
+            # Logging
+            # ------------------------------------------------------------------------------------------------------
+            logger.log_epoch(epoch, t)
+            logger.log_epoch_results_train('train_weighted', train_sens_mse, train_kl_div, train_grid_mse, train_loss)
+            with torch.no_grad():
+                # --------------------------------------------------------------------------------------------------
+                # Testing accuracy at the end of the epoch, and logging with LoggerVAE
+                # --------------------------------------------------------------------------------------------------
+                test_sens_mse_vec            = []
+                test_sens_mse_vec_unweighted = []
+                test_grid_mse_vec            = []
+                test_counters_vec            = []
+                test_costs_vec               = []
+                for key in test_loaders:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # Getting the respective group weight
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    test_mse_weight = trainer.get_test_group_weight(key)
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # Testing the results of the current group
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    test_sens_mse, test_grid_mse, test_counter, test_cost, test_sens_mse_unweighted = trainer.test_model(mod_vae, test_loaders[key])
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # Logging
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    logger.log_epoch_results_test(key, test_sens_mse, test_grid_mse, test_mse_weight, test_sens_mse_unweighted)
+                    test_sens_mse_vec.append(test_sens_mse)
+                    test_grid_mse_vec.append(test_grid_mse)
+                    test_counters_vec.append(test_counter)
+                    test_costs_vec.append(test_cost)
+                    test_sens_mse_vec_unweighted.append(test_sens_mse_unweighted)
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # Computing total cost for all test loaders and logging with LoggerVAE
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                test_sens_mse            = 0.0
+                test_sens_mse_unweighted = 0.0
+                test_grid_mse            = 0.0
+                test_counter             = 0
+                test_loss                = 0.0
+                for sens_mse, grid_mse, count, loss, sens_mse_unweighted in zip(test_sens_mse_vec,
+                                                                                test_grid_mse_vec,
+                                                                                test_counters_vec, test_costs_vec,
+                                                                                test_sens_mse_vec_unweighted):
+                    test_sens_mse += (sens_mse * count)
+                    test_sens_mse_unweighted += (sens_mse_unweighted * count)
+                    test_grid_mse += (grid_mse * count)
+                    test_loss += (loss * count)
+                    test_counter += count
+                test_sens_mse = test_sens_mse / test_counter
+                test_sens_mse_unweighted = test_sens_mse_unweighted / test_counter
+                test_grid_mse = test_grid_mse / test_counter
+                test_loss = test_loss / test_counter
+                logger.log_epoch_results_test('test_total', test_sens_mse, test_grid_mse, 0, test_sens_mse_unweighted)
+
 
 class PostProcessingDG:
     def __init__(self):
@@ -940,7 +1066,9 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\5_8_2022_8_41'
+    c_path = '..\\results_vae\\20_9_2022_10_39'
+    # c_path = '..\\results_vae\\25_8_2022_15_6'
+    # c_path = '..\\results_vae\\5_8_2022_8_41'
     c_path2 = '..\\results_dg\\3_8_2022_8_32'
 
     pp = PostProcessing()
@@ -949,7 +1077,7 @@ if __name__ == '__main__':
     threshold_list = [0.1, 0.2, 0.5]
     # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
-    prefix_list    = ['4e+03_to_inf']
+    prefix_list    = ['4e+03_to_inf', '0_to_2e+03']
     # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
 
     # pp.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
@@ -958,8 +1086,9 @@ if __name__ == '__main__':
     # pp.get_latent_statistics(c_path, c_epoch)
     # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
 
+    # pp.recompute_log(c_path)
     pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
-    # pp.log_to_plot(c_path, spacing=10)
+    # pp.log_to_plot(c_path, plt_joined=False, spacing=10)
 
     # pp2.log_to_plot(c_path2, spacing=1)
     # pp2.load_and_pass(c_path2, c_epoch)

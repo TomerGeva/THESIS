@@ -58,6 +58,8 @@ class ModelManipulationFunctions:
         mod_vae.to(device)  # allocating the computation to the CPU or GPU
         mod_vae.load_state_dict(checkpoint['vae_state_dict'])
 
+        norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+        norm_grid = (GRID_MEAN, GRID_STD) if NORM_GRID else (0, 1)
         trainer = TrainerVAE(mod_vae,
                              lr=checkpoint['lr'],
                              mom=MOM,
@@ -68,7 +70,9 @@ class ModelManipulationFunctions:
                              grad_clip=GRAD_CLIP,
                              group_thresholds=thresholds,
                              group_weights=MSE_GROUP_WEIGHT,
-                             abs_sens=ABS_SENS)
+                             abs_sens=ABS_SENS, norm_sens=norm_sens,
+                             grid_pos_weight=GRID_POS_WEIGHT,
+                             xquantize=XQUANTIZE, yquantize=YQUANTIZE)
         trainer.epoch = checkpoint['epoch']
         trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 

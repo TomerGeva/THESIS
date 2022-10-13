@@ -47,8 +47,8 @@ class ScattererCoordinateDataset(Dataset):
         self.dbf          = DatabaseFunctions()
 
     def __len__(self):
-        # return 2 * sum(self.csv_lens)
-        return sum(self.csv_lens)
+        return 2 * sum(self.csv_lens)
+        # return sum(self.csv_lens)
 
     def __getitem__(self, idx, mixup=True):
         if torch.is_tensor(idx):
@@ -77,16 +77,14 @@ class ScattererCoordinateDataset(Dataset):
         points = self.csv_data[file_idx].iloc[row_idx, 1:]
         points = np.array([points])
         points = points.astype('float').reshape(-1, 2)
-
         # ----------------------------------------------------------------------------------------------------------
         # Converting points from micro meter to pixels
         # ----------------------------------------------------------------------------------------------------------
         pixel_points = self.dbf.micrometer2pixel(points)
-
         # ----------------------------------------------------------------------------------------------------------
         # Converting the points to a 2-D array
         # ----------------------------------------------------------------------------------------------------------
-        if idx >= sum(self.csv_lens):
+        if idx >= sum(self.csv_lens):  # Transposing the coordinates
             pixel_points = np.fliplr(pixel_points)
         grid_array = self.dbf.points2mat(pixel_points)
         # ----------------------------------------------------------------------------------------------------------
