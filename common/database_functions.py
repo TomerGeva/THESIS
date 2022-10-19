@@ -2,15 +2,14 @@
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
 from ConfigVAE import *
-from global_const import encoder_type_e
 import os
 import csv
 import torch
 import torch.nn as nn
 import numpy as np
-from models.ModVAE import ModVAE
-from trainers.TrainerVAE import TrainerVAE
-from models.DecoderVAE import DecoderVAE
+from classes.ModVAE import ModVAE
+from classes.TrainerVAE import TrainerVAE
+from classes.DecoderVAE import DecoderVAE
 from classes.DGcnn import ModDGCNN2
 from classes.TrainerDG import TrainerDG
 

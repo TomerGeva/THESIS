@@ -1,11 +1,10 @@
 from ConfigDG import *
 from database_functions import ModelManipulationFunctions
-from LoggerDG import LoggerDG
+from classes.LoggerDG import LoggerDG
 from ScatCoord_DG import import_data_sets_coord
-from TrainerDG import TrainerDG
+from classes.TrainerDG import TrainerDG
 import torch
-from PointNet import ModPointNet
-from DGcnn import ModDGCNN, ModDGCNN2
+from classes.DGcnn import ModDGCNN2
 from auxiliary_functions import _init_
 
 
@@ -34,8 +33,6 @@ def main():
     # ================================================================================
     # Creating the model
     # ================================================================================
-    # model = ModPointNet(device, POINTNET_TOPOLOGY)
-    # model = ModDGCNN(device, DGCNN_TOPOLOGY, CONCAT_EDGECONV, FLATTEN_TYPE)
     model = ModDGCNN2(device, MODGCNN_TOPOLOGY, FLATTEN_TYPE)
     mmf.initialize_weights(model, INIT_WEIGHT_MEAN, INIT_WEIGHT_STD, method='xavier')
     model.to(device)

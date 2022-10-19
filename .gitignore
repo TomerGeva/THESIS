@@ -136,5 +136,5 @@ dmypy.json
 */.idea/*
 convolution_net/Config.py
 databases/corner_1450_10k.csv
-vae_model/ConfigVAE.py
+model_vae/ConfigVAE.py
 results/*

@@ -93,7 +93,7 @@ PP_DATA = 'post_processing'
 ENCODER_TYPE     = encoder_type_e.RES_VGG
 MODEL_OUT        = model_output_e.BOTH
 MODE             = mode_e.VAE
-LATENT_SPACE_DIM = 300                   # number of dimensions in the latent space
+LATENT_SPACE_DIM = 500                   # number of dimensions in the latent space
 INIT_WEIGHT_MEAN = 0                     # weight init mean
 INIT_WEIGHT_STD  = 0.02                  # weight init std
 # Fields used for the point cloud configuration only
@@ -338,8 +338,8 @@ elif XQUANTIZE == 600:
         ['convTrans', ConvTransposeBlock2DData(8,     1,  5, 1, padding=2, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # 600 --> 600  ; DO NOT CHANGE THIS LINE EVER!!!
     ]
 FC_DECODER_TOPOLOGY = [
-    ['linear',      FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear_last', FCBlockData(400, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(500, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear_last', FCBlockData(500, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['res-linear',  ResFCBlockData(750, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',      FCBlockData(1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]

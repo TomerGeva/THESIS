@@ -4,11 +4,11 @@ import torch
 import os
 import matplotlib.pyplot as plt
 from ConfigVAE                  import *
-from LoggerVAE                  import LoggerVAE
-from LoggerLatent               import LoggerLatent
-from trainers.TrainerVAE        import TrainerVAE
-from trainers.TrainerLatent     import TrainerLatent
-from models.ModVAE              import ModVAE
+from classes.LoggerVAE import LoggerVAE
+from classes.LoggerLatent import LoggerLatent
+from classes.TrainerVAE import TrainerVAE
+from classes.TrainerLatent import TrainerLatent
+from classes.ModVAE import ModVAE
 from auxiliary_functions        import PlottingFunctions, _init_
 from ScatterCoordinateDataset   import import_data_sets_pics
 from ScatCoord_DG               import import_data_sets_coord
@@ -372,7 +372,7 @@ if __name__ == '__main__':
         # load_path   = '..\\results_vae\\5_8_2022_8_41'
         # load_path   = '..\\results\\9_4_2022_18_43'
         # load_path   = '..\\results_vae\\8_9_2022_14_38'
-        load_path   = '..\\results_vae\\20_9_2022_10_39'
+        # load_path   = '..\\results_vae\\20_9_2022_10_39'
         # load_path   = '..\\results\\9_6_2022_8_28'
         # copy_path   = '..\\results\\15_12_2021_23_46'
         if ENCODER_TYPE == encoder_type_e.PCLOUD_GRAPH:

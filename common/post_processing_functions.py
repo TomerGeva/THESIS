@@ -761,7 +761,7 @@ class PostProcessing:
 
     @staticmethod
     def recompute_log(path):
-        from LoggerVAE import LoggerVAE
+        from classes.LoggerVAE import LoggerVAE
         # pf = PlottingFunctions()
         # pff = PathFindingFunctions()
         mff = ModelManipulationFunctions()
@@ -1066,7 +1066,8 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\20_9_2022_10_39'
+    c_path = '..\\results_vae\\13_10_2022_11_14'
+    # c_path = '..\\results_vae\\20_9_2022_10_39'
     # c_path = '..\\results_vae\\25_8_2022_15_6'
     # c_path = '..\\results_vae\\5_8_2022_8_41'
     c_path2 = '..\\results_dg\\3_8_2022_8_32'
@@ -1087,8 +1088,8 @@ if __name__ == '__main__':
     # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
 
     # pp.recompute_log(c_path)
-    pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
-    # pp.log_to_plot(c_path, plt_joined=False, spacing=10)
+    # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
+    pp.log_to_plot(c_path, plt_joined=False, spacing=10)
 
     # pp2.log_to_plot(c_path2, spacing=1)
     # pp2.load_and_pass(c_path2, c_epoch)

@@ -1,13 +1,9 @@
-from torch.autograd import Variable
-from global_const import encoder_type_e
 from time import time
 import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from auxiliary_functions import weighted_mse
-from DGcnn import ModDGCNN2, ModDGCNN
-from GPUtil import showUtilization as gpu_usage  # for debug only
 
 
 class TrainerDG:

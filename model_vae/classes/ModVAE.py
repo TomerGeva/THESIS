@@ -1,7 +1,7 @@
 import torch.nn         as nn
-from models.EncoderVAE import EncoderVAE
-from models.DecoderVAE import DecoderVAE
-from DGcnn import ModDGCNN2
+from classes.EncoderVAE import EncoderVAE
+from classes.DecoderVAE import DecoderVAE
+from classes.DGcnn import ModDGCNN2
 from global_const       import encoder_type_e, mode_e, model_output_e
 
 
