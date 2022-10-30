@@ -12,6 +12,8 @@ from classes.TrainerVAE import TrainerVAE
 from classes.DecoderVAE import DecoderVAE
 from classes.DGcnn import ModDGCNN2
 from classes.TrainerDG import TrainerDG
+from classes.Model_CNN import CnnModel
+from classes.TrainerCnn import TrainerCNN
 
 
 class ModelManipulationFunctions:
@@ -80,11 +82,11 @@ class ModelManipulationFunctions:
     @staticmethod
     def load_state_train_pcloud(data_path, device=None, thresholds=None):
         """
-                :param data_path: path to the saved data regarding the network
-                :param device: allocation to either cpu of cuda:0
-                :param thresholds: test group thresholds
-                :return: the function loads the data into and returns the saves network and trainer
-                """
+        :param data_path: path to the saved data regarding the network
+        :param device: allocation to either cpu of cuda:0
+        :param thresholds: test group thresholds
+        :return: the function loads the data into and returns the saves network and trainer
+        """
         if device is None:
             device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         # -------------------------------------
@@ -113,6 +115,45 @@ class ModelManipulationFunctions:
         trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         return model, trainer
+
+    @staticmethod
+    def load_state_train_cnn(data_path, device=None, thresholds=None):
+        """
+        :param data_path: path to the saved data regarding the network
+        :param device: allocation to either cpu of cuda:0
+        :param thresholds: test group thresholds
+        :return: the function loads the data into and returns the saves network and trainer
+        """
+        if device is None:
+            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # -------------------------------------
+        # loading the dictionary
+        # -------------------------------------
+        checkpoint = torch.load(data_path, map_location=device)
+        # -------------------------------------
+        # arranging the data
+        # -------------------------------------
+        topology = checkpoint['topology']
+        model    = CnnModel(device, topology, model_type=checkpoint['model_type'])
+        model.to(device)  # allocating the computation to the CPU or GPU
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+        norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+        trainer = TrainerCNN(model,
+                             lr=checkpoint['lr'],
+                             mom=checkpoint['mom'],
+                             sched_step=SCHEDULER_STEP,
+                             sched_gamma=SCHEDULER_GAMMA,
+                             grad_clip=GRAD_CLIP,
+                             group_thresholds=thresholds,
+                             group_weights=MSE_GROUP_WEIGHT,
+                             abs_sens=ABS_SENS,
+                             norm_sens=norm_sens)
+        trainer.epoch = checkpoint['epoch']
+        trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return model, trainer
+
     @staticmethod
     def load_decoder(data_path=None, device=None):
         """

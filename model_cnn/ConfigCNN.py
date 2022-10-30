@@ -78,7 +78,7 @@ PP_DATA = 'post_processing'
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Model configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-MODEL_TYPE       = "res-vgg"
+MODEL_TYPE       = 'res-vgg'
 INIT_WEIGHT_MEAN = 0                     # weight init mean
 INIT_WEIGHT_STD  = 0.02                  # weight init std
 EMBED_DIM        = 1024
@@ -89,15 +89,15 @@ MSE_GROUP_WEIGHT = [1, 4, 4, 16]  # [1, 2, 2, 20]  # weighted MSE according to s
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-EPOCH_NUM        = 1501
-LR               = 3e-4  # learning rate
+EPOCH_NUM        = 1001
+LR               = 1e-4  # learning rate
 SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
 GRAD_CLIP        = 5
 
 # --------------------------------------------------------------------------------------------------------------
-# Encoder topology
+# Topology
 # --------------------------------------------------------------------------------------------------------------
 DENSE_TOPOLOGY     = [
     ['conv',       ConvBlockData(1, 12, 25, 25, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
@@ -112,7 +112,9 @@ DENSE_TOPOLOGY     = [
     ['dense',      DenseBlockData(64, 6, 3, 1, 1,  batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
     ['transition', TransBlockData(0.5, 3, 1, 1,    batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU, pool_type=pool_e.AVG, pool_pad=(0, 1, 1, 0), pool_size=7)],
     ['linear',     FCBlockData(300,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
-    ['linear',     FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+    ['linear',     FCBlockData(100,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData( 25,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData(  1,                batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 SEPARABLE_TOPOLOGY = [
     ['conv',     ConvBlockData(1, 16, 25, 25, 0, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.lReLU)],     # 2500  --> 100         LOS 25
@@ -126,8 +128,10 @@ SEPARABLE_TOPOLOGY = [
     ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                                  # 13    --> 14 --> 7    LOS 400
     ['sep-conv', ConvBlockData(256, 512, 3,  1, 1, batch_norm=True, bias=False, dropout_rate=0, activation=activation_type_e.lReLU)],   # 7     --> 7           LOS 400
     ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                             # 7     --> 1           LOS 2500 + 300
-    ['linear', FCBlockData(300,                  batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+    ['linear',     FCBlockData(300,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData(100,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData( 25,                batch_norm=True, dropout_rate=0, activation=activation_type_e.ReLU)],
+    ['linear',     FCBlockData(  1,                batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 # TRANS_ENCODER_TOPOLOGY = [
 #         ['transformer', SelfAttentionData(patch_size_x=50, patch_size_y=50, embed_size=1250)],
@@ -143,13 +147,8 @@ TRANS_TOPOLOGY     = [
         ['linear',      FCBlockData(1000, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
         ['res-linear',  ResFCBlockData(500, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
         ['res-linear',  ResFCBlockData(300, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-        ['linear', FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+        ['linear', FCBlockData(1,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
     ]
-FC_TOPOLOGY        = [
-    ['linear',      FCBlockData(1500, in_neurons=1000, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['res-linear',  ResFCBlockData(600, layers=4, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',      FCBlockData(2 * LATENT_SPACE_DIM,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
-]
 VGG_TOPOLOGY = [
     ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],       # 600   --> 50          LOS 12
     # ['conv', ConvBlockData(32, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 100   --> 100         LOS 25
@@ -162,23 +161,25 @@ VGG_TOPOLOGY = [
     ['pool', PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                        # 13    --> 14 --> 7    LOS 128
     ['conv', ConvBlockData(512, 1024, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 7     --> 7           LOS 128
     ['pool', PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                   # 7     --> 1           LOS 800 + 300
-    ['linear', FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
-    # DO NOT CHANGE THIS LINE EVER
+    ['linear',     FCBlockData(300,                batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',     FCBlockData(100,                batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',     FCBlockData( 25,                batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',     FCBlockData(  1,                batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 VGG_RES_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0.1, activation=activation_type_e.lReLU)],              # 600   --> 50          LOS 12
+    ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],              # 600   --> 50          LOS 12
     # ['conv', ConvBlock2DData(32, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],            # 100   --> 100         LOS 25
     # ['pool', PadPool2DData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 100   --> 50          LOS 50
-    ['res-conv', ResConvBlock2DData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50    --> 50          LOS 16
-    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                      # 50    --> 25          LOS 32
-    ['res-conv', ResConvBlock2DData(64, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 25    --> 25          LOS 32
-    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                           # 25    --> 26 --> 13   LOS 64
-    ['res-conv', ResConvBlock2DData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13    --> 13          LOS 64
-    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                           # 13    --> 14 --> 7    LOS 128
-    ['res-conv', ResConvBlock2DData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7     --> 7           LOS 128
-    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                      # 7     --> 1           LOS 800 + 300
-    ['linear',   FCBlockData(1000, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',   FCBlockData(2 * LATENT_SPACE_DIM, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # DO NOT CHANGE THIS LINE EVER
+    ['res-conv', ResConvBlock2DData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50 --> 50          LOS 16
+    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 50 --> 25          LOS 32
+    ['res-conv', ResConvBlock2DData(64, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 25 --> 25          LOS 32
+    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 25 --> 26 --> 13   LOS 64
+    ['res-conv', ResConvBlock2DData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13 --> 13          LOS 64
+    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 13 --> 14 --> 7    LOS 128
+    ['res-conv', ResConvBlock2DData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7  --> 7           LOS 128
+    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                        # 7  --> 1           LOS 800 + 300
+    ['linear',   FCBlockData( 300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',   FCBlockData(  25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',   FCBlockData(   1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
 

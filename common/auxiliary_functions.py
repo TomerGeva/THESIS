@@ -84,7 +84,7 @@ def truncated_relu(x):
 # ==================================================================================================================
 # Functions used by the trainers
 # ==================================================================================================================
-def weighted_mse(targets, outputs, weights=None, thresholds=None):
+def weighted_mse(targets, outputs, weights=None, thresholds=None, normalize=False):
     """
     :param targets: model targets
     :param outputs: model outputs
@@ -107,7 +107,10 @@ def weighted_mse(targets, outputs, weights=None, thresholds=None):
     # ==================================================================================================================
     # Computing weighted MSE as a sum, not mean
     # ==================================================================================================================
-    return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / targets**2)
+    if normalize:
+        return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec / targets**2)
+    else:
+        return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
     # return 0.5 * torch.sum((outputs - targets).pow(2) * weight_vec)
 
 

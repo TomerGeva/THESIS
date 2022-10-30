@@ -1,5 +1,3 @@
-from ConfigVAE import *
-# from ConfigDG import *
 import os
 import json
 import math
@@ -18,7 +16,7 @@ from database_functions import DatabaseFunctions
 from time import time
 
 
-class PostProcessing:
+class PostProcessingVAE:
     def __init__(self):
         pass
 
@@ -998,6 +996,202 @@ class PostProcessingDG:
                 print('hi')
 
 
+class PostProcessingCNN:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def log_to_plot(path, spacing=1, save_plt=True):
+        def plot_fig(train_loss, test_losses, title, xlabel, ylabel, div_weights=False, log_scale=False, scale=1):
+            fig = plt.figure()
+            if log_scale:
+                if div_weights:
+                    plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / train_weights[ii] for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
+                    for test_db in keys_list:
+                        plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / weights[test_db] for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                else:
+                    plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=(train_label + '_weighted'))
+                    for test_db in keys_list:
+                        plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            else:
+                if div_weights:
+                    plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / train_weights[ii] for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
+                    for test_db in keys_list:
+                        plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / weights[test_db] for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                else:
+                    plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=(train_label + '_weighted'))
+                    for test_db in keys_list:
+                        plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.title(title)
+            plt.legend()
+            plt.grid()
+            return fig
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        filename = os.path.join(path, 'logger_cnn.txt')
+        fileID = open(filename, 'r')
+        lines = fileID.readlines()
+        fileID.close()
+
+        reached_start = False
+        epoch_list = []
+        keys_list  = []
+        weights    = {}
+        test_nwmse  = {}
+        test_wmse   = {}
+        test_mse    = {}
+
+        train_label = None
+        train_nwmse_loss = []
+        train_wmse_loss  = []
+        train_mse_loss   = []
+        # ==============================================================================================================
+        # Going over lines, adding to log
+        # ==============================================================================================================
+        for line in lines:
+            # ------------------------------------------------------------------------------------------------------
+            # Getting to beginning of training
+            # ------------------------------------------------------------------------------------------------------
+            if not reached_start and 'Beginning Training' not in line:
+                continue
+            elif not reached_start:
+                reached_start = True
+                continue
+            # ------------------------------------------------------------------------------------------------------
+            # Reached beginning, going over cases
+            # ------------------------------------------------------------------------------------------------------
+            words = list(filter(None, line.split(sep=' ')))
+            if 'Epoch' in line:
+                try:
+                    epoch_list.append(int(words[4]))
+                except ValueError:
+                    epoch_list.append(int(words[4][:-1]))
+            elif 'train' in line.lower():
+                if train_label is None:
+                    train_label = words[3]
+                train_nwmse_loss.append(float(words[6]))
+                train_wmse_loss.append(float(words[8]))
+                train_mse_loss.append(float(words[10]))
+            elif 'group' in line.lower():
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                # one of the test databases
+                # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                temp_key = words[3]
+                if temp_key not in keys_list:
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    # if key does not exist, creates a new list
+                    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    keys_list.append(temp_key)
+                    test_nwmse[temp_key] = []
+                    test_wmse[temp_key]  = []
+                    test_mse[temp_key]   = []
+                    weights[temp_key]    = np.max([float(words[-2]), 1.0])
+                test_nwmse[temp_key].append(float(words[6]))
+                test_wmse[temp_key].append(float(words[8]))
+                test_mse[temp_key].append(float(words[10]))
+        # ==============================================================================================================
+        # Computing train weights
+        # ==============================================================================================================
+        train_weights = [train_wmse_loss[ii] / train_mse_loss[ii] for ii in range(len(train_wmse_loss))]
+        # ==============================================================================================================
+        # Plotting the results
+        # ==============================================================================================================
+        epoch_len = len(epoch_list)
+        plt.rcParams["figure.figsize"] = (18, 9)
+        # ------------------------------------------------------------------------------------------------------
+        # Sensitivity plot - weighted
+        # ------------------------------------------------------------------------------------------------------
+        sens_plt_nwmse = plot_fig(train_nwmse_loss, test_nwmse, title='Normalized Weighted RMS loss vs Epoch number',
+                                  xlabel='Epoch', ylabel='Normalized Weighted RMS Loss', div_weights=False, log_scale=True)
+        sens_plt_nmse  = plot_fig(train_nwmse_loss, test_nwmse, title='Normalized RMS loss vs Epoch number',
+                                  xlabel='Epoch', ylabel='Normalized RMS Loss', div_weights=True, log_scale=True)
+        # ------------------------------------------------------------------------------------------------------
+        # Sensitivity plot - unweighted
+        # ------------------------------------------------------------------------------------------------------
+        sens_plt_wmse = plot_fig(train_wmse_loss, test_wmse, title='Weighted RMS loss vs Epoch number',
+                                 xlabel='Epoch', ylabel='Weighted RMS Loss', div_weights=False, scale=SENS_STD)
+        sens_plt_mse  = plot_fig(train_mse_loss, test_mse, title='RMS loss vs Epoch number',
+                                 xlabel='Epoch', ylabel='RMS Loss', div_weights=False, scale=SENS_STD)
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename_sens_nw = f'sensitivity_loss_training_normalized_weights.png'
+            filename_sens_n  = f'sensitivity_loss_training_normalized.png'
+            filename_sens_w  = f'sensitivity_loss_training_weighted.png'
+            filename_sens    = f'sensitivity_loss_training.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            sens_plt_nwmse.savefig(os.path.join(path, FIG_DIR, filename_sens_nw))
+            sens_plt_nmse.savefig(os.path.join(path, FIG_DIR, filename_sens_n))
+            sens_plt_wmse.savefig(os.path.join(path, FIG_DIR, filename_sens_w))
+            sens_plt_mse.savefig(os.path.join(path, FIG_DIR, filename_sens))
+        plt.show()
+
+    @staticmethod
+    def load_and_pass(path, epoch, key='4e+03_to_inf'):
+        pf = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(path, epoch)
+        # ==============================================================================================================
+        # Loading the needed models and data
+        # ==============================================================================================================
+        norm_grid = (GRID_MEAN, GRID_STD) if NORM_GRID else (0, 1)
+        norm_sens = (SENS_MEAN, SENS_STD) if NORM_SENS else (0, 1)
+        train_loader, test_loaders, _ = import_data_sets_pics(PATH_DATABASE_TRAIN,
+                                                              PATH_DATABASE_TEST,
+                                                              BATCH_SIZE,
+                                                              abs_sens=ABS_SENS,
+                                                              dilation=DILATION,
+                                                              norm_grid=norm_grid,
+                                                              norm_sens=norm_sens,
+                                                              num_workers=NUM_WORKERS)
+        model, trainer = mff.load_state_train_cnn(chosen_file)
+        # ==============================================================================================================
+        # Extracting statistics
+        # ==============================================================================================================
+        model.eval()
+        with torch.no_grad():
+            test_loader_iter = iter(test_loaders[key])
+            for ii in range(len(test_loaders[key])):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample_batched = next(test_loader_iter)
+                except StopIteration:
+                    break
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities, passing through the model
+                # ------------------------------------------------------------------------------
+                sens_targets = sample_batched['sensitivity'].float().to(model.device)
+                grids        = Variable(sample_batched['grid_in'].float()).to(model.device)
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                sens_outputs = model(grids)
+                plt.figure()
+                plt.plot(sens_targets.cpu().detach().numpy() * SENS_STD)
+                plt.plot(sens_outputs.cpu().detach().numpy() * SENS_STD)
+                print('hi')
+
+
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
     # 24_8_2021_8_51   - with mixup 0.00 - 25k database
@@ -1056,8 +1250,10 @@ if __name__ == '__main__':
     # c_path = '..\\results\\12_12_2021_23_5'
     # 12_1_2022_6_51 + 16_1_2022_21_39 - The model that worked!
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
-
-    c_epoch = 1000
+    # from ConfigVAE import *
+    # from ConfigDG import *
+    from ConfigCNN import *
+    c_epoch = 880
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -1066,31 +1262,36 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path = '..\\results_vae\\13_10_2022_11_14'
+    c_path_vae = '..\\results_vae\\13_10_2022_11_14'
     # c_path = '..\\results_vae\\20_9_2022_10_39'
     # c_path = '..\\results_vae\\25_8_2022_15_6'
     # c_path = '..\\results_vae\\5_8_2022_8_41'
-    c_path2 = '..\\results_dg\\3_8_2022_8_32'
+    c_path_dg  = '..\\results_dg\\3_8_2022_8_32'
 
-    pp = PostProcessing()
-    pp2 = PostProcessingDG()
+    c_path_cnn = '..\\results_cnn\\27_10_2022_11_30'
+
+    pp_vae = PostProcessingVAE()
+    pp_dg  = PostProcessingDG()
+    pp_cnn = PostProcessingCNN()
 
     threshold_list = [0.1, 0.2, 0.5]
     # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
     prefix_list    = ['4e+03_to_inf', '0_to_2e+03']
-    # pp.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
-
-    # pp.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
-    # pp.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
-    # pp.log_to_plot(c_path, spacing=10)
-    # pp.get_latent_statistics(c_path, c_epoch)
-    # pp.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
+    # pp_vae.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
+    # pp_vae.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
+    # pp_vae.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
+    # pp_vae.log_to_plot(c_path, spacing=10)
+    # pp_vae.get_latent_statistics(c_path, c_epoch)
+    # pp_vae.load_data_plot_latent_statistics(c_path, c_epoch, prefix_list)
 
     # pp.recompute_log(c_path)
     # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
-    pp.log_to_plot(c_path, plt_joined=False, spacing=10)
+    # pp_vae.log_to_plot(c_path, plt_joined=False, spacing=10)
 
-    # pp2.log_to_plot(c_path2, spacing=1)
-    # pp2.load_and_pass(c_path2, c_epoch)
+    # pp_dg.log_to_plot(c_path2, spacing=1)
+    # pp_dg.load_and_pass(c_path2, c_epoch)
+
+    pp_cnn.log_to_plot(c_path_cnn, spacing=1)
+    # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[1])
 
