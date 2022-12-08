@@ -1006,18 +1006,18 @@ class PostProcessingCNN:
             fig = plt.figure()
             if log_scale:
                 if div_weights:
-                    plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / train_weights[ii] for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
+                    plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x / train_weights[ii]) for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
                     for test_db in keys_list:
-                        plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / weights[test_db] for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                        plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x / weights[test_db]) for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
                 else:
                     plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=(train_label + '_weighted'))
                     for test_db in keys_list:
                         plt.semilogy(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
             else:
                 if div_weights:
-                    plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / train_weights[ii] for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
+                    plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x / train_weights[ii]) for ii, x in enumerate(train_loss[0:epoch_len:spacing])], '-o', label=train_label)
                     for test_db in keys_list:
-                        plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) / weights[test_db] for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
+                        plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x / weights[test_db]) for x in test_losses[test_db][0:epoch_len:spacing]], '-o', label=test_db)
                 else:
                     plt.plot(epoch_list[0:epoch_len:spacing], [scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=(train_label + '_weighted'))
                     for test_db in keys_list:
@@ -1111,10 +1111,11 @@ class PostProcessingCNN:
         # ------------------------------------------------------------------------------------------------------
         # Sensitivity plot - unweighted
         # ------------------------------------------------------------------------------------------------------
+        scale = SENS_STD if NORM_SENS else 1
         sens_plt_wmse = plot_fig(train_wmse_loss, test_wmse, title='Weighted RMS loss vs Epoch number',
-                                 xlabel='Epoch', ylabel='Weighted RMS Loss', div_weights=False, scale=SENS_STD)
+                                 xlabel='Epoch', ylabel='Weighted RMS Loss', div_weights=False, scale=scale)
         sens_plt_mse  = plot_fig(train_mse_loss, test_mse, title='RMS loss vs Epoch number',
-                                 xlabel='Epoch', ylabel='RMS Loss', div_weights=False, scale=SENS_STD)
+                                 xlabel='Epoch', ylabel='RMS Loss', div_weights=False, scale=scale)
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
@@ -1187,8 +1188,9 @@ class PostProcessingCNN:
                 # ------------------------------------------------------------------------------
                 sens_outputs = model(grids)
                 plt.figure()
-                plt.plot(sens_targets.cpu().detach().numpy() * SENS_STD)
-                plt.plot(sens_outputs.cpu().detach().numpy() * SENS_STD)
+                scale = SENS_STD if NORM_SENS else 1
+                plt.plot(sens_targets.cpu().detach().numpy() * scale)
+                plt.plot(sens_outputs.cpu().detach().numpy() * scale)
                 print('hi')
 
 
@@ -1253,7 +1255,7 @@ if __name__ == '__main__':
     # from ConfigVAE import *
     # from ConfigDG import *
     from ConfigCNN import *
-    c_epoch = 880
+    c_epoch = 40
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -1266,9 +1268,9 @@ if __name__ == '__main__':
     # c_path = '..\\results_vae\\20_9_2022_10_39'
     # c_path = '..\\results_vae\\25_8_2022_15_6'
     # c_path = '..\\results_vae\\5_8_2022_8_41'
-    c_path_dg  = '..\\results_dg\\3_8_2022_8_32'
+    c_path_dg  = '..\\results_dg\\11_7_2022_16_0'
 
-    c_path_cnn = '..\\results_cnn\\27_10_2022_11_30'
+    c_path_cnn = '..\\results_cnn\\27_11_2022_16_10'
 
     pp_vae = PostProcessingVAE()
     pp_dg  = PostProcessingDG()
@@ -1277,7 +1279,7 @@ if __name__ == '__main__':
     threshold_list = [0.1, 0.2, 0.5]
     # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
     # prefix_list    = ['1e+05_to_2e+05']
-    prefix_list    = ['4e+03_to_inf', '0_to_2e+03']
+    # prefix_list    = ['4e+03_to_inf', '0_to_2e+03']
     # pp_vae.load_data_plot_roc_det(c_path, c_epoch, prefix_list)
     # pp_vae.load_model_compare_blobs(c_path, c_epoch, key='2e+05_to_3e+05', peak_threshold=3.3)
     # pp_vae.load_model_plot_roc_det(c_path, c_epoch, key='0_to_1e+05')
@@ -1289,9 +1291,10 @@ if __name__ == '__main__':
     # pp.load_and_pass(c_path, c_epoch, key=prefix_list[0])
     # pp_vae.log_to_plot(c_path, plt_joined=False, spacing=10)
 
-    # pp_dg.log_to_plot(c_path2, spacing=1)
+    pp_dg.log_to_plot(c_path_dg, spacing=1)
     # pp_dg.load_and_pass(c_path2, c_epoch)
+    prefix_list    = ['3e+02_to_inf', '2e+02_to_3e+02', '0_to_1e+02']
 
     pp_cnn.log_to_plot(c_path_cnn, spacing=1)
-    # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[1])
+    # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[0])
 

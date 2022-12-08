@@ -1,5 +1,5 @@
 import os
-from ConfigVAE import *
+from ConfigCNN import *
 from LoggerGeneric import LoggerGeneric
 from database_functions import ModelManipulationFunctions
 from auxiliary_functions import compute_output_dim

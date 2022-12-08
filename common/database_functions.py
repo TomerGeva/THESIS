@@ -274,24 +274,28 @@ class DatabaseFunctions:
         pass
 
     @staticmethod
-    def micrometer2pixel(arr):
+    def micrometer2pixel(arr, xrange, yrange, xquantize, yquantize):
         """
         This function is used to convert the coordinates from micro meter to pixel values
         :param arr: (N,2) array holding the coordinates in microns
+        :param xrange: range of micrometers in x axis
+        :param yrange: range of micrometers in  axis
+        :param xquantize: quantization points in x axis
+        :param yquantize: quantization points in y axis
         :return: array sized (N, 2) with the coordinates in pixel values
         """
         grid_coords = [np.zeros([2, ]).astype(int)] * len(arr)
         for ii in range(len(arr)):
             x = float(arr[ii, 0])
             y = float(arr[ii, 1])
-            x_grid = int(round(((x - XRANGE[0]) / XRANGE[1]) * (XQUANTIZE - 1), 0))
-            y_grid = int(round(((y - YRANGE[0]) / YRANGE[1]) * (YQUANTIZE - 1), 0))
+            x_grid = int(round(((x - xrange[0]) / xrange[1]) * (xquantize - 1), 0))
+            y_grid = int(round(((y - yrange[0]) / yrange[1]) * (yquantize - 1), 0))
             grid_coords[ii] = np.array([x_grid, y_grid])
 
         return np.array(grid_coords)
 
     @staticmethod
-    def points2mat(arr):
+    def points2mat(arr, xquantize, yquantize):
         """
         THIS FILE HOLDS THE FUNCTION WHICH TAKES AN ARRAY OF POINTS AND CONVERTS IT TO A MATRIX, WHERE:
         FOR EACH (X,Y) OF THE MATRIX:
@@ -300,7 +304,7 @@ class DatabaseFunctions:
         :param: arr: a 2-D array which holds the coordinates of the scatterers
         :return: xQuantize X yQuantize grid simulating the array
         """
-        grid_array = np.zeros([XQUANTIZE, YQUANTIZE])
+        grid_array = np.zeros([xquantize, yquantize])
         grid_array[arr[:, 1], arr[:, 0]] = 255
         return grid_array.astype(np.uint8)
 

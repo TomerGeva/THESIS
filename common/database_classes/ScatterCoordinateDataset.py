@@ -1,5 +1,6 @@
-from ConfigVAE import *
+from ConfigCNN import *
 import os
+import numpy as np
 import torch
 import pandas as pd
 import random as rnd
@@ -19,10 +20,14 @@ class ScattererCoordinateDataset(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, abs_sens=True, dilation=0):
+    def __init__(self, csv_files, xrange, yrange, xquantize, yquantize, transform=None, abs_sens=True, dilation=0):
         """
         Args:
         :param csv_files: logdir to the file with all the database
+        :param xrange: range of micrometers in x axis
+        :param yrange: range of micrometers in  axis
+        :param xquantize: quantization points in x axis
+        :param yquantize: quantization points in y axis
         :param transform: transformation flag of the data
         :param abs_sens: if true, doing abs on the sensitivity
         :param dilation: amount of dilation done for the cylinder locations
@@ -40,6 +45,10 @@ class ScattererCoordinateDataset(Dataset):
                 self.cumsum.append(len(self.csv_data[-1]))
             else:
                 self.cumsum.append(self.cumsum[-1] + len(self.csv_data[-1]))
+        self.xrange       = xrange
+        self.yrange       = yrange
+        self.xquantize    = xquantize
+        self.yquantize    = yquantize
         self.transform    = transform
         self.abs_sens     = abs_sens
         self.dilation     = dilation
@@ -80,13 +89,13 @@ class ScattererCoordinateDataset(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # Converting points from micro meter to pixels
         # ----------------------------------------------------------------------------------------------------------
-        pixel_points = self.dbf.micrometer2pixel(points)
+        pixel_points = self.dbf.micrometer2pixel(points, self.xrange, self.yrange, self.xquantize, self.yquantize)
         # ----------------------------------------------------------------------------------------------------------
         # Converting the points to a 2-D array
         # ----------------------------------------------------------------------------------------------------------
         if idx >= sum(self.csv_lens):  # Transposing the coordinates
             pixel_points = np.fliplr(pixel_points)
-        grid_array = self.dbf.points2mat(pixel_points)
+        grid_array = self.dbf.points2mat(pixel_points, self.xquantize, self.yquantize)
         # ----------------------------------------------------------------------------------------------------------
         # Dilating the cylinder locations
         # ----------------------------------------------------------------------------------------------------------
@@ -163,10 +172,11 @@ def import_data_sets_pics(paths_train, paths_test, batch_size, abs_sens=True, di
     # Importing complete dataset and creating train dataloader
     # --------------------------------------------------------------------------------------------------------------
     data_train = ScattererCoordinateDataset(csv_files=paths_train,
+                                            xrange=XRANGE, yrange=YRANGE, xquantize=XQUANTIZE, yquantize=YQUANTIZE,
                                             transform=ToTensorMap(norm_sens=norm_sens, norm_grid=norm_grid),
                                             abs_sens=abs_sens,
                                             dilation=dilation,)
-    train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=NUM_WORKERS, pin_memory=True)
+    train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     # --------------------------------------------------------------------------------------------------------------
     # Importing complete dataset and creating test dataloaders
@@ -176,6 +186,7 @@ def import_data_sets_pics(paths_train, paths_test, batch_size, abs_sens=True, di
     for ii, dataset in enumerate(paths_test):
         data_list = [dataset]
         temp_data = ScattererCoordinateDataset(csv_files=data_list,
+                                               xrange=XRANGE, yrange=YRANGE, xquantize=XQUANTIZE, yquantize=YQUANTIZE,
                                                transform=ToTensorMap(norm_sens=norm_sens, norm_grid=norm_grid),
                                                abs_sens=abs_sens,
                                                dilation=dilation)

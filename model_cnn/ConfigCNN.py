@@ -12,10 +12,10 @@ from global_struct import ConvBlockData, ResConvBlock2DData, DenseBlockData, Tra
 XRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the x coordinate of the structure in micro-meters
 YRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the y coordinate of the structure in micro-meters
 
-XQUANTIZE = 600  # 800  # 2500  # number of quantization points in the X coordinate
-YQUANTIZE = 600  # 800  # 2500  # number of quantization points in the Y coordinate
+XQUANTIZE = 200  # 600  # 800  # 2500  # number of quantization points in the X coordinate
+YQUANTIZE = 200  # 600  # 800  # 2500  # number of quantization points in the Y coordinate
 
-NUM_OF_POINTS = 500
+NUM_OF_POINTS = 50  # 500
 
 DMIN = 0.1  # minimal allowed distance between cylinder centers, in micro-meters
 
@@ -28,7 +28,7 @@ SEED = 140993
 # --------------------------------------------------------------------------------------------------------------
 # Convolution based dataloader configurations
 # --------------------------------------------------------------------------------------------------------------
-DILATION     = 4
+DILATION     = 2
 NORM_GRID    = False
 # Grid norm for 2D grids
 GRID_MEAN    = 0.000232
@@ -37,7 +37,7 @@ GRID_STD     = 0.015229786
 COORD_MEAN   = (XRANGE[1] + XRANGE[0]) / 2
 COORD_SCALE  = np.sqrt(2 * (XRANGE[1] - COORD_MEAN)**2)
 ABS_SENS     = True
-NORM_SENS    = True
+NORM_SENS    = False
 SENS_MEAN    = 0    # 1655  # 64458    # output normalization factor - mean sensitivity
 SENS_STD     = 1e2  # 385   # 41025
 IMG_CHANNELS = 1
@@ -54,14 +54,30 @@ N               = 1  # power of the gaussian
 # Paths
 # ==================================================================================================================
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_4e+03_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_4e+03_test.csv']
+# PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_2e+03_train.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_2e+03_train.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_train.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_4e+03_train.csv']
+# PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_2e+03_test.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_2e+03_test.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_test.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_4e+03_test.csv']
+# PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_3e+03_train.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_train2.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_5e+03_train.csv',
+#                        ]  # '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_8e+03_train.csv']
+# PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_3e+03_test.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_test2.csv',
+#                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_5e+03_test.csv',
+#                        ]  # '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_8e+03_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_50_db_75k_50scat_signed_lt_1e+02_train.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_1e+02_train.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_2e+02_train.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_3e+02_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_50_db_75k_50scat_signed_lt_1e+02_test.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_1e+02_test.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_2e+02_test.csv',
+                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_3e+02_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results_cnn'
 # --------------------------------------------------------------------------------------------------------------
 # Post processing paths
@@ -85,17 +101,18 @@ EMBED_DIM        = 1024
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Cost function
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-MSE_GROUP_WEIGHT = [1, 4, 4, 16]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+# MSE_GROUP_WEIGHT = [1, 1, 1, 4]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
+MSE_GROUP_WEIGHT = [4, 1, 1, 16]  # [1, 2, 2, 20]  # weighted MSE according to sensitivity group
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-EPOCH_NUM        = 1001
-LR               = 1e-4  # learning rate
+EPOCH_NUM        = 101
+LR               = 5e-5  # learning rate
 SCHEDULER_STEP   = 50
-SCHEDULER_GAMMA  = 0.9
+SCHEDULER_GAMMA  = 0.7
 MOM              = 0.9   # momentum update
 GRAD_CLIP        = 5
-
+SAVE_PER_EPOCH   = 20
 # --------------------------------------------------------------------------------------------------------------
 # Topology
 # --------------------------------------------------------------------------------------------------------------
@@ -166,20 +183,34 @@ VGG_TOPOLOGY = [
     ['linear',     FCBlockData( 25,                batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear',     FCBlockData(  1,                batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
 ]
-VGG_RES_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],              # 600   --> 50          LOS 12
-    # ['conv', ConvBlock2DData(32, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],            # 100   --> 100         LOS 25
-    # ['pool', PadPool2DData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 100   --> 50          LOS 50
-    ['res-conv', ResConvBlock2DData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50 --> 50          LOS 16
-    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 50 --> 25          LOS 32
-    ['res-conv', ResConvBlock2DData(64, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 25 --> 25          LOS 32
-    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 25 --> 26 --> 13   LOS 64
-    ['res-conv', ResConvBlock2DData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13 --> 13          LOS 64
-    ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 13 --> 14 --> 7    LOS 128
-    ['res-conv', ResConvBlock2DData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7  --> 7           LOS 128
-    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                        # 7  --> 1           LOS 800 + 300
-    ['linear',   FCBlockData( 300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',   FCBlockData(  25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear',   FCBlockData(   1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
-]
+# VGG_RES_TOPOLOGY = [
+#     ['conv', ConvBlockData(1, 64, 12, 12, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],              # 600   --> 50          LOS 12
+#     # ['conv', ConvBlock2DData(32, 32, 3,  1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],            # 100   --> 100         LOS 25
+#     # ['pool', PadPool2DData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 100   --> 50          LOS 50
+#     ['res-conv', ResConvBlock2DData(64, 64, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],     # 50 --> 50          LOS 16
+#     ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=2)],                                                                        # 50 --> 25          LOS 32
+#     ['res-conv', ResConvBlock2DData(64, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 25 --> 25          LOS 32
+#     ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 25 --> 26 --> 13   LOS 64
+#     ['res-conv', ResConvBlock2DData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 13 --> 13          LOS 64
+#     ['pool',     PadPoolData(pool_e.AVG, pad=(0, 1, 1, 0), kernel=2)],                                                             # 13 --> 14 --> 7    LOS 128
+#     ['res-conv', ResConvBlock2DData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],  # 7  --> 7           LOS 128
+#     ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=7)],                                                                        # 7  --> 1           LOS 800 + 300
+#     ['linear',   FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#     ['linear',   FCBlockData(300, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#     ['linear',   FCBlockData( 25, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+#     ['linear',   FCBlockData(  1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+# ]
 
+VGG_RES_TOPOLOGY = [
+    ['conv', ConvBlockData(1, 128, 10, 10, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],                # 600 --> 20         LOS 30
+    ['res-conv', ResConvBlock2DData(128, 128, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 20 --> 20          LOS 16
+    ['res-conv', ResConvBlock2DData(128, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 20 --> 20          LOS 32
+    ['pool',     PadPoolData(pool_e.MAX, pad=0, kernel=2)],                                                                         # 20 --> 10          LOS 64
+    ['res-conv', ResConvBlock2DData(256, 512, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 10 --> 10          LOS 64
+    ['res-conv', ResConvBlock2DData(512, 1024, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],   # 10 --> 10          LOS 128
+    ['pool',     PadPoolData(pool_e.AVG, pad=0, kernel=10)],                                                                        # 10  --> 1          LOS 800 + 300
+    ['linear',   FCBlockData(512, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',   FCBlockData(128, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',   FCBlockData( 32, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',   FCBlockData(  1, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],  # DO NOT CHANGE THIS LINE EVER
+]

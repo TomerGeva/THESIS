@@ -57,7 +57,7 @@ def main():
     # ================================================================================
     # Training
     # ================================================================================
-    trainer.train(model, train_loader, test_loaders, logger, save_per_epochs=40)
+    trainer.train(model, train_loader, test_loaders, logger, save_per_epochs=SAVE_PER_EPOCH)
 
 
 if __name__ == '__main__':
