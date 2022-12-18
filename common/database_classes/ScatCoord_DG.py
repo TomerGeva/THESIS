@@ -15,7 +15,7 @@ class ScatCoordDG(Dataset):
     A sample of the dataset will be a dictionary {'grid': 2D array, 'sensitivity': target sensitivity}
     Out dataset will take additional argument 'transform' so that any required processing can be applied on the sample.
     """
-    def __init__(self, csv_files, transform=None, abs_sens=True, double_size=False, coord_mean=2.5, coord_scale=np.sqrt(12.5)):
+    def __init__(self, csv_files, transform=None, abs_sens=True, n_points=50):
         """
         Args:
         :param csv_files: logdir to the file with all the database
@@ -35,16 +35,13 @@ class ScatCoordDG(Dataset):
                 self.cumsum.append(len(self.csv_data[-1]))
             else:
                 self.cumsum.append(self.cumsum[-1] + len(self.csv_data[-1]))
-        self.transform    = transform
-        self.abs_sens     = abs_sens
-        self.double_size  = double_size
-        self.dbf          = DatabaseFunctions()
+        self.transform  = transform
+        self.abs_sens   = abs_sens
+        self.n_points   = n_points
+        self.dbf        = DatabaseFunctions()
 
     def __len__(self):
-        if self.double_size:
-            return 2 * sum(self.csv_lens)
-        else:
-            return sum(self.csv_lens)
+        return sum(self.csv_lens)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -69,12 +66,12 @@ class ScatCoordDG(Dataset):
         # ----------------------------------------------------------------------------------------------------------
         # extracting the points, shuffling
         # ----------------------------------------------------------------------------------------------------------
-        points = self.csv_data[file_idx].iloc[row_idx, 1:]
+        points = self.csv_data[file_idx].iloc[row_idx, 1:-2*self.n_points]
         # points = np.array([points])
         # points = points.astype('float').reshape(2, -1)
-        points    = torch.tensor([points]).view(2, -1)
-        col_order = torch.randperm(points.size()[-1])
-        points    = points[:, col_order]
+        points    = torch.tensor([points]).view(self.n_points, -1)
+        row_order = torch.randperm(points.size()[0])
+        points    = torch.transpose(points[row_order, :], 0, 1)
         # ----------------------------------------------------------------------------------------------------------
         # Creating the sample dict
         # ----------------------------------------------------------------------------------------------------------
@@ -110,13 +107,14 @@ class ToTensorCoord(object):
 # ======================================================================================================================
 # Defining functions which manipulate the classes above
 # ======================================================================================================================
-def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens=True, coord_mean=2.5, coord_scale=np.sqrt(12.5), num_workers=1):
+def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens=True, norm_sens=(0, 1), coord_mean=0, coord_scale=1, n_points=50, num_workers=1):
     """
     This function imports the train and test database
     :param path_list_train: list of paths to be used in the train dataloader
     :param path_list_test: list of paths to be used in the test dataloader
     :param batch_size: size of each batch in the databases
     :param abs_sens: if true, doing absolute value over teh sensitivity
+    :param norm_sens: mean and std to normalize by
     :param coord_mean: normalization translation for the coordinates
     :param coord_scale: normalization scale for the coordinates
     :param num_workers: number of workers in the dataloader
@@ -127,7 +125,8 @@ def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens
     # --------------------------------------------------------------------------------------------------------------
     data_train = ScatCoordDG(csv_files=path_list_train,
                              transform=ToTensorCoord(mean=coord_mean, scale=coord_scale),
-                             abs_sens=abs_sens)
+                             abs_sens=abs_sens,
+                             n_points=n_points)
     train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
     # --------------------------------------------------------------------------------------------------------------
     # Importing complete dataset and creating test dataloaders
@@ -138,7 +137,8 @@ def import_data_sets_coord(path_list_train, path_list_test, batch_size, abs_sens
         data_list = [dataset]
         temp_data = ScatCoordDG(csv_files=data_list,
                                 transform=ToTensorCoord(mean=coord_mean, scale=coord_scale),
-                                abs_sens=abs_sens,)
+                                abs_sens=abs_sens,
+                                n_points=n_points)
         # ******************************************************************************************************
         # extracting the data-loader key from the name
         # ******************************************************************************************************

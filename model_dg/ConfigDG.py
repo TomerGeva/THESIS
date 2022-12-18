@@ -14,7 +14,7 @@ YRANGE = np.array([0, 4])  # np.array([0, 19])  # Range of the y coordinate of t
 COORD_MEAN  = (XRANGE[1] + XRANGE[0]) / 2
 COORD_SCALE = np.sqrt(2 * (XRANGE[1] - COORD_MEAN)**2)
 
-NUM_OF_POINTS = 500
+NUM_OF_POINTS = 20
 
 XQUANTIZE = 600  # 800  # 2500  # number of quantization points in the X coordinate
 YQUANTIZE = 600  # 800  # 2500  # number of quantization points in the Y coordinate
@@ -25,9 +25,9 @@ SEED = 140993
 # ==================================================================================================================
 # DATALOADER HYPER-PARAMETERS
 # ==================================================================================================================
-NORM_SENS   = False
-SENS_MEAN   = 1655  # 64458    # output normalization factor - mean sensitivity
-SENS_STD    = 385   # 41025
+NORM_SENS   = True
+SENS_MEAN   = 0    # 1655  # 64458    # output normalization factor - mean sensitivity
+SENS_STD    = 100  # 385   # 41025
 # --------------------------------------------------------------------------------------------------------------
 # Fully Connected based dataloader configurations
 # --------------------------------------------------------------------------------------------------------------
@@ -45,15 +45,14 @@ OPTIMIZE_TIME  = True
 # ==================================================================================================================
 # Paths
 # ==================================================================================================================
-PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_30k_500scat_signed_lt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_2e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_3e+03_train.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_4e+03_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_500_db_30k_500scat_signed_lt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_2e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_3e+03_test.csv',
-                       '..\\..\\databases\\corner_500_db_30k_500scat_signed_gt_4e+03_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_lt_4e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_4e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_8e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_1e+02_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_lt_4e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_4e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_8e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_distance_gt_1e+02_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results_dg'
 # --------------------------------------------------------------------------------------------------------------
 # Post processing paths
@@ -67,7 +66,7 @@ PP_DATA = 'post_processing'
 # --------------------------------------------------------------------------------------------------------------
 # Hyper parameters
 # --------------------------------------------------------------------------------------------------------------
-EMBED_DIM       = 1024
+EMBED_DIM       = 2048
 CONCAT_EDGECONV = True  # boolean stating if we want to concatenate all the edgeconv results at the end
 FLATTEN_TYPE    = 'both'  # max, avg, both
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -82,8 +81,8 @@ MSE_GROUP_WEIGHT = [1, 2, 2, 4]  # [1, 2, 2, 20]  # weighted MSE according to se
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Trainer configurations
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-EPOCH_NUM        = 1001
-LR               = 2e-4  # learning rate
+EPOCH_NUM        = 101
+LR               = 5e-5  # learning rate
 SCHEDULER_STEP   = 50
 SCHEDULER_GAMMA  = 0.9
 MOM              = 0.9   # momentum update
@@ -105,12 +104,12 @@ POINTNET_TOPOLOGY = [
     ['linear', FCBlockData(1,   in_neurons=128, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],
 ]
 DGCNN_TOPOLOGY = [
-    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=4,     out_channels=64,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2,  out_channels=64,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=64*2,  out_channels=128, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=128*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['edgeconv', EdgeConvData(k=40, conv_data=ConvBlockData(in_channels=256*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
-    ['conv1d', ConvBlockData(768, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
+    ['edgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=2*20,  out_channels=64,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=64*2,  out_channels=128,  kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=128*2, out_channels=256, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=256*2, out_channels=512, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['edgeconv', EdgeConvData(k=20, conv_data=ConvBlockData(in_channels=512*2, out_channels=512, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2), aggregation='sum')],
+    ['conv1d', ConvBlockData(1472, EMBED_DIM, kernel_size=1, stride=1, padding=0, bias=False, batch_norm=True, activation=activation_type_e.lReLU, alpha=0.2)],
     ['linear', FCBlockData(512, in_neurons=EMBED_DIM*2, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
     ['linear', FCBlockData(256, in_neurons=512, bias=False, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU, alpha=0.2)],
     ['res-linear', ResFCBlockData(1, in_neurons=256, layers=4, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],

@@ -1268,7 +1268,7 @@ if __name__ == '__main__':
     # c_path = '..\\results_vae\\20_9_2022_10_39'
     # c_path = '..\\results_vae\\25_8_2022_15_6'
     # c_path = '..\\results_vae\\5_8_2022_8_41'
-    c_path_dg  = '..\\results_dg\\11_7_2022_16_0'
+    c_path_dg  = '..\\results_dg\\16_12_2022_14_6'
 
     c_path_cnn = '..\\results_cnn\\27_11_2022_16_10'
 
@@ -1295,6 +1295,6 @@ if __name__ == '__main__':
     # pp_dg.load_and_pass(c_path2, c_epoch)
     prefix_list    = ['3e+02_to_inf', '2e+02_to_3e+02', '0_to_1e+02']
 
-    pp_cnn.log_to_plot(c_path_cnn, spacing=1)
+    # pp_cnn.log_to_plot(c_path_cnn, spacing=1)
     # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[0])
 

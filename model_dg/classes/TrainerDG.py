@@ -11,16 +11,23 @@ class TrainerDG:
     This class holds the trainer for the DG model
     """
 
-    def __init__(self, net, lr=1e-2, mom=0.9,
-                 sched_step=20, sched_gamma=0.5, grad_clip=5,
-                 group_thresholds=None, group_weights=None,
+    def __init__(self, net,
+                 lr=1e-2,
+                 mom=0.9,
+                 sched_step=20,
+                 sched_gamma=0.5,
+                 grad_clip=5,
+                 group_thresholds=None,
+                 group_weights=None,
                  abs_sens=True,
-                 training=True, optimize_time=False):
-        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+                 norm_sens=(0, 1),
+                 training=True,
+                 optimize_time=False):
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.abs_sens = abs_sens
+        self.norm_sens        = norm_sens
+        self.abs_sens         = abs_sens
         self.sensitivity_loss = weighted_mse
         # -------------------------------------
         # optimizer
