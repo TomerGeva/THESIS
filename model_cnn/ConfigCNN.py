@@ -70,14 +70,14 @@ PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_
 #                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_3e+03_test2.csv',
 #                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_5e+03_test.csv',
 #                        ]  # '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_8e+03_test.csv']
-PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_50_db_75k_50scat_signed_lt_1e+02_train.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_1e+02_train.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_2e+02_train.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_3e+02_train.csv']
-PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_50_db_75k_50scat_signed_lt_1e+02_test.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_1e+02_test.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_2e+02_test.csv',
-                       '..\\..\\databases\\corner_50_db_75k_50scat_signed_gt_3e+02_test.csv']
+PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_20_db_53k_20scat_signed_lt_4e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_4e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_8e+01_train.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_1e+02_train.csv']
+PATH_DATABASE_TEST  = ['..\\..\\databases\\corner_20_db_53k_20scat_signed_lt_4e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_4e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_8e+01_test.csv',
+                       '..\\..\\databases\\corner_20_db_53k_20scat_signed_gt_1e+02_test.csv']
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results_cnn'
 # --------------------------------------------------------------------------------------------------------------
 # Post processing paths
@@ -202,7 +202,7 @@ VGG_TOPOLOGY = [
 # ]
 
 VGG_RES_TOPOLOGY = [
-    ['conv', ConvBlockData(1, 128, 10, 10, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],                # 600 --> 20         LOS 30
+    ['conv', ConvBlockData(1, 128, 10, 10, 0, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],                # 200 --> 20         LOS 30
     ['res-conv', ResConvBlock2DData(128, 128, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 20 --> 20          LOS 16
     ['res-conv', ResConvBlock2DData(128, 256, 3, 3, 1, 1, batch_norm=True, dropout_rate=0, activation=activation_type_e.lReLU)],    # 20 --> 20          LOS 32
     ['pool',     PadPoolData(pool_e.MAX, pad=0, kernel=2)],                                                                         # 20 --> 10          LOS 64
