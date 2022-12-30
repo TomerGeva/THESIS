@@ -1194,6 +1194,102 @@ class PostProcessingCNN:
                 print('hi')
 
 
+class PostProcessingOmega:
+
+    @staticmethod
+    def log_to_plot(path, spacing=1, save_plt=True, scale=1):
+        def plot_fig(train_loss, test_loss, title, xlabel, ylabel, log_scale=False, rms_scale=1):
+            fig = plt.figure()
+            if log_scale:
+                plt.semilogy(epoch_list[0:epoch_len:spacing], [rms_scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=train_label)
+                plt.semilogy(epoch_list[0:epoch_len:spacing], [rms_scale * math.sqrt(x) for x in test_loss[0:epoch_len:spacing]], '-o',  label=test_label)
+            else:
+                plt.plot(epoch_list[0:epoch_len:spacing], [rms_scale * math.sqrt(x) for x in train_loss[0:epoch_len:spacing]], '-o', label=train_label)
+                plt.plot(epoch_list[0:epoch_len:spacing], [rms_scale * math.sqrt(x) for x in test_loss[0:epoch_len:spacing]], '-o', label=test_label)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.title(title)
+            plt.legend()
+            plt.grid()
+            return fig
+
+        # ==============================================================================================================
+        # Local variables
+        # ==============================================================================================================
+        filename = os.path.join(path, 'logger_omega.txt')
+        fileID = open(filename, 'r')
+        lines = fileID.readlines()
+        fileID.close()
+
+        reached_start  = False
+        epoch_list     = []
+        test_label     = None
+        test_mse_loss  = []
+        train_label    = None
+        train_mse_loss = []
+        # ==============================================================================================================
+        # Going over lines, adding to log
+        # ==============================================================================================================
+        for line in lines:
+            # ------------------------------------------------------------------------------------------------------
+            # Getting to beginning of training
+            # ------------------------------------------------------------------------------------------------------
+            if not reached_start and 'Beginning Training' not in line:
+                continue
+            elif not reached_start:
+                reached_start = True
+                continue
+            # ------------------------------------------------------------------------------------------------------
+            # Reached beginning, going over cases
+            # ------------------------------------------------------------------------------------------------------
+            words = list(filter(None, line.split(sep=' ')))
+            if 'Epoch' in line:
+                try:
+                    epoch_list.append(int(words[4]))
+                except ValueError:
+                    epoch_list.append(int(words[4][:-1]))
+            elif 'train' in line.lower():
+                if train_label is None:
+                    train_label = words[3]
+                train_mse_loss.append(float(words[6]))
+            elif 'test' in line.lower():
+                if test_label is None:
+                    test_label = words[3]
+                test_mse_loss.append(float(words[6]))
+        # ==============================================================================================================
+        # Plotting the results
+        # ==============================================================================================================
+        epoch_len = len(epoch_list)
+        plt.rcParams["figure.figsize"] = (18, 9)
+        # ------------------------------------------------------------------------------------------------------
+        # RMS plot
+        # ------------------------------------------------------------------------------------------------------
+        plt_rms = plot_fig(train_mse_loss, test_mse_loss,
+                           title='RMS Vs Epoch',
+                           xlabel='Epoch',
+                           ylabel='RMS',
+                           log_scale=True,
+                           rms_scale=scale)
+        # ==============================================================================================================
+        # Saving
+        # ==============================================================================================================
+        if save_plt and (path is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename_rms = f'rms_loss.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            plt_rms.savefig(os.path.join(path, FIG_DIR, filename_rms))
+        plt.show()
+
+
 if __name__ == '__main__':
     # 14_7_2021_0_47 # 12_7_2021_15_22 # 15_7_2021_9_7  # 4_8_2021_8_30
     # 24_8_2021_8_51   - with mixup 0.00 - 25k database
@@ -1254,7 +1350,8 @@ if __name__ == '__main__':
     # 10_2_2022_16_45 + 13_2_2022_21_4 - The model that worked + transpose training
     # from ConfigVAE import *
     # from ConfigDG import *
-    from ConfigCNN import *
+    # from ConfigCNN import *
+    from config_omega import *
     c_epoch = 40
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
@@ -1264,17 +1361,18 @@ if __name__ == '__main__':
     # c_path = '..\\results\\15_5_2022_17_9'
     # c_path = '..\\results\\6_6_2022_19_7'
     # c_path = '..\\results\\14_6_2022_16_8'
-    c_path_vae = '..\\results_vae\\13_10_2022_11_14'
     # c_path = '..\\results_vae\\20_9_2022_10_39'
     # c_path = '..\\results_vae\\25_8_2022_15_6'
     # c_path = '..\\results_vae\\5_8_2022_8_41'
-    c_path_dg  = '..\\results_dg\\16_12_2022_14_6'
-
-    c_path_cnn = '..\\results_cnn\\18_12_2022_9_16'
+    c_path_vae   = '..\\results_vae\\13_10_2022_11_14'
+    c_path_dg    = '..\\results_dg\\16_12_2022_14_6'
+    c_path_cnn   = '..\\results_cnn\\18_12_2022_9_16'
+    c_path_omega = '..\\results_omega\\28_12_2022_14_51'
 
     pp_vae = PostProcessingVAE()
     pp_dg  = PostProcessingDG()
     pp_cnn = PostProcessingCNN()
+    pp_omega = PostProcessingOmega()
 
     threshold_list = [0.1, 0.2, 0.5]
     # prefix_list    = ['3e+05_to_inf', '2e+05_to_3e+05', '1e+05_to_2e+05', '0_to_1e+05']
@@ -1295,6 +1393,8 @@ if __name__ == '__main__':
     # pp_dg.load_and_pass(c_path2, c_epoch)
     # prefix_list    = ['3e+02_to_inf', '2e+02_to_3e+02', '0_to_1e+02']
 
-    pp_cnn.log_to_plot(c_path_cnn, spacing=1)
+    # pp_cnn.log_to_plot(c_path_cnn, spacing=1)
     # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[0])
+
+    pp_omega.log_to_plot(c_path_omega, spacing=1, scale=1/OMEGA_FACTOR)
 

@@ -3,8 +3,8 @@ import torch
 from database_functions import ModelManipulationFunctions
 from ScatterCoordinateDataset import import_data_sets_pics
 from classes.LoggerCNN import LoggerCNN
-from model_cnn.classes.TrainerCnn import TrainerCNN
-from model_cnn.classes.Model_CNN import CnnModel
+from classes.TrainerCnn import TrainerCNN
+from classes.Model_CNN import CnnModel
 from auxiliary_functions import _init_
 from model_cnn.utils import get_topology
 

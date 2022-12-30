@@ -50,9 +50,6 @@ OPTIMIZE_TIME = True
 COORD2MAP_SIGMA = 3  # deliminator in the coord2map function
 N               = 1  # power of the gaussian
 
-# ==================================================================================================================
-# Paths
-# ==================================================================================================================
 PATH          = 'C:\\Users\\tomer\\Documents\\MATLAB\\csv_files\\grid_size_2500_2500\\corner_1450'
 # PATH_DATABASE_TRAIN = ['..\\..\\databases\\corner_500_db_50k_500scat_signed_lt_2e+03_train.csv',
 #                        '..\\..\\databases\\corner_500_db_50k_500scat_signed_gt_2e+03_train.csv',
