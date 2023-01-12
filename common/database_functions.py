@@ -1,7 +1,8 @@
 # ***************************************************************************************************
 # THIS FILE HOLDS THE FUNCTIONS NEEDED TO MANIPULATE THE DATABASE ON WHICH THE NETWORK TRAINS
 # ***************************************************************************************************
-from ConfigVAE import *
+# from ConfigVAE import *
+from config_omega import *
 import os
 import csv
 import torch
@@ -14,6 +15,8 @@ from classes.DGcnn import ModDGCNN2
 from classes.TrainerDG import TrainerDG
 from classes.Model_CNN import CnnModel
 from classes.TrainerCnn import TrainerCNN
+from classes.Model_Omega import OmegaModel
+from classes.TrainerOmega import TrainerOmega
 
 
 class ModelManipulationFunctions:
@@ -200,6 +203,43 @@ class ModelManipulationFunctions:
         decoder.to(decoder.device)
 
         return decoder, latent_dim
+
+    @staticmethod
+    def load_state_train_omega(data_path, device=None, noise=False):
+        """
+        :param data_path: path to the saved data regarding the network
+        :param device: allocation to either cpu of cuda:0
+        :param noise: if we want to introduce shot noise or not
+        :return: the function loads the data into and returns the saves network and trainer
+        """
+        if device is None:
+            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # -------------------------------------
+        # loading the dictionary
+        # -------------------------------------
+        checkpoint = torch.load(data_path, map_location=device)
+        # -------------------------------------
+        # arranging the data
+        # -------------------------------------
+        topology = checkpoint['topology']
+        model = OmegaModel(device, topology)
+        model.to(device)  # allocating the computation to the CPU or GPU
+        model.load_state_dict(checkpoint['model_state_dict'])
+        try:
+            sampling_rate = checkpoint['sampling_rate']
+        except:
+            sampling_rate = 100
+        trainer = TrainerOmega(model,
+                               num_epochs=EPOCH_NUM,
+                               lr=LR, mom=MOM,
+                               sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
+                               grad_clip=GRAD_CLIP,
+                               omega_factor=checkpoint['omega_factor'], shot_noise=noise,
+                               sampling_rate=sampling_rate)
+        trainer.epoch = checkpoint['epoch']
+        trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        return model, trainer
 
     @staticmethod
     def initialize_weights(net, mean=0.0, std=0.02, method='gaussian'):

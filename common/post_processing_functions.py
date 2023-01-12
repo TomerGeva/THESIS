@@ -7,6 +7,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from global_const import encoder_type_e
 from ScatterCoordinateDataset import import_data_sets_pics, import_data_set_test
+from PCurrentDataset import import_pcurrents_dataset, import_pcurrent_omega_dataset
 from ScatCoord_DG import import_data_sets_coord
 from database_functions import PathFindingFunctions, ModelManipulationFunctions
 from auxiliary_functions import PlottingFunctions
@@ -1221,12 +1222,14 @@ class PostProcessingOmega:
         lines = fileID.readlines()
         fileID.close()
 
-        reached_start  = False
-        epoch_list     = []
-        test_label     = None
-        test_mse_loss  = []
-        train_label    = None
-        train_mse_loss = []
+        reached_start   = False
+        epoch_list      = []
+        test_label      = None
+        test_mse_loss   = []
+        test_nmse_loss  = []
+        train_label     = None
+        train_mse_loss  = []
+        train_nmse_loss = []
         # ==============================================================================================================
         # Going over lines, adding to log
         # ==============================================================================================================
@@ -1252,10 +1255,12 @@ class PostProcessingOmega:
                 if train_label is None:
                     train_label = words[3]
                 train_mse_loss.append(float(words[6]))
+                train_nmse_loss.append(float(words[8]))
             elif 'test' in line.lower():
                 if test_label is None:
                     test_label = words[3]
                 test_mse_loss.append(float(words[6]))
+                test_nmse_loss.append(float(words[8]))
         # ==============================================================================================================
         # Plotting the results
         # ==============================================================================================================
@@ -1270,6 +1275,12 @@ class PostProcessingOmega:
                            ylabel='RMS',
                            log_scale=True,
                            rms_scale=scale)
+        plt_nrms = plot_fig(train_nmse_loss, test_nmse_loss,
+                           title='NRMS Vs Epoch',
+                           xlabel='Epoch',
+                           ylabel='NRMS',
+                           log_scale=True,
+                           rms_scale=1)
         # ==============================================================================================================
         # Saving
         # ==============================================================================================================
@@ -1277,7 +1288,8 @@ class PostProcessingOmega:
             # ------------------------------------------------------------------------------------------------------
             # Setting filename
             # ------------------------------------------------------------------------------------------------------
-            filename_rms = f'rms_loss.png'
+            filename_rms  = f'rms_loss.png'
+            filename_nrms = f'nrms_loss.png'
             # ------------------------------------------------------------------------------------------------------
             # Creating directory if not exists
             # ------------------------------------------------------------------------------------------------------
@@ -1287,6 +1299,318 @@ class PostProcessingOmega:
             # Saving
             # ------------------------------------------------------------------------------------------------------
             plt_rms.savefig(os.path.join(path, FIG_DIR, filename_rms))
+            plt_nrms.savefig(os.path.join(path, FIG_DIR, filename_nrms))
+        plt.show()
+
+    @staticmethod
+    def load_and_pass(path, epoch, spacing=1, save_plt=False):
+        pf = PlottingFunctions()
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(path, epoch)
+        # ==============================================================================================================
+        # Loading the needed models and data
+        # ==============================================================================================================
+        train_loader = import_pcurrents_dataset(BATCH_SIZE, PATH_DATABASE_TRAIN,
+                                                omega_factor=OMEGA_FACTOR,
+                                                shot_noise=SHOT_NOISE,
+                                                sampling_rate=SAMPLING_RATE,
+                                                shuffle=False,
+                                                num_workers=1)
+        # loader_list = [train_loader, test_loader]
+        loader_list = [train_loader]
+        model, trainer = mff.load_state_train_omega(chosen_file)
+        print('Loaded model, trainer and datasets')
+        # ==============================================================================================================
+        # Extracting statistics
+        # ==============================================================================================================
+        omega_outputs = torch.tensor([]).to(model.device)
+        omega_targets = torch.tensor([]).to(model.device)
+        model.eval()
+        with torch.no_grad():
+            for loader in loader_list:
+                loader_iter = iter(loader)
+                for ii in range(len(loader)):
+                    # ------------------------------------------------------------------------------
+                    # Working with iterables, much faster
+                    # ------------------------------------------------------------------------------
+                    try:
+                        sample_batched = next(loader_iter)
+                    except StopIteration:
+                        break
+                    # ------------------------------------------------------------------------------
+                    # Extracting the grids and sensitivities, passing through the model
+                    # ------------------------------------------------------------------------------
+                    omega_targets_batch = sample_batched['omega'].float().to(model.device)
+                    pcurrents           = Variable(sample_batched['pcurrents'].float()).to(model.device)
+                    # ------------------------------------------------------------------------------
+                    # Forward pass + Docking
+                    # ------------------------------------------------------------------------------
+                    omega_outputs_batch = model(pcurrents)
+                    omega_outputs       = torch.cat((omega_outputs, omega_outputs_batch))
+                    omega_targets       = torch.cat((omega_targets, omega_targets_batch))
+        print('Finished passing through the datasets')
+        # ==============================================================================================================
+        # Plotting the results
+        # ==============================================================================================================
+        plt.rcParams["figure.figsize"] = (18, 9)
+        omega_targets = omega_targets.cpu().detach().numpy() / trainer.omega_factor
+        omega_outputs = omega_outputs.cpu().detach().numpy() / trainer.omega_factor
+        error         = np.abs(omega_targets - omega_outputs)
+
+        omega_plot = plt.figure()
+        plt.plot(omega_targets[0:len(omega_targets):spacing], omega_targets[0:len(omega_targets):spacing], '.', label='target')
+        plt.plot(omega_targets[0:len(omega_targets):spacing], omega_outputs[0:len(omega_outputs):spacing], '.', label='result')
+        plt.title('Omega results - Train & test')
+        plt.xlabel('Omega, normalized')
+        plt.ylabel('Omega, normalized')
+        plt.legend()
+        plt.grid()
+
+        error_plot = plt.figure()
+        plt.semilogy(omega_targets[0:len(omega_targets):spacing], error[0:len(error):spacing], '.')
+        # plt.plot(omega_targets[0:len(omega_targets):spacing], 20 * np.log10(error[0:len(error):spacing]), '.')
+        plt.title('Omega results - Train & test')
+        plt.xlabel('Omega, normalized')
+        # plt.ylabel('Error [dB]')
+        plt.ylabel('Error')
+        plt.grid()
+
+        if save_plt and (path is not None):
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            filename_omega = f'omega_inference.png'
+            filename_error = f'omega_error.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(path, FIG_DIR)):
+                os.makedirs(os.path.join(path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            omega_plot.savefig(os.path.join(path, FIG_DIR, filename_omega))
+            error_plot.savefig(os.path.join(path, FIG_DIR, filename_error))
+        plt.show()
+
+    @staticmethod
+    def generate_sens_pdf(db_path, run_path, epoch, omegas=None, save_plt=False):
+        import pandas as pd
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        elec_amp_per_sec = 6.24e18
+        pdf_count        = 100000
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(run_path, epoch)
+        model, trainer = mff.load_state_train_omega(chosen_file)
+        sampling_rate = trainer.sampling_rate  # (100 * trainer.sampling_rate)  # TODO: remove the 100
+        curr_per_part = 1e12 * 1 / elec_amp_per_sec * sampling_rate
+        # ==============================================================================================================
+        # Extracting the most sensitive slope and 0 current
+        # ==============================================================================================================
+        csv_data = pd.read_csv(db_path)
+        omega_0_row = len(csv_data) // 2
+        omega_1p_row = omega_0_row + 1
+        omega_1n_row = omega_0_row - 1
+        omega_0  = csv_data.iloc[omega_0_row, 0]
+        omega_1p = csv_data.iloc[omega_1p_row, 0]
+        omega_1n = csv_data.iloc[omega_1n_row, 0]
+        omega_0_current  = csv_data.iloc[omega_0_row, [1, 2]].to_numpy()
+        omega_1p_current = csv_data.iloc[omega_1p_row, [1, 2]].to_numpy()
+        omega_1n_current = csv_data.iloc[omega_1n_row, [1, 2]].to_numpy()
+        omega_0_current_abs  = np.sqrt(omega_0_current[0] ** 2 + omega_0_current[1] ** 2)
+        omega_1p_current_abs = np.sqrt(omega_1p_current[0] ** 2 + omega_1p_current[1] ** 2)
+        omega_1n_current_abs = np.sqrt(omega_1n_current[0] ** 2 + omega_1n_current[1] ** 2)
+        omega_0_slope        = (omega_1p_current_abs - omega_1n_current_abs) / (omega_1p - omega_1n)
+        # ==============================================================================================================
+        # Creating the single scatterer pdf
+        # ==============================================================================================================
+        # Generating noised current in abs value - assuming same phase (no phase noise atm)
+        n_of_particles         = elec_amp_per_sec * omega_0_current_abs * 1e-12 / sampling_rate
+        n_of_particles_snoised = np.random.poisson(n_of_particles, pdf_count)
+        noised_current_abs     = n_of_particles_snoised * curr_per_part
+        sensitivity_estimator  = (noised_current_abs - omega_0_current_abs) / omega_0_slope
+        sens_est_std           = np.std(sensitivity_estimator)
+        # ==============================================================================================================
+        # Plotting sens estimator
+        # ==============================================================================================================
+        plt.rcParams["figure.figsize"] = (18, 9)
+        sensitivity_estimator_fig = plt.figure()
+        plt.hist(sensitivity_estimator, 50, density=True)
+        plt.xlabel('Omega, normalized')
+        plt.title('Sensitivity Estimator PDF, at Omega = {0:.3e} ; std = {1:.3e}'.format(omega_0, sens_est_std))
+        plt.grid()
+        if save_plt:
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            sensitivity_pdf = f'sinsitivity_pdf.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(run_path, FIG_DIR)):
+                os.makedirs(os.path.join(run_path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            sensitivity_estimator_fig.savefig(os.path.join(run_path, FIG_DIR, sensitivity_pdf))
+        plt.show()
+
+    @staticmethod
+    def generate_multi_sens_pdf(db_path, run_path, epoch, omegas=None, save_plt=False):
+        import pandas as pd
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        elec_amp_per_sec = 6.24e18
+        pdf_count        = 100000
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file = pff.get_full_path(run_path, epoch)
+        model, trainer = mff.load_state_train_omega(chosen_file)
+        sampling_rate  = trainer.sampling_rate
+        curr_per_part  = 1e12 * 1 / elec_amp_per_sec * sampling_rate
+        # ==============================================================================================================
+        # Extracting the most sensitive slope and 0 current
+        # ==============================================================================================================
+        csv_data = pd.read_csv(db_path)
+        omega_0_row  = len(csv_data) // 2
+        omega_1p_row = omega_0_row + 1
+        omega_1n_row = omega_0_row - 1
+        omega_0  = csv_data.iloc[omega_0_row, 0]
+        omega_1p = csv_data.iloc[omega_1p_row, 0]
+        omega_1n = csv_data.iloc[omega_1n_row, 0]
+        omega_0_current  = csv_data.iloc[omega_0_row, 1:].to_numpy()
+        omega_1p_current = csv_data.iloc[omega_1p_row, 1:].to_numpy()
+        omega_1n_current = csv_data.iloc[omega_1n_row, 1:].to_numpy()
+        # ----------------------------------------------------------------------------------------------------------
+        # Creating the currents in abs value
+        # ----------------------------------------------------------------------------------------------------------
+        omega_0_current       = np.reshape(omega_0_current, [-1, 2])
+        omega_0_current_comp  = omega_0_current[:, 0] + 1j * omega_0_current[:, 1]
+        omega_1p_current      = np.reshape(omega_1p_current, [-1, 2])
+        omega_1p_current_comp = omega_1p_current[:, 0] + 1j * omega_1p_current[:, 1]
+        omega_1n_current      = np.reshape(omega_1n_current, [-1, 2])
+        omega_1n_current_comp = omega_1n_current[:, 0] + 1j * omega_1n_current[:, 1]
+        pcurr_comp     = np.array([omega_1n_current_comp, omega_0_current_comp, omega_1p_current_comp]).T
+        pcurr_abs      = np.abs(pcurr_comp / pcurr_comp[:, 1][:, None])
+        omega_0_slopes = (pcurr_abs[:, 2] - pcurr_abs[:, 0]) / (omega_1p - omega_1n)
+        omega_mat      = np.array([omega_0_slopes, np.abs(omega_0_current_comp)])
+        # ==============================================================================================================
+        # Creating the multi- scatterer pdf
+        # ==============================================================================================================
+        # Generating noised current in abs value - assuming same phase (no phase noise atm)
+        n_of_particles = elec_amp_per_sec * np.abs(omega_0_current_comp) * 1e-12 / sampling_rate
+        # ----------------------------------------------------------------------------------------------------------
+        # Generating the noised samples
+        # ----------------------------------------------------------------------------------------------------------
+        noised_current_abs = np.zeros([len(n_of_particles), pdf_count])
+        for ii in range(len(n_of_particles)):
+            n_of_particle_ii_noised = np.random.poisson(n_of_particles[ii], pdf_count)
+            noised_current_abs[ii]  = n_of_particle_ii_noised * curr_per_part
+        # ----------------------------------------------------------------------------------------------------------
+        # Created omega_mat, where the 1st col are the slopes, the 2nd col are the intersections, trying to estimate
+        # a vector with length 2: [Omega, 1]
+        # ----------------------------------------------------------------------------------------------------------
+        estimator, _, _, _ = np.linalg.lstsq(omega_mat.T, noised_current_abs, rcond=-1)  # vector of 2, the first is the wanted omega, the second is the constant 1
+        sensitivity_estimator = estimator[0, :] / estimator[1, :]
+        sens_est_std          = np.std(sensitivity_estimator)
+        # ==============================================================================================================
+        # Plotting sens estimator
+        # ==============================================================================================================
+        plt.rcParams["figure.figsize"] = (18, 9)
+        sensitivity_estimator_fig = plt.figure()
+        plt.hist(sensitivity_estimator, 100, density=True)
+        plt.xlabel('Omega, normalized')
+        plt.title('Multi-Sensitivity Estimator PDF, at Omega = {0:.3e} ; std = {1:.3e}'.format(omega_0, sens_est_std))
+        plt.grid()
+        if save_plt:
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            sensitivity_pdf = f'multi_sens_pdf.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(run_path, FIG_DIR)):
+                os.makedirs(os.path.join(run_path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            sensitivity_estimator_fig.savefig(os.path.join(run_path, FIG_DIR, sensitivity_pdf))
+        plt.show()
+
+    @staticmethod
+    def generate_nn_pdf(db_path, run_path,  epoch, omega=0, save_plt=False, wanted_sampling_rate=100):
+        pff = PathFindingFunctions()
+        mff = ModelManipulationFunctions()
+        elec_amp_per_sec = 6.24e18
+        pdf_count        = 100000
+        # ==============================================================================================================
+        # Extracting the full file path
+        # ==============================================================================================================
+        chosen_file    = pff.get_full_path(run_path, epoch)
+        model, trainer = mff.load_state_train_omega(chosen_file)
+        sampling_rate  = trainer.sampling_rate  # TODO: remove the 100
+        averaging_num  = int(sampling_rate / wanted_sampling_rate)
+        # ==============================================================================================================
+        # Creating the NN PDF
+        # ==============================================================================================================
+        data_loader = import_pcurrent_omega_dataset(100, db_path, omega, int(pdf_count*averaging_num), OMEGA_FACTOR,
+                                                    shot_noise=True,
+                                                    sampling_rate=sampling_rate,
+                                                    num_workers=NUM_WORKERS)
+        loader_iter = iter(data_loader)
+        nn_estimator = []
+        model.eval()
+        with torch.no_grad():
+            for _ in range(len(data_loader)):
+                # ------------------------------------------------------------------------------
+                # Working with iterables, much faster
+                # ------------------------------------------------------------------------------
+                try:
+                    sample = next(loader_iter)
+                except StopIteration:
+                    break
+                # ------------------------------------------------------------------------------
+                # Extracting the grids and sensitivities
+                # ------------------------------------------------------------------------------
+                # omega_targets = sample['omega'].float().to(model.device)
+                pcurrents = Variable(sample['pcurrents'].float()).to(model.device)
+                # ------------------------------------------------------------------------------
+                # Forward pass
+                # ------------------------------------------------------------------------------
+                omega_outputs = model(pcurrents)
+                nn_estimator.append(omega_outputs.T.cpu().detach().numpy().tolist()[0])
+        nn_estimator = np.reshape(np.array(nn_estimator), [-1, averaging_num]) / trainer.omega_factor
+        nn_estimator = np.mean(nn_estimator, axis=1)
+        nn_est_std   = np.std(nn_estimator)
+        plt.rcParams["figure.figsize"] = (18, 9)
+        nn_estimator_fig = plt.figure()
+        plt.hist(nn_estimator, 100, density=True)
+        plt.xlabel('Omega, normalized')
+        plt.title('NN Estimator PDF, at Omega = {0:.3e} ; std = {1:.3e}'.format(omega, nn_est_std))
+        plt.grid()
+        if save_plt:
+            # ------------------------------------------------------------------------------------------------------
+            # Setting filename
+            # ------------------------------------------------------------------------------------------------------
+            sinsitivity_pdf = f'nn_pdf.png'
+            # ------------------------------------------------------------------------------------------------------
+            # Creating directory if not exists
+            # ------------------------------------------------------------------------------------------------------
+            if not os.path.isdir(os.path.join(run_path, FIG_DIR)):
+                os.makedirs(os.path.join(run_path, FIG_DIR))
+            # ------------------------------------------------------------------------------------------------------
+            # Saving
+            # ------------------------------------------------------------------------------------------------------
+            nn_estimator_fig.savefig(os.path.join(run_path, FIG_DIR, sinsitivity_pdf))
         plt.show()
 
 
@@ -1352,7 +1676,7 @@ if __name__ == '__main__':
     # from ConfigDG import *
     # from ConfigCNN import *
     from config_omega import *
-    c_epoch = 40
+    c_epoch = 300
     # c_path = '..\\results\\16_1_2022_21_39'
     # c_path = '..\\results\\10_2_2022_16_45'
     # c_path = '..\\results\\10_2_2022_16_45_plus_13_2_2022_21_4'
@@ -1367,7 +1691,8 @@ if __name__ == '__main__':
     c_path_vae   = '..\\results_vae\\13_10_2022_11_14'
     c_path_dg    = '..\\results_dg\\16_12_2022_14_6'
     c_path_cnn   = '..\\results_cnn\\18_12_2022_9_16'
-    c_path_omega = '..\\results_omega\\28_12_2022_14_51'
+    # c_path_omega = '..\\results_omega\\7_1_2023_22_51'
+    c_path_omega = '..\\results_omega\\6_1_2023_8_21'
 
     pp_vae = PostProcessingVAE()
     pp_dg  = PostProcessingDG()
@@ -1396,5 +1721,9 @@ if __name__ == '__main__':
     # pp_cnn.log_to_plot(c_path_cnn, spacing=1)
     # pp_cnn.load_and_pass(c_path_cnn, c_epoch, key=prefix_list[0])
 
-    pp_omega.log_to_plot(c_path_omega, spacing=1, scale=1/OMEGA_FACTOR)
-
+    print('hi')
+    # pp_omega.log_to_plot(c_path_omega, spacing=1, scale=1/OMEGA_FACTOR)
+    # pp_omega.load_and_pass(c_path_omega, c_epoch, spacing=100, save_plt=True)
+    # pp_omega.generate_sens_pdf(PATH_DATABASE, c_path_omega, c_epoch, save_plt=True)
+    pp_omega.generate_multi_sens_pdf(PATH_DATABASE, c_path_omega, c_epoch, save_plt=True)
+    # pp_omega.generate_nn_pdf(PATH_DATABASE, c_path_omega, c_epoch, save_plt=True)

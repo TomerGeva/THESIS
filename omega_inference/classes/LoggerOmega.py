@@ -10,9 +10,9 @@ class LoggerOmega(LoggerGeneric):
     # ==================================================================================================================
     # Basic help functions, internal
     # ==================================================================================================================
-    def _get_result_string(self, loss):
-        temp_str = 'Omega_MSE: {0:^' + str(self.result_space) + 'f}'
-        return temp_str.format(loss)
+    def _get_result_string(self, loss, loss_norm):
+        temp_str = 'Omega_MSE: {0:^' + str(self.result_space) + '} Omega_NMSE: {1:^' + str(self.result_space) + 'f}'
+        return temp_str.format(loss, loss_norm)
 
     def _get_layer_log_string(self, action):
         if 'res-linear' in action[0]:
@@ -33,8 +33,8 @@ class LoggerOmega(LoggerGeneric):
     # ==================================================================================================================
     # Logging functions
     # ==================================================================================================================
-    def log_epoch_results(self, header, loss):
-        self.log_line(self.get_header(header) + self._get_result_string(loss))
+    def log_epoch_results(self, header, loss, loss_norm):
+        self.log_line(self.get_header(header) + self._get_result_string(loss, loss_norm))
         self.end_log()
         if self.write_to_file:
             full_path = os.path.join(self.logdir, self.filename)

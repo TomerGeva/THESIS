@@ -118,6 +118,10 @@ def grid_mse(targets, outputs):
     return 0.5 * torch.sum(torch.pow(targets - outputs, 2.0))
 
 
+def norm_mse(targets, outputs, eps=1e-9):
+    return torch.sum(torch.pow((targets - outputs) / (targets + eps), 2.0))
+
+
 def hausdorf_distance(X, Y, reduction='sum'):
     """
     :param X: B X N X 2 tensor or B X 2N tensor

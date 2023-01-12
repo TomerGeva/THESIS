@@ -4,6 +4,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from auxiliary_functions import norm_mse
 
 
 class TrainerOmega:
@@ -15,6 +16,9 @@ class TrainerOmega:
                  sched_step=20,
                  sched_gamma=0.5,
                  grad_clip=5,
+                 omega_factor=1,
+                 shot_noise=False,
+                 sampling_rate=1,  # [Hz]
                  training=True,
                  optimize_time=False,
                  xquantize=2500,
@@ -22,9 +26,13 @@ class TrainerOmega:
         # -------------------------------------
         # cost function
         # -------------------------------------
-        self.loss      = nn.MSELoss(reduction='sum')
-        self.xquantize = xquantize
-        self.yquantize = yquantize
+        self.loss          = nn.MSELoss(reduction='sum')
+        self.loss_norm     = norm_mse
+        self.xquantize     = xquantize
+        self.yquantize     = yquantize
+        self.omega_factor  = omega_factor
+        self.shot_noise    = shot_noise
+        self.sampling_rate = sampling_rate
         # -------------------------------------
         # optimizer
         # -------------------------------------
@@ -53,14 +61,15 @@ class TrainerOmega:
         self.training   = training
 
     def compute_loss(self, omega_targets, omega_outputs):
-        return self.loss(omega_targets, omega_outputs)
+        return self.loss(omega_targets, omega_outputs), self.loss_norm(omega_targets, omega_outputs, eps=1e-9*self.omega_factor)
 
     def run_single_epoch(self, model, loader):
         # ==========================================================================================
         # Init variables
         # ==========================================================================================
-        loss    = 0
-        counter = 0
+        loss      = 0
+        loss_norm = 0
+        counter   = 0
         loader_iter = iter(loader)
         for _ in range(len(loader)):
             # ------------------------------------------------------------------------------
@@ -82,9 +91,10 @@ class TrainerOmega:
             # ------------------------------------------------------------------------------
             # Cost computations
             # ------------------------------------------------------------------------------
-            batch_loss = self.loss(omega_targets, omega_outputs)
-            loss += batch_loss.item()
-            counter += omega_targets.size(0)
+            batch_loss, batch_loss_norm = self.compute_loss(omega_targets, omega_outputs)
+            loss      += batch_loss.item()
+            loss_norm += batch_loss_norm.item()
+            counter   += omega_targets.size(0)
             # ------------------------------------------------------------------------------
             # Back propagation
             # ------------------------------------------------------------------------------
@@ -95,7 +105,7 @@ class TrainerOmega:
                 batch_loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), self.grad_clip)
                 self.optimizer.step()
-        return loss / counter, counter
+        return loss / counter, loss_norm / counter, counter
 
     def test_model(self, model, loader):
         # ==========================================================================================
@@ -107,10 +117,10 @@ class TrainerOmega:
         # Begin of testing
         # ==========================================================================================
         with torch.no_grad():
-            test_loss, counter = self.run_single_epoch(model, loader)
+            test_loss, test_loss_norm, counter = self.run_single_epoch(model, loader)
         model.train()
         self.trainer_train()
-        return test_loss, counter
+        return test_loss, test_loss_norm, counter
 
     def trainer_eval(self, model=None):
         self.training = False
@@ -129,6 +139,9 @@ class TrainerOmega:
         logger.filename = 'logger_omega.txt'
         logger.start_log()
         logger.log_model_arch(model)
+        logger.log_line('Omega factor: ' + str(self.omega_factor))
+        logger.log_line('Shot noise: ' + str(self.shot_noise))
+        logger.log_line('Sampling rate: ' + str(self.sampling_rate) + ' [Hz]')
         # ==========================================================================================
         # Begin of training
         # ==========================================================================================
@@ -145,17 +158,17 @@ class TrainerOmega:
             # ------------------------------------------------------------------------------
             # Training a single epoch + logging
             # ------------------------------------------------------------------------------
-            train_loss, _ = self.run_single_epoch(model, train_loader)
+            train_loss, train_loss_norm, _ = self.run_single_epoch(model, train_loader)
             logger.log_epoch(epoch, t)
-            logger.log_epoch_results('train', train_loss)
+            logger.log_epoch_results('train', train_loss, train_loss_norm)
             # ------------------------------------------------------------------------------
             # Testing accuracy at the end of the epoch and logging
             # ------------------------------------------------------------------------------
             if valid_loader is not None:
                 valid_loss, _ = self.test_model(model, valid_loader)
                 logger.log_epoch_results('valid', valid_loss)
-            test_loss, _ = self.test_model(model, test_loader)
-            logger.log_epoch_results('test', test_loss)
+            test_loss, test_loss_norm, _ = self.test_model(model, test_loader)
+            logger.log_epoch_results('test', test_loss, test_loss_norm)
             # ------------------------------------------------------------------------------
             # Advancing the scheduler of the lr
             # ------------------------------------------------------------------------------
@@ -185,6 +198,8 @@ class TrainerOmega:
                         'optimizer_state_dict': self.optimizer.state_dict(),
                         'lr':                   lr,
                         'mom':                  mom,
+                        'omega_factor':         self.omega_factor,
+                        'sampling_rate':        self.sampling_rate,
                         'topology':             model.topology,
                         }
         torch.save(data_to_save, path)

@@ -14,12 +14,15 @@ YRANGE = np.array([-10, 10])  # Range of the y coordinate of the structure in mi
 XQUANTIZE = 2500  # number of quantization points in the X coordinate
 YQUANTIZE = 2500  # number of quantization points in the Y coordinate
 
-NUM_OF_POINTS         = 20  # 500
+NUM_OF_POINTS         = 500  # 500
 NUM_OF_SAMPLED_POINTS = 20
 
-OMEGA_FACTOR = 1e3  # The omegas are in reange [-1e-2, 1e-2], factoring to [-1,1]
+OMEGA_FACTOR = 1e3  # The omegas are in range [-1e-2, 1e-2], factoring to [-10,10]
 
 DMIN = 0.1  # minimal allowed distance between cylinder centers, in micro-meters
+
+SHOT_NOISE    = True
+SAMPLING_RATE = 100  # [Hz]
 
 SEED = 140993
 # ==================================================================================================================
@@ -33,9 +36,9 @@ OPTIMIZE_TIME = True
 # ==================================================================================================================
 # Paths
 # ==================================================================================================================
-
-PATH_DATABASE_TRAIN = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\databases\\center_500_1_database_train.csv'
-PATH_DATABASE_TEST  = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\databases\\center_500_1_database_test.csv'
+PATH_DATABASE       = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\databases\\center_500_3_database.csv'
+PATH_DATABASE_TRAIN = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\databases\\center_500_3_database_train.csv'
+PATH_DATABASE_TEST  = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\databases\\center_500_3_database_test.csv'
 PATH_LOGS           = 'C:\\Users\\TomerG\\PycharmProjects\\THESIS_TG\\results_omega'
 # --------------------------------------------------------------------------------------------------------------
 # Post processing paths
@@ -61,10 +64,11 @@ SAVE_PER_EPOCH   = 40
 # Topology
 # --------------------------------------------------------------------------------------------------------------
 FC_TOPOLOGY = [
-    ['linear',      FCBlockData(256, in_neurons=2*NUM_OF_SAMPLED_POINTS, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear',      FCBlockData(256, in_neurons=NUM_OF_SAMPLED_POINTS, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     # ['res-linear',  ResFCBlockData(512, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
     # ['res-linear',  ResFCBlockData(128, layers=3, bias=True, batch_norm=True,  dropout_rate=0, activation=activation_type_e.lReLU)],
-    ['linear', FCBlockData(128,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    ['linear', FCBlockData(256,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
+    # ['res-linear',  ResFCBlockData(100, layers=2, bias=True, batch_norm=False,  dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(64,  bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.lReLU)],
     ['linear', FCBlockData(1, bias=True, batch_norm=False, dropout_rate=0, activation=activation_type_e.null)],   # DO NOT CHANGE THIS LINE EVER
 ]

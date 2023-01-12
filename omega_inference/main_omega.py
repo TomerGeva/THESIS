@@ -23,10 +23,11 @@ def main():
     # ================================================================================
     # Importing the database
     # ================================================================================
-    train_loader, test_loader = import_pcurrents_dataset(BATCH_SIZE,
-                                                         PATH_DATABASE_TRAIN,
-                                                         PATH_DATABASE_TEST,
-                                                         omega_Factor=OMEGA_FACTOR)
+    train_loader, test_loader = import_pcurrents_dataset(BATCH_SIZE, PATH_DATABASE_TRAIN, PATH_DATABASE_TEST,
+                                                         omega_factor=OMEGA_FACTOR,
+                                                         shot_noise=SHOT_NOISE,
+                                                         sampling_rate=SAMPLING_RATE,
+                                                         num_workers=NUM_WORKERS)
     # ================================================================================
     # Creating the model
     # ================================================================================
@@ -37,10 +38,11 @@ def main():
     # Creating the trainer
     # ================================================================================
     trainer = TrainerOmega(model,
-                           EPOCH_NUM,
-                           LR, MOM,
-                           SCHEDULER_STEP, SCHEDULER_GAMMA,
-                           GRAD_CLIP)
+                           num_epochs=EPOCH_NUM,
+                           lr=LR, mom=MOM,
+                           sched_step=SCHEDULER_STEP, sched_gamma=SCHEDULER_GAMMA,
+                           grad_clip=GRAD_CLIP,
+                           omega_factor=OMEGA_FACTOR, shot_noise=SHOT_NOISE, sampling_rate=SAMPLING_RATE)
     # ================================================================================
     # Training
     # ================================================================================
